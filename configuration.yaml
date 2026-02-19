@@ -1,0 +1,130 @@
+#
+# Loads default set of integrations. Do not remove.
+#
+default_config:
+
+homeassistant:
+
+  packages: !include_dir_named packages
+
+  auth_providers:
+    - type: homeassistant
+    - type: trusted_networks
+      trusted_networks:
+        - 192.168.1.0/24
+        - 127.0.0.1
+        - ::1
+
+  customize_glob:
+    "number.adlar_*": # For number entities from integrations
+      mode: box
+
+# voor persons https://companion.home-assistant.io/docs/getting_started/
+# cloud:
+
+#
+# Http setup
+#
+http:
+  use_x_forwarded_for: true
+  trusted_proxies:
+    - 192.168.1.0/24
+    - 127.0.0.1
+    - ::1
+
+#
+# Text to speech
+#
+tts:
+  platform: google_translate
+
+#
+# Mariadb: database zonder history: tot purge datum
+#
+recorder:
+  db_url: !secret mariadb_url
+  purge_keep_days: 31
+  commit_interval: 1
+  exclude:
+    #    entities:
+    #      - sensor.watermeter_totaal_water_verbruik_cost
+    #      - sensor.ha_uptime_minutes
+    #    entity_globs:
+    #      - sensor.*uptime
+    domains:
+      - automation
+      - update
+
+#
+# InfluxDB: database met history: lange termijn data
+#
+influxdb:
+  host: !secret influxdb_host
+  port: !secret influxdb_port
+  api_version: 1
+  database: homeassistant
+  username: homeassistant
+  password: !secret influxdb_pass
+  ssl: false
+  verify_ssl: false
+  max_retries: 3
+  default_measurement: state
+  include:
+    entity_globs:
+      - sensor.smartmeter_*
+      - sensor.envoy_lifetime_*
+      - sensor.envoy_122025007960_lifetime_*
+      - sensor.adlar_warmtepomp_*
+      - sensor.adlar*
+      - sensor.zonnepanelen_*
+      - sensor.wp_*
+      - sensor.vermogen_per_wp_*
+      - sensor.watermeter_*
+    entities:
+      - sensor.volle_zonuren
+      - sensor.frank_slim_terugleveren_history
+
+#
+# Files include
+#
+script: !include scripts.yaml
+scene: !include scenes.yaml
+group: !include group.yaml
+
+# My own handmade automations
+automation manual: !include_dir_list automation/
+# Automations I create in the UI
+automation ui: !include automations.yaml
+
+#
+# Directories include
+#
+template: !include_dir_merge_list templates/
+
+#`
+# Log data
+#
+logger:
+  default: warning # critical fatal error warning(=default) warn info debug notset
+  filters: # filter out
+    homeassistant.components.script:
+      - 'Timeout when calling resource "http://192.168.1.73/*"'
+#  logs:
+#    rest_command: debug
+#    homeassistant.components.rest.util: error
+
+logbook:
+  exclude:
+    entities:
+      - sensor.warmtepomp_meter_last_seen
+    entity_globs:
+      - sensor.envoy_*_inverter_*
+    domains:
+      - Envoy-S-Metered-EU
+      - Forecast.Solar
+      - Uptime
+      - OpenTherm
+
+shell_command:
+  run_remote_db_backup: !secret mariadb_backup
+
