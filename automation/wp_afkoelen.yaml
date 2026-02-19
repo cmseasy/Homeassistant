@@ -1,0 +1,53 @@
+alias: "WP AV: temp set bij afkoelen"
+description: ""
+triggers:
+  - trigger: state
+    entity_id:
+      - sensor.adlar_warmtepomp_wp_inlet_temp
+    for:
+      hours: 0
+      minutes: 0
+      seconds: 30
+conditions:
+  - condition: state
+    entity_id: input_select.wp_selecteer_bedrijfsmodus
+    state: Auto verwarmen
+  - condition: state
+    entity_id: binary_sensor.adlar_warmtepomp_wp_defrosting
+    state: "off"
+  - condition: state
+    entity_id: binary_sensor.adlar_warmtepomp_maintenance
+    state: "off"
+  - condition: numeric_state
+    entity_id: sensor.smart_thermostat_x_set_temperatuur
+    below: sensor.smart_thermostat_x_temperatuur
+  - condition: numeric_state
+    entity_id: sensor.smart_thermostat_x_set_temperatuur
+    below: 20
+  - condition: numeric_state
+    entity_id: number.adlar_warmtepomp_wp_temp_set
+    above: sensor.adlar_warmtepomp_wp_inlet_temp
+  - condition: not
+    conditions:
+      - condition: state
+        entity_id: sensor.kamertemperatuur_waardering
+        state: Te koud
+    enabled: true
+actions:
+  - action: number.set_value
+    metadata: {}
+    data:
+      value: >
+        {% set inlet_temp = states('sensor.adlar_warmtepomp_wp_inlet_temp') |
+        float %} 
+        {{ [ inlet_temp -1 , 18] | max }}
+    target:
+      entity_id: number.adlar_warmtepomp_wp_temp_set
+    enabled: true
+  - action: logbook.log
+    metadata: {}
+    data:
+      entity_id: number.adlar_warmtepomp_wp_temp_set
+      name: Adlar automation
+      message: "WP Auto Verwarmen: stel in temp set = inlet bij afkoelen"
+mode: single

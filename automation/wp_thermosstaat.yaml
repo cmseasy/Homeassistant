@@ -1,0 +1,221 @@
+alias: "WP AV: temp set door thermosstaat aanpassing"
+id: wp_av_temp_set_door_thermosstaat_aanpassing
+description: ""
+triggers:
+  - trigger: state
+    entity_id:
+      - sensor.smart_thermostat_x_set_temperatuur
+    for:
+      hours: 0
+      minutes: 0
+      seconds: 30
+    from: null
+    to: null
+conditions:
+  - condition: state
+    entity_id: input_select.wp_selecteer_bedrijfsmodus
+    state: Auto verwarmen
+    enabled: true
+  - condition: template
+    value_template: |-
+      {# Alleen als de verandering een nummerieke verandering is #}
+      {% set temp_from = trigger.from_state.state | float(0)  %} 
+      {% set temp_to = trigger.to_state.state | float(0) %} 
+      {% if temp_from > 0 and temp_to > 0  %}
+        {% set state = 'true' %}
+      {% else %}
+        {% set state = 'false' %}
+      {% endif %}
+      {{ state }}
+    alias: Verandering is numeriek
+actions:
+  - choose:
+      - conditions:
+          - condition: numeric_state
+            entity_id: sensor.smart_thermostat_x_set_temperatuur
+            below: sensor.smart_thermostat_x_temperatuur
+          - alias: " Verlaging moet lager zijn dan 0,6 grC "
+            condition: template
+            value_template: |-
+              {# Verandering is minimaal de temp_delta waarde #}
+              {% set temp_from = trigger.from_state.state | float(0)  %} 
+              {% set temp_to = trigger.to_state.state | float(0) %} 
+              {% set temp_delta = (temp_from - temp_to) | float  %} 
+              {% if temp_delta > 0.6 %}
+                {% set state = 'true' %}
+              {% else %}
+                {% set state = 'false' %}
+              {% endif %}
+              {{ state }}
+            enabled: true
+        sequence:
+          - action: number.set_value
+            metadata: {}
+            data:
+              value: >
+                {% set current_temp_set = 
+                states('number.adlar_warmtepomp_wp_temp_set') | float %}
+
+                {{ [current_temp_set - 5, 24 ] | max }}
+            target:
+              entity_id: number.adlar_warmtepomp_wp_temp_set
+            enabled: true
+          - action: logbook.log
+            metadata: {}
+            data:
+              entity_id: number.adlar_warmtepomp_wp_temp_set
+              name: Adlar automation
+              message: >-
+                WP Auto Verwarmen: temp set temperatuur regeling door
+                thermostaat aanpassing: verlagen
+        alias: Temp set bij thermostaat verlaging
+      - conditions:
+          - condition: numeric_state
+            entity_id: sensor.smart_thermostat_x_set_temperatuur
+            above: sensor.smart_thermostat_x_temperatuur
+          - condition: state
+            entity_id: binary_sensor.wp_compressor
+            state: "off"
+          - condition: template
+            value_template: |-
+              {# Verandering is minimaal de temp_delta waarde #}
+              {% set temp_from = trigger.from_state.state | float(0)  %} 
+              {% set temp_to = trigger.to_state.state | float(0) %} 
+              {% set temp_delta = (temp_to - temp_from) | float  %} 
+              {% if temp_delta > 0.4 %}
+                {% set state = 'true' %}
+              {% else %}
+                {% set state = 'false' %}
+              {% endif %}
+              {{ state }}
+            enabled: true
+            alias: Verhoging moet hoger zijn dan 0,4 grC
+        sequence:
+          - action: number.set_value
+            metadata: {}
+            data:
+              value: >
+                {% set current_temp_set =
+                states('number.adlar_warmtepomp_wp_temp_set') | float %}
+
+                {% set opt_set_temp =
+                states('input_number.wp_berekende_optimale_temp_set') | float %}
+
+                {{ [current_temp_set +2 , opt_set_temp] | max }}
+            target:
+              entity_id: number.adlar_warmtepomp_wp_temp_set
+            enabled: true
+          - action: logbook.log
+            metadata: {}
+            data:
+              entity_id: number.adlar_warmtepomp_wp_temp_set
+              name: Adlar automation
+              message: >-
+                WP Auto Verwarmen: temp set temperatuur regeling door
+                thermostaat aanpassing: verhogen compressor niet actief
+          - action: timer.start
+            metadata: {}
+            data:
+              duration: 00:{{ states('input_number.temperatuurvertraging') | int + 10 }}
+            target:
+              entity_id: timer.wachttijd_temp_set_veranderen
+          - wait_for_trigger:
+              - trigger: state
+                entity_id:
+                  - binary_sensor.wp_compressor
+                to: "on"
+                for:
+                  hours: 0
+                  minutes: 0
+                  seconds: 30
+          - action: number.set_value
+            metadata: {}
+            data:
+              value: >
+                {% set current_temp_set =
+                states('number.adlar_warmtepomp_wp_temp_set') | float %}
+
+                {% set opt_set_temp =
+                states('input_number.wp_berekende_optimale_temp_set') | float %}
+
+                {{ [current_temp_set -1 , opt_set_temp] | max }}
+            target:
+              entity_id: number.adlar_warmtepomp_wp_temp_set
+            enabled: true
+        alias: Temp set bij thermostaat verhoging en compressor is niet actief
+      - conditions:
+          - condition: numeric_state
+            entity_id: sensor.smart_thermostat_x_set_temperatuur
+            above: sensor.smart_thermostat_x_temperatuur
+          - condition: state
+            entity_id: binary_sensor.wp_compressor
+            state: "on"
+          - condition: template
+            value_template: |-
+              {# Verandering is minimaal de temp_delta waarde #}
+              {% set temp_from = trigger.from_state.state | float(0)  %} 
+              {% set temp_to = trigger.to_state.state | float(0) %} 
+              {% set temp_delta = (temp_to - temp_from) | float  %} 
+              {% if temp_delta > 0.4 %}
+                {% set state = 'true' %}
+              {% else %}
+                {% set state = 'false' %}
+              {% endif %}
+              {{ state }}
+            enabled: true
+            alias: Verhoging moet hoger zijn dan 0,4 grC
+        sequence:
+          - action: number.set_value
+            metadata: {}
+            data:
+              value: >
+                {% set current_temp_set =
+                states('number.adlar_warmtepomp_wp_temp_set') | float %}
+
+                {% set opt_set_temp =
+                states('input_number.wp_berekende_optimale_temp_set') | float %}
+
+                {{ [current_temp_set +1 , opt_set_temp] | max }}
+            target:
+              entity_id: number.adlar_warmtepomp_wp_temp_set
+            enabled: true
+          - action: logbook.log
+            metadata: {}
+            data:
+              entity_id: number.adlar_warmtepomp_wp_temp_set
+              name: Adlar automation
+              message: >-
+                WP Auto Verwarmen: temp set temperatuur regeling door
+                thermostaat aanpassing: verhogen compressor is actief
+          - wait_for_trigger:
+              - trigger: state
+                entity_id:
+                  - binary_sensor.wp_compressor
+                to: "on"
+                for:
+                  hours: 0
+                  minutes: 0
+                  seconds: 30
+            enabled: false
+          - action: number.set_value
+            metadata: {}
+            data:
+              value: >
+                {% set current_temp_set =
+                states('number.adlar_warmtepomp_wp_temp_set') | float %}
+
+                {% set opt_set_temp =
+                states('input_number.wp_berekende_optimale_temp_set') | float %}
+
+                {{ [current_temp_set -1 , opt_set_temp] | max }}
+            target:
+              entity_id: number.adlar_warmtepomp_wp_temp_set
+            enabled: false
+        alias: Temp set bij thermostaat verhoging en compressor is actief
+    default:
+      - action: timer.start
+        metadata: {}
+        target:
+          entity_id: timer.wachttijd_temp_set_veranderen
+        data: {}
+mode: single

@@ -1,0 +1,60 @@
+###   Energie   ####
+
+#
+# Huidig energieverbruik [W]
+# berekend op basis van Enphase en P1mon gegevens 
+#
+- sensor:
+    - name: "Huidig energie verbruik"
+      unique_id: huidig_energie_verbruik
+      device_class: power
+      state_class: measurement
+      unit_of_measurement: 'W'
+      icon: mdi:home-lightning-bolt-outline
+      availability: >
+        {{  states('sensor.envoy_122025007960_power_production') not in ['unavailable', 'unknown'] and
+            states('sensor.smartmeter_stroomverbruik') not in ['unavailable', 'unknown'] and
+            states('sensor.smartmeter_stroomproductie') not in ['unavailable', 'unknown']
+        }}
+      state: >
+
+        {% if states('sensor.envoy_122025007960_power_production') | int(0)
+        + states('sensor.smartmeter_stroomverbruik') | int(0)
+        - states('sensor.smartmeter_stroomproductie') | int(0)
+        > 0 %}
+
+        {{ (states('sensor.envoy_122025007960_power_production') | int(0)
+          + states('sensor.smartmeter_stroomverbruik') | int(0)
+          - states('sensor.smartmeter_stroomproductie') | int(0)) 
+          }}
+
+        {% else %}
+          {{ states('sensor.huidig_energie_verbruik') }}
+        {% endif %}
+
+        
+# - trigger:
+#     platform: time
+#     at: "15:05:00"
+# #  # - trigger: homeassistant
+# #  #   event: start
+- sensor:
+    - name: Frank prices
+      unique_id: frank_prices
+      availability: >
+        {{ states('sensor.Frank_energie_prijzen_gemiddelde_elektriciteitsprijs_alle_uren_all_in') not in ['unavailable', 'unknown'] }}
+      state: >
+        {% set t = now().hour %}
+        {% set prijs = state_attr('sensor.Frank_energie_prijzen_gemiddelde_elektriciteitsprijs_alle_uren_all_in', 'all_prices')[t].price | float %}
+        {{ prijs }}
+      attributes: 
+        data: >
+          {% set ns = namespace(items=[]) %}
+          {% for item in states.sensor.frank_energie_prijzen_gemiddelde_elektriciteitsprijs_alle_uren_all_in.attributes.all_prices %}
+          {% set ns.items = ns.items + [{
+          'start_time': (item.from | as_datetime | as_local).isoformat(),
+          'price_per_kwh': item.price
+          }] %}
+          {% endfor %}
+          {{ ns.items | sort(attribute='start_time') }}
+
