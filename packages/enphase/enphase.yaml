@@ -1,0 +1,108 @@
+sensor:
+
+# Enphase gedwongen offline minuten
+  - platform: history_stats
+    name: "Enphase productie uit tijdens zonuren" 
+    unique_id: enphase_productie_uit_tijdens_zonuren
+    entity_id: input_boolean.enphase_productie_uit_tijdens_zonuren
+    state: "on"
+    type: time
+    start: "{{ today_at('00:00') }}"
+    end: "{{ now() }}" 
+
+# Frank slim terugleveren
+  - platform: history_stats
+    name: "Frank slim terugleveren vandaag"
+    unique_id: frank_slim_terugleveren_vandaag
+    entity_id: binary_sensor.frank_slim_terugleveren
+    state: "on" 
+    type: time
+    start: "{{ today_at('00:00') }}"
+    end: '{{ now() }}'
+
+  - platform: history_stats
+    name: "Frank slim terugleveren history"
+    unique_id: frank_slim_terugleveren_history
+    entity_id: binary_sensor.frank_slim_terugleveren
+    state: "on" 
+    type: time
+    start: "{{ 0 }}"
+    end: '{{ now() }}'
+
+###   Zonnepanelen   ###
+
+#
+# Zonnepanelen Oost Wat per Watpiek
+#
+template:
+  - sensor:
+    - unique_id: vermogen_per_wp_oost
+      name: "Vermogen per Wp oost"
+      state_class: measurement
+      unit_of_measurement: "W"
+      device_class: power
+      icon: mdi:solar-power-variant-outline
+      availability: >
+        {{  states('sensor.zonnepanelen_oost') not in ['unavailable', 'unknown'] }}
+      state: >-
+        {% if has_value('sensor.zonnepanelen_oost') %}
+        {{ ( states('sensor.zonnepanelen_oost') | float(0) |round(3)
+        / (6*360) ) |round(3) 
+        }}
+        {% else %}
+          {{ this.state }}
+        {% endif %}
+#
+# Zonnepanelen Zuid Wat per Watpiek/Wp
+#
+  - sensor:
+    - unique_id: vermogen_per_wp_zuid
+      name: "Vermogen per Wp zuid"
+      state_class: measurement
+      unit_of_measurement: "W"
+      device_class: power
+      icon: mdi:solar-power-variant-outline
+      availability: >
+        {{  states('sensor.zonnepanelen_zuid') not in ['unavailable', 'unknown'] }}
+      state: >-
+        {% if has_value('sensor.zonnepanelen_zuid') %}
+        {{ ( states('sensor.zonnepanelen_zuid') | float(0) 
+        / (2*290) ) |round(3) 
+        }}
+        {% else %}
+          {{ this.state }}
+        {% endif %}
+#
+# Zonnepanelen West W/Wat per Watpiek
+#
+  - sensor:
+    - unique_id: vermogen_per_wp_west
+      name: "Vermogen per Wp west"
+      state_class: measurement
+      unit_of_measurement: "W"
+      device_class: power
+      icon: mdi:solar-power-variant-outline
+      availability: >
+        {{  states('sensor.zonnepanelen_west') not in ['unavailable', 'unknown'] }}
+      state: >-
+        {% if has_value('sensor.zonnepanelen_west') %}
+        {{ ( states('sensor.zonnepanelen_west') | float(0) 
+        / (6*360) ) | round(3) 
+        }}
+        {% else %}
+          {{ this.state }}
+        {% endif %}
+
+
+# - sensor:
+#   - unique_id: stroomproductie
+#     name: "stroomproductie"
+#     state_class: measurement
+#     unit_of_measurement: "W"
+#     device_class: power
+#     icon: mdi:transmission-tower-import
+#     availability: >
+#       {{  states('sensor.smartmeter_stroomproductie') not in ['unavailable', 'unknown'] }}
+#     state: >-
+#       {{ (states ('sensor.smartmeter_stroomproductie')) | int(0) *-1 }}
+

@@ -1,0 +1,131 @@
+
+#
+# Templates
+#
+template:
+
+#
+# Kamertemperatuur toe- en afname
+#
+  - sensor:
+      - unique_id: kamertemperatuur_gradient
+        name: kamertemperatuur gradient
+        unit_of_measurement: '°C/h'
+        state: >
+         {{ state_attr('binary_sensor.kamertemperatuur_stijgt', "gradient") | float(0) * 3600 | round(3)
+          }}
+
+  - sensor:
+      - unique_id: kamertemperatuur_setpoint_afwijking
+        name: kamertemperatuur setpoint afwijking
+        unit_of_measurement: '°C'
+        availability: >
+          {{ states('var.wp_ruimtetemperatuur_gemeten') | float(0) > 10 and
+            states('var.wp_ruimtetemperatuur_gewenst') | float(0) > 10
+          }}
+        state: >
+          {{ (states('var.wp_ruimtetemperatuur_gemeten') | float(0)
+          - states('var.wp_ruimtetemperatuur_gewenst') | float(0)) | round(2) 
+          }}
+#
+# set de kamertemperatuur waardering: te warm, te koud, ok
+#
+  - sensor:
+    - unique_id: kamertemperatuur_waardering
+      name: Kamertemperatuur waardering
+      availability: >
+        {{  state_attr('climate.smart_thermostat_x', "temperature") | is_number and
+            state_attr('climate.smart_thermostat_x', "temperature") | float > 0 
+        }}
+      state: >-
+          {% set offset_lower = states('input_number.thermostaat_offset') | float %}
+          {% set offset_upper = states('input_number.thermostaat_hysterese') | float %}
+          {% set thermostat_setpoint = state_attr('climate.smart_thermostat_x', "temperature") | float(18) %}
+          {% set min = (thermostat_setpoint + offset_lower) | float | round(1) %}
+          {% set max = (thermostat_setpoint + offset_lower + offset_upper) | float | round(1) %}
+          {% set kamer_temp = states('sensor.smart_thermostat_x_temperatuur') | float  %} 
+            {% if kamer_temp >= max %}
+            {% set state = 'Te warm' %}
+            {% elif kamer_temp <= min %}
+            {% set state = 'Te koud' %}
+          {% else %}
+            {% set state = 'Ok' %}
+          {% endif %}
+          {{ state }}
+      attributes:
+        lower_limit: >-
+          {% set offset_lower = states('input_number.thermostaat_offset') | float %}
+          {% set thermostat_setpoint = state_attr('climate.smart_thermostat_x', "temperature") | float(18) %}
+          {% set state = thermostat_setpoint + offset_lower %}
+          {{ state | float | round(1)}}
+        upper_limit: >-
+          {% set offset_lower = states('input_number.thermostaat_offset') | float %}
+          {% set offset_upper = states('input_number.thermostaat_hysterese') | float %}
+          {% set thermostat_setpoint = state_attr('climate.smart_thermostat_x', "temperature") | float(18) %}
+          {% set state = thermostat_setpoint + offset_lower + offset_upper %}
+          {{ state | float | round(1)}}
+
+
+
+
+
+
+
+  - sensor:
+    - unique_id: kamertemperatuur_verandering
+      name: "Kamertemperatuur verandering"
+      # device_class: temperature
+      # state_class: measurement
+      # unit_of_measurement: '°C'
+      icon: mdi:thermometer
+      # availability: >
+      #   {{  state_attr('climate.smart_thermostat_x', "temperature") | is_number and
+      #       state_attr('climate.smart_thermostat_x', "temperature") | float > 0 
+      #   }}
+      state: >-
+        {% set temp_daalt = states('binary_sensor.kamertemperatuur_daalt') %}
+          {% set temp_stijgt = states('binary_sensor.kamertemperatuur_stijgt') %}
+          {% if temp_daalt == 'on' and temp_stijgt == 'off' %}
+            Daalt
+          {% elif temp_daalt == 'off' and temp_stijgt == 'on' %}
+            Stijgt
+          {% else %}
+            Stabiel
+          {% endif %}
+
+  - sensor:
+    - unique_id: wp_waterpomp_regeling
+      name: "WP waterpomp regeling"
+      availability: >
+        {{  states('sensor.wp_delta_t') not in ['unavailable', 'unknown'] and
+            states('sensor.adlar_warmtepomp_wp_water_flow') not in ['unavailable', 'unknown'] 
+        }}
+      state: >-
+        {% set p99 = 5 %}
+        {% set p163 = 10 %}
+        {% set delta_t = states('sensor.wp_delta_t') | float %}
+        {% set flow = states('sensor.adlar_warmtepomp_wp_water_flow') | float %}
+        {% if delta_t > (p99 + 3) or flow < p163 %}
+          Pompvermogen + 2%
+        {% elif delta_t < (p99 - 1) or flow > p163 %}
+          Pompvermogen - 2%
+        {% else %}
+          Pompvermogen stabiel
+        {% endif %}
+
+
+
+  # - sensor:
+  #     - name: "Warmtepomp Actuele COP"
+  #       unit_of_measurement: "COP"
+  #       state: >
+  #         {% set opbrengst_watt = states('sensor.warmtepomp_actuele_warmteproductie') | float(0) %}
+  #         {% set verbruik_watt = states('sensor.warmtepomp_actueel_stroomverbruik') | float(0) %}
+  #         {% if verbruik_watt > 0 %}
+  #           {{ (opbrengst_watt / verbruik_watt) | round(2) }}
+  #         {% else %}
+  #           0
+  #         {% endif %}
+
+
+

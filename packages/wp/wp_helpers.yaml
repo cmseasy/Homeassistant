@@ -1,0 +1,273 @@
+#
+# Variabelen:
+# Zet de juiste entities hieronder gemerkt met  #####
+#
+var:
+# sensor thermostaat, huidige gemeten temperatuur
+  wp_ruimtetemperatuur_gemeten:
+    friendly_name: 'WP gemeten ruimtetemperatuur'
+    value_template: "{{ states('sensor.smart_thermostat_x_temperatuur') }}" #####
+    tracked_entity_id:
+    - sensor.smart_thermostat_x_temperatuur #####
+    initial_value: 18.5
+    icon: mdi:thermostat
+    unit_of_measurement: °C
+# sensor setpoint thermostaat, gewenste temperatuur
+  wp_ruimtetemperatuur_gewenst:
+    friendly_name: 'WP gewenste ruimtetemperatuur'
+    value_template: "{{ states('sensor.smart_thermostat_x_set_temperatuur') }}" #####
+    tracked_entity_id:
+    - sensor.smart_thermostat_x_set_temperatuur #####
+    initial_value: 18.5
+    icon: mdi:thermostat
+    unit_of_measurement: °C
+# sensor buitentemperatuur
+  wp_buitentemperatuur_gemeten:
+    friendly_name: 'WP buitentemperatuur'
+    value_template: "{{ states('sensor.adlar_ambient_temp_t1') }}" #####
+    tracked_entity_id:
+    - sensor.adlar_ambient_temp_t1 #####
+    initial_value: 18.5
+    icon: mdi:thermostat
+    unit_of_measurement: °C
+# sensor warmtepomp compressor frequentie
+  wp_compressor_frequentie:
+    friendly_name: 'WP compressor frequentie'
+    value_template: "{{ states('sensor.adlar_compressor_running_frequency') }}" #####
+    tracked_entity_id:
+    - sensor.adlar_compressor_running_frequency #####
+    initial_value: 0
+    icon: mdi:heat-pump
+    unit_of_measurement: Hz
+# sensor warmtepomp water flow
+  wp_water_flow:
+    friendly_name: 'WP water flow'
+    value_template: "{{ states('sensor.adlar_water_flow') }}" #####
+    tracked_entity_id:
+    - sensor.adlar_water_flow #####
+    initial_value: 0
+    icon: mdi:hydro-power
+    unit_of_measurement: l/m
+# sensor warmtepomp inlet temperatuur
+  wp_inlet_temperatuur:
+    friendly_name: 'WP inlet temperatuur'
+    value_template: "{{ states('sensor.adlar_water_inlet_temp_t6') }}" #####
+    tracked_entity_id:
+    - sensor.adlar_water_inlet_temp_t6 #####
+    initial_value: 0
+    icon: mdi:thermometer
+    unit_of_measurement: °C
+# number warmtepomp temp set
+  wp_temp_set:
+    friendly_name: 'WP temp set'
+    value_template: "{{ states('number.adlar_temp_set_heating') }}" #####
+    tracked_entity_id:
+    - number.adlar_temp_set_heating #####
+    initial_value: 24
+    icon: mdi:thermometer-auto
+    unit_of_measurement: °C
+
+
+# automation:
+# - id: wp_set_temp_set
+#   alias: WP set temp set
+#   triggers:
+#     - trigger: state
+#       entity_id: var.wp_temp_set
+#       from: null
+#       to: null
+#   actions:
+#     - action: number.set_value
+#       data:
+#         value: {{ states('var.wp_temp_set') | int }}
+#       target:
+#         entity_id: number.adlar_temp_set_heating #####
+
+#automation: 
+# - trigger:
+#     - platform: state
+#       entity_id: var.wp_temp_set
+#       from: null
+#       to: null
+#   actions:
+#     action: number.set_value
+#     data:
+#       value: "{{ states('var.wp_temp_set') | int }}"
+#     target:
+#       entity_id: number.adlar_warmtepomp_wp_temp_set #####
+
+#
+# Selectors
+#
+input_select:
+  wp_selecteer_energiemodus:
+    name: WP Selecteer de energiemodus
+    icon: mdi:leaf
+    options:
+      - "Normaal"
+      - "Eco"
+      - "Boost"
+      - "Auto"
+  wp_selecteer_bedrijfsmodus:
+    name: WP Selecteer de bedrijfsmodus
+    icon: mdi:heat-pump-outline
+    options:
+#      - "Uit" 
+#      - "Aan"
+      - "Adlar handbediend"
+      - "Adlar LT8/JAN"
+      - "Adlar warmtecurves"
+      - "Auto verwarmen"
+      - "Auto koelen"
+  wp_selecteer_nacht_eco:
+    name: Energiemodus 's nacht op Eco
+    icon: mdi:clock
+    options:
+      - "Aan"
+      - "Uit"
+
+#
+# Nummerieke invoer
+#
+input_number:
+  wp_berekende_optimale_temp_set:
+    name: wp berekende optimale temp set
+    min: 24.0
+    max: 40.0
+    step: 1.0
+    initial: 28
+    icon: mdi:heat-pump-outline
+    unit_of_measurement: "°C"
+    mode: box
+  thermostaat_offset:
+    name: Thermostaat offset (min setpoint)
+    min: -3.0
+    max: 3.0
+    step: 0.1
+    initial: 0
+    icon: mdi:thermometer-chevron-down
+    unit_of_measurement: "°C"
+    mode: box
+  thermostaat_hysterese:
+    name: Thermostaat hysterese (max setpoint)
+    min: 0.0
+    max: 5.0
+    step: 0.1
+    initial: 0.2
+    icon: mdi:thermometer-chevron-up
+    unit_of_measurement: "°C"
+    mode: box
+  temperatuurvertraging:
+    name: Reactietijd op temperatuurverandering (min)
+    min: 0
+    max: 60
+    step: 1
+    initial: 30
+    icon: mdi:timer-lock-outline
+    unit_of_measurement: "min"
+    mode: box
+
+
+#
+# Timers
+#
+timer:
+  wachttijd_temp_set_veranderen:
+    name: Wachttijd temp set veranderen
+    duration: 00:30:00
+    icon: mdi:timer-lock-outline
+    restore: true
+  tijd_eco_na_defrost:
+    name: Tijdsduur eco na defrost (min)
+    duration: 00:20:00
+    icon: mdi:timer-lock-outline
+    restore: true
+
+
+#
+# Binary sensors
+#
+binary_sensor:
+  - platform: trend
+    sensors:
+      kamertemperatuur_stijgt:
+        friendly_name: 'Kamertemperatuur stijgt'
+        entity_id: var.wp_ruimtetemperatuur_gemeten
+#        entity_id: sensor.smart_thermostat_x_temperatuur
+        sample_duration: 0
+        max_samples: 10
+        min_samples: 4 #6
+        min_gradient: 0.00003  #####
+        # = 0,1gr/1800s 0.0001 units/sec = 0.36 gr/h
+      kamertemperatuur_daalt:
+        friendly_name: 'Kamertemperatuur daalt'
+        entity_id: var.wp_ruimtetemperatuur_gemeten
+#        entity_id: sensor.smart_thermostat_x_temperatuur
+        sample_duration: 0
+        max_samples: 10
+        min_samples: 4 #6
+        min_gradient: -0.00003  #####
+
+      inlettemperatuur_daalt:
+        friendly_name: 'Inlettemperatuur daalt'
+        entity_id: var.wp_inlet_temperatuur
+#        entity_id: sensor.smart_thermostat_x_temperatuur
+        sample_duration: 0
+        max_samples: 10
+        min_samples: 2 #6
+        min_gradient: -0.00003  #####
+
+      kamertemperatuur_stijgt_30_metingen:
+        friendly_name: 'Kamertemperatuur stijgt in 30 metingen'
+        entity_id: var.wp_ruimtetemperatuur_gemeten
+#        entity_id: sensor.smart_thermostat_x_temperatuur
+#        sample_duration: 2700 # 45min
+        max_samples: 40
+        min_samples: 30
+        min_gradient: 0.00003  #####
+        # = 0,1gr/1800s 0.0001 units/sec = 0.36 gr/h
+
+      kamertemperatuur_stijgt_1uur:
+        friendly_name: 'Kamertemperatuur stijgt in 1 uur'
+        entity_id: var.wp_ruimtetemperatuur_gemeten
+#        entity_id: sensor.smart_thermostat_x_temperatuur
+        sample_duration: 2700 # 45min
+        max_samples: 40
+        min_samples: 30
+        min_gradient: 0.00003  #####
+        # = 0,1gr/1800s 0.0001 units/sec = 0.36 gr/h
+
+  - platform: threshold
+    name: wp compressor
+    device_class: running
+#    entity_id: sensor.adlar_warmtepomp_wp_compressor_frequency
+    entity_id: var.wp_compressor_frequentie
+    hysteresis: 0
+    upper: 1
+
+  - platform: threshold
+    name: wp pomp water flow
+    device_class: running
+    entity_id: var.wp_water_flow
+#    entity_id: sensor.adlar_warmtepomp_wp_water_flow  
+    hysteresis: 0
+    upper: 5  #####
+
+  - platform: threshold
+    name: wp eco mode buitentemperatuur
+    device_class: running
+    entity_id: var.wp_buitentemperatuur_gemeten
+#    entity_id: sensor.adlar_warmtepomp_wp_ambient_temp
+    hysteresis: 0
+    upper: 6  #####
+    lower: 5  #####
+
+  - platform: tod
+    name: wp eco mode nacht
+    unique_id: eco_mode_nacht
+    after: "23:00:00"  #####
+    before: "08:00:00"  #####
+
+
+
+

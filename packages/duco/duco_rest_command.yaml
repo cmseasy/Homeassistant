@@ -1,0 +1,78 @@
+rest_command:
+
+#
+# Duco WTW api change commands
+#
+
+# duco_box_mode_auto1:
+#   url: http://192.168.1.73/nodeconfig.html
+#   method: get
+#   headers:
+#     accept: "application/json, text/html"
+#     user-agent: 'Mozilla/5.0 {{ useragent }}'
+#   content_type: "application/json; charset=UTF-8"
+#   payload: "nodesetoperstate?node=1&value=AUTO"
+  duco_box_mode_auto:
+    url: http://192.168.1.73/nodesetoperstate?node=1&value=AUTO
+  duco_box_mode_cnt1:
+    url: http://192.168.1.73/nodesetoperstate?node=1&value=CNT1
+  duco_box_mode_cnt2:
+    url: http://192.168.1.73/nodesetoperstate?node=1&value=CNT2
+  duco_box_mode_cnt3:
+    url: http://192.168.1.73/nodesetoperstate?node=1&value=CNT3
+  duco_box_mode_man1:
+    url: http://192.168.1.73/nodesetoperstate?node=1&value=MAN1
+  duco_box_mode_man2:
+    url: http://192.168.1.73/nodesetoperstate?node=1&value=MAN2
+  duco_box_mode_man3:
+    url: http://192.168.1.73/nodesetoperstate?node=1&value=MAN3
+
+  duco_wonen_mode_auto:
+    url: http://192.168.1.73/nodesetoperstate?node=2&value=AUTO
+  duco_wonen_mode_cnt1:
+    url: http://192.168.1.73/nodesetoperstate?node=2&value=CNT1
+  duco_wonen_mode_cnt2:
+    url: http://192.168.1.73/nodesetoperstate?node=2&value=CNT2
+  duco_wonen_mode_cnt3:
+    url: http://192.168.1.73/nodesetoperstate?node=2&value=CNT3
+  duco_wonen_mode_man1:
+    url: http://192.168.1.73/nodesetoperstate?node=2&value=MAN1
+  duco_wonen_mode_man2:
+    url: http://192.168.1.73/nodesetoperstate?node=2&value=MAN2
+  duco_wonen_mode_man3:
+    url: http://192.168.1.73/nodesetoperstate?node=2&value=MAN3
+
+  duco_slapen_mode_auto:
+    url: http://192.168.1.73/nodesetoperstate?node=3&value=AUTO
+  duco_slapen_mode_cnt1:
+    url: http://192.168.1.73/nodesetoperstate?node=3&value=CNT1
+  duco_slapen_mode_cnt2:
+    url: http://192.168.1.73/nodesetoperstate?node=3&value=CNT2
+  duco_slapen_mode_cnt3:
+    url: http://192.168.1.73/nodesetoperstate?node=3&value=CNT3
+  duco_slapen_mode_man1:
+    url: http://192.168.1.73/nodesetoperstate?node=3&value=MAN1
+  duco_slapen_mode_man2:
+    url: http://192.168.1.73/nodesetoperstate?node=3&value=MAN2
+  duco_slapen_mode_man3:
+    url: http://192.168.1.73/nodesetoperstate?node=3&value=MAN3
+
+  duco_box_rhsetpoint_55:
+    url: http://192.168.1.73/nodeconfigset?node=58&para=RHSetpoint&value=55
+  duco_box_rhsetpoint_60:
+    url: http://192.168.1.73/nodeconfigset?node=58&para=RHSetpoint&value=60
+  duco_box_rhsetpoint_65:
+    url: http://192.168.1.73/nodeconfigset?node=58&para=RHSetpoint&value=65
+  duco_box_rhsetpoint_70:
+    url: http://192.168.1.73/nodeconfigset?node=58&para=RHSetpoint&value=70
+  duco_box_rhsetpoint_80:
+    url: http://192.168.1.73/nodeconfigset?node=58&para=RHSetpoint&value=80
+  duco_box_rhsetpoint_90:
+    url: http://192.168.1.73/nodeconfigset?node=58&para=RHSetpoint&value=90
+
+  ducobox_bypassmode_auto:
+    url: http://192.168.1.73/boxconfigset?mod=Energy&para=BypassMode&value=0
+  ducobox_bypassmode_closed:
+    url: http://192.168.1.73/boxconfigset?mod=Energy&para=BypassMode&value=1
+  ducobox_bypassmode_open:
+    url: http://192.168.1.73/boxconfigset?mod=Energy&para=BypassMode&value=2

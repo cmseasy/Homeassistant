@@ -1,0 +1,490 @@
+template:
+
+# Sensoren voor de Ducobox WTW, afgeleid van rest.yaml
+  - sensor:
+
+    - name: "Ducobox Filter resttijd"
+      unique_id: ducobox_filter_resttijd
+      device_class: duration
+      unit_of_measurement: "d"
+      availability: >
+        {{ states('sensor.ducobox_boxinfoget') not in ['unavailable', 'unknown'] }}
+  #      {{ state_attr('sensor.ducobox_boxinfoget', 'EnergyInfo') ['FilterRemainingTime'] not in ['unavailable', 'unknown'] }}
+      state: >
+        {{ state_attr('sensor.ducobox_boxinfoget', 'EnergyInfo') ['FilterRemainingTime'] }}
+
+    - name: "Ducobox temperatuur, toevoer van buiten"
+      unique_id: ducobox_tempoda  
+      device_class: temperature
+      unit_of_measurement: "°C"
+      availability: >
+        {{ states('sensor.ducobox_boxinfoget') not in ['unavailable', 'unknown'] }}
+  #      {{ state_attr('sensor.ducobox_boxinfoget', 'EnergyInfo') ['TempODA'] | is_defined }}
+      state: >
+        {{ state_attr('sensor.ducobox_boxinfoget', 'EnergyInfo') ['TempODA'] / 10 }}
+
+    - name: "Ducobox temperatuur, toevoer naar woning"
+      unique_id: ducobox_tempsup
+      device_class: temperature
+      unit_of_measurement: "°C"
+      availability: >
+        {{ states('sensor.ducobox_boxinfoget') not in ['unavailable', 'unknown'] }}
+  #      {{ state_attr('sensor.ducobox_boxinfoget', 'EnergyInfo') ['TempSUP'] | is_defined }}
+      state: >
+        {{ state_attr('sensor.ducobox_boxinfoget', 'EnergyInfo') ['TempSUP'] / 10 }}
+
+    - name: "Ducobox temperatuur, afvoer van woning"
+      unique_id: ducobox_tempeta
+      device_class: temperature
+      unit_of_measurement: "°C"
+      availability: >
+        {{ states('sensor.ducobox_boxinfoget') not in ['unavailable', 'unknown'] }}
+  #      {{ state_attr('sensor.ducobox_boxinfoget', 'EnergyInfo') ['TempETA'] | is_defined }}
+      state: >
+        {{ state_attr('sensor.ducobox_boxinfoget', 'EnergyInfo') ['TempETA'] / 10 }}
+
+    - name: "Ducobox temperatuur, afvoer naar buiten"
+      unique_id: ducobox_tempeha
+      device_class: temperature
+      unit_of_measurement: "°C"
+      availability: >
+        {{ states('sensor.ducobox_boxinfoget') not in ['unavailable', 'unknown'] }}
+  #      {{ state_attr('sensor.ducobox_boxinfoget', 'EnergyInfo') ['TempEHA'] | is_defined }}
+      state: >
+        {{ state_attr('sensor.ducobox_boxinfoget', 'EnergyInfo') ['TempEHA'] / 10 }}
+
+    - name: "Ducobox SupplyFanPwmPercentage"
+      unique_id: ducobox_supplyfanpwmpercentage
+      unit_of_measurement: "%"
+      availability: >
+        {{ states('sensor.ducobox_boxinfoget') not in ['unavailable', 'unknown'] }}
+  #      {{ state_attr('sensor.ducobox_boxinfoget', 'EnergyFan') ['SupplyFanPwmPercentage'] | is_defined }}
+      state: >
+        {{ state_attr('sensor.ducobox_boxinfoget', 'EnergyFan') ['SupplyFanPwmPercentage'] }}
+      # value_template: >
+      #   {{ value_json['EnergyFan']['SupplyFanPwmPercentage'] }}
+
+    - name: "Ducobox ExhaustFanPwmPercentage"
+      unique_id: ducobox_exhaustfanpwmpercentage
+      unit_of_measurement: "%"
+      availability: >
+        {{ states('sensor.ducobox_boxinfoget') not in ['unavailable', 'unknown'] }}
+  #      {{ state_attr('sensor.ducobox_boxinfoget', 'EnergyFan') ['ExhaustFanPwmPercentage'] | is_defined }}
+      state: >
+        {{ state_attr('sensor.ducobox_boxinfoget', 'EnergyFan') ['ExhaustFanPwmPercentage'] }}
+      # value_template: >
+      #   {{ value_json['EnergyFan']['ExhaustFanPwmPercentage'] }}
+
+      ################
+    - name: "Ducobox SupplyFanSpeed"
+      unique_id: ducobox_supplyfanspeed
+      unit_of_measurement: "rpm"
+      availability: >
+        {{ states('sensor.ducobox_boxinfoget') not in ['unavailable', 'unknown'] }}
+  #      {{ state_attr('sensor.ducobox_boxinfoget', 'EnergyFan') ['SupplyFanSpeed'] | is_defined }}
+      state: >
+        {{ state_attr('sensor.ducobox_boxinfoget', 'EnergyFan') ['SupplyFanSpeed'] }}
+      # value_template: >
+      #   {{ value_json['EnergyFan']['SupplyFanSpeed'] }}
+
+    - name: "Ducobox ExhaustFanSpeed"
+      unique_id: ducobox_exhaustfanspeed
+      unit_of_measurement: "rpm"
+      availability: >
+        {{ states('sensor.ducobox_boxinfoget') not in ['unavailable', 'unknown'] }}
+  #      {{ state_attr('sensor.ducobox_boxinfoget', 'EnergyFan') ['ExhaustFanSpeed'] | is_defined }}
+      state: >
+        {{ state_attr('sensor.ducobox_boxinfoget', 'EnergyFan') ['ExhaustFanSpeed'] }}
+      # value_template: >
+      #   {{ value_json['EnergyFan']['ExhaustFanSpeed'] }}
+
+      ################################################
+
+    - name: "Ducobox SupplyFanPressTarget"
+      unique_id: ducobox_supplyfanpresstarget
+      unit_of_measurement: "Pa"
+      availability: >
+        {{ states('sensor.ducobox_boxinfoget') not in ['unavailable', 'unknown'] }}
+  #      {{ state_attr('sensor.ducobox_boxinfoget', 'EnergyFan') ['SupplyFanPressTarget'] | is_defined }}
+      state: >
+        {{ state_attr('sensor.ducobox_boxinfoget', 'EnergyFan') ['SupplyFanPressTarget'] }}
+      # value_template: >
+      #   {{ value_json['EnergyFan']['SupplyFanPressTarget'] }}
+
+    - name: "Ducobox SupplyFanPressActual"
+      unique_id: ducobox_supplyfanpressactual
+      unit_of_measurement: "Pa"
+      availability: >
+        {{ states('sensor.ducobox_boxinfoget') not in ['unavailable', 'unknown'] }}
+  #      {{ state_attr('sensor.ducobox_boxinfoget', 'EnergyFan') ['SupplyFanPressActual'] | is_defined }}
+      state: >
+        {{ state_attr('sensor.ducobox_boxinfoget', 'EnergyFan') ['SupplyFanPressActual'] }}
+      # value_template: >
+      #   {{ value_json['EnergyFan']['SupplyFanPressActual'] }}
+
+    - name: "Ducobox ExhaustFanPressTarget"
+      unique_id: ducobox_exhaustfanpresstarget
+      unit_of_measurement: "Pa"
+      availability: >
+        {{ states('sensor.ducobox_boxinfoget') not in ['unavailable', 'unknown'] }}
+  #      {{ state_attr('sensor.ducobox_boxinfoget', 'EnergyFan') ['ExhaustFanPressTarget'] | is_defined }}
+      state: >
+        {{ state_attr('sensor.ducobox_boxinfoget', 'EnergyFan') ['ExhaustFanPressTarget'] }}
+      # value_template: >
+      #   {{ value_json['EnergyFan']['ExhaustFanPressTarget'] }}
+
+    - name: "Ducobox ExhaustFanPressActual"
+      unique_id: ducobox_exhaustfanpressactual
+      unit_of_measurement: "Pa"
+      availability: >
+        {{ states('sensor.ducobox_boxinfoget') not in ['unavailable', 'unknown'] }}
+  #       {{ state_attr('sensor.ducobox_boxinfoget', 'EnergyFan') ['ExhaustFanPressActual'] | is_defined }}
+      state: >
+        {{ state_attr('sensor.ducobox_boxinfoget', 'EnergyFan') ['ExhaustFanPressActual'] }}
+      # value_template: >
+      #   {{ value_json['EnergyFan']['ExhaustFanPressActual'] }}
+
+  #######################
+
+    - name: "Ducobox BypassStatus"
+      unique_id: ducobox_bypassstatus
+      unit_of_measurement: "%"
+      availability: >
+        {{ states('sensor.ducobox_boxinfoget') not in ['unavailable', 'unknown'] }}
+      state: >
+        {{ state_attr('sensor.ducobox_boxinfoget', 'EnergyInfo') ['BypassStatus'] }}
+
+
+
+
+    - name: "Ducobox BypassRequestedTemp"
+      unique_id: bypassrequestedtemp
+      unit_of_measurement: "°C"
+      state_class: measurement
+      device_class: temperature
+      availability: >
+        {{ states('sensor.ducobox_boxinfoget') not in ['unavailable', 'unknown'] }}
+      state: >
+        {{ state_attr('sensor.ducobox_boxinfoget', 'EnergyInfo') ['BypassRequestedTemp'] / 10 }}
+      # value_template: >
+      #   {{ value_json['EnergyInfo']['BypassRequestedTemp'] /10 }}
+
+    - name: "Ducobox FrostProtState"
+      unique_id: ducobox_frostprotstate
+      availability: >
+        {{ states('sensor.ducobox_boxinfoget') not in ['unavailable', 'unknown'] }}
+  #      {{ state_attr('sensor.ducobox_boxinfoget', 'EnergyInfo') ['FrostProtState'] not in ['unavailable', 'unknown'] }}
+      state: >
+        {{ state_attr('sensor.ducobox_boxinfoget', 'EnergyInfo') ['FrostProtState'] }}
+      # value_template: >
+      #   {{ value_json['EnergyInfo']['FrostProtState'] }}
+
+    - name: "Ducobox FrostProtPressReduct"
+      unique_id: ducobox_frostprotpressreduct
+      unit_of_measurement: "%"
+      availability: >
+        {{ states('sensor.ducobox_boxinfoget') not in ['unavailable', 'unknown'] }}
+  #      {{ state_attr('sensor.ducobox_boxinfoget', 'EnergyInfo') ['FrostProtPressReduct'] | is_defined }}
+      state: >
+        {{ state_attr('sensor.ducobox_boxinfoget', 'EnergyInfo') ['FrostProtPressReduct'] }}
+      # value_template: >
+      #   {{ value_json['EnergyInfo']['FrostProtPressReduct'] }}
+
+    - name: "Ducobox FrostProtHeaterLevel"
+      unique_id: ducobox_frostprotheaterlevel
+      unit_of_measurement: "%"
+      availability: >
+        {{ states('sensor.ducobox_boxinfoget') not in ['unavailable', 'unknown'] }}
+  #      {{ state_attr('sensor.ducobox_boxinfoget', 'EnergyInfo') ['FrostProtHeaterLevel'] not in ['unavailable', 'unknown'] }}
+      state: >
+        {{ state_attr('sensor.ducobox_boxinfoget', 'EnergyInfo') ['FrostProtHeaterLevel'] }}
+      # value_template: >
+      #   {{ value_json['EnergyInfo']['FrostProtHeaterLevel'] }}
+
+    - name: "Ducobox VentCool Comfort temp"
+      unique_id: ducobox_tempinsidecomfort
+      device_class: temperature
+      unit_of_measurement: "°C"
+      availability: >
+        {{ states('sensor.ducobox_boxinfoget') not in ['unavailable', 'unknown'] }}
+  #      {{ state_attr('sensor.ducobox_boxinfoget', 'VentCoolInfo') ['TempInsideComfort'] | is_defined }}
+      state: >
+        {{ state_attr('sensor.ducobox_boxinfoget', 'VentCoolInfo') ['TempInsideComfort'] / 10 }}
+      # value_template: >
+      #   {{ value_json['VentCoolInfo']['TempInsideComfort'] / 10 }}
+
+    - name: "Ducobox NightBoost Comfort temp"
+      unique_id: ducobox_tempcomfort
+      device_class: temperature
+      unit_of_measurement: "°C"
+      availability: >
+        {{ states('sensor.ducobox_boxinfoget') not in ['unavailable', 'unknown'] }}
+  #      {{ state_attr('sensor.ducobox_boxinfoget', 'NightBoostInfo') ['TempComfort'] | is_defined }}
+      state: >
+        {{ state_attr('sensor.ducobox_boxinfoget', 'NightBoostInfo') ['TempComfort'] / 10 }}
+      # value_template: >
+      #   {{ value_json['NightBoostInfo']['TempComfort'] / 10 }}
+
+
+
+
+
+
+
+    - name: "Ducobox relatieve vochtigheid"
+      unique_id: ducobox_rh
+      device_class: humidity
+      unit_of_measurement: "%"
+      availability: >
+        {{ state_attr('sensor.ducobox', 'rh') | is_defined }}
+      state: >
+        {{ state_attr('sensor.ducobox', 'rh') }}
+
+    - name: "Ducobox temperatuur"
+      unique_id: ducobox_temperatuur
+      device_class: temperature
+      unit_of_measurement: "°C"
+      availability: >
+        {{  state_attr('sensor.ducobox', 'temp') | is_defined }}
+      state: >
+        {{ state_attr('sensor.ducobox', 'temp') }}
+
+
+
+
+
+  #######################
+    - name: "Ducobox temperatuur woonkamer"
+      unique_id: ducobox_temp_woonkamer
+      device_class: temperature
+      unit_of_measurement: "°C"
+      availability: >
+        {{ state_attr('sensor.duco_bedieningssensor_woonkamer', 'temp') | is_defined }}
+      state: >
+        {{ state_attr('sensor.duco_bedieningssensor_woonkamer', 'temp') }}
+  #    availability: >
+  #      {{ value_json is defined }}
+  #    value_template: >
+  #      {% if value_json['temp'] | is_number %}
+  #        {{ value_json['temp'] }}
+  #      {% else %}
+  #        {{ this.state }}
+  #      {% endif %}
+  ##      {{ value_json['temp'] }}
+
+    - name: "Ducobox CO2 woonkamer"
+      unique_id: ducobox_co2_woonkamer
+      device_class: carbon_dioxide
+      unit_of_measurement: "ppm"
+      availability: >
+        {{ state_attr('sensor.duco_bedieningssensor_woonkamer', 'co2') | is_defined }}
+      state: >
+        {{ state_attr('sensor.duco_bedieningssensor_woonkamer', 'co2') }}
+  #    availability: >
+  #      {{ value_json is defined }}
+  #    value_template: >
+  ##      {% if value_json['co2'] | is_number %}
+  #        {{ value_json['co2'] }}
+  #      {% else %}
+  #        {{ this.state }}
+  #      {% endif %}
+  #      {{ value_json['co2'] }}
+
+
+    - name: "Ducobox temperatuur slaapkamer"
+      unique_id: ducobox_temp_slaapkamer
+      device_class: temperature
+      unit_of_measurement: "°C"
+      availability: >
+        {{ state_attr('sensor.duco_bedieningssensor_slaapkamer', 'temp') | is_defined }}
+      state: >
+        {{ state_attr('sensor.duco_bedieningssensor_slaapkamer', 'temp') }}
+  #    availability: >
+  #      {{ value_json is defined }}
+  #    value_template: >
+  #      {% if value_json['temp'] | is_number %}
+  #        {{ value_json['temp'] }}
+  #      {% else %}
+  #        {{ this.state }}
+  #      {% endif %}
+  #      {{ value_json['temp'] }}
+
+    - name: "Ducobox CO2 slaapkamer"
+      unique_id: ducobox_co2_slaapkamer
+      device_class: carbon_dioxide
+      unit_of_measurement: "ppm"
+      availability: >
+        {{ state_attr('sensor.duco_bedieningssensor_slaapkamer', 'co2') | is_defined }}
+      state: >
+        {{ state_attr('sensor.duco_bedieningssensor_slaapkamer', 'co2') }}
+  #    availability: >
+  #      {{ value_json is defined }}
+  #    value_template: >
+  #      {% if value_json['co2'] | is_number %}
+  #        {{ value_json['co2'] }}
+  #      {% else %}
+  #        {{ this.state }}
+  #      {% endif %}
+  #      {{ value_json['co2'] }}
+
+
+
+
+  # # Ducobox rhsetpoint meter
+    - name: "Duco RHSetpoint"
+      unique_id: duco_rhsetpoint
+      device_class: humidity
+      unit_of_measurement: "%"
+      availability: >
+        {{ states('sensor.ducobox_node58_configget') not in ['unavailable', 'unknown'] }}
+  #      {{ state_attr('sensor.ducobox_node58_configget', 'RHSetpoint') ['Val'] | is_defined }}
+      state: >
+        {% set x = state_attr('sensor.ducobox_node58_configget', 'RHSetpoint') ['Val'] %}
+          {% if is_number(x) %}
+            {{ x }}
+          {% else %}
+            {{ this.state | default(0, true) }}
+          {% endif %}
+
+  #       {{ state_attr('sensor.ducobox_node58_configget', 'RHSetpoint') ['Val'] | int(60) }}
+
+
+
+
+  ###   WTW warmte terugwin uit   ###
+
+  #
+  # WTW debiet
+  #
+  - sensor:
+    - unique_id: ducobox_debiet
+      name: "Ducobox debiet"
+      unit_of_measurement: "m³/h"
+      device_class: volume_flow_rate
+      icon: mdi:air-filter
+      availability: >
+        {{  states('sensor.ducobox_supplyfanpwmpercentage') not in ['unavailable', 'unknown'] and
+            states('sensor.ducobox_exhaustfanpwmpercentage') not in ['unavailable', 'unknown']
+        }}
+      state: >-
+        {{ (states('sensor.ducobox_supplyfanpwmpercentage') | float(0)
+        + states('sensor.ducobox_exhaustfanpwmpercentage') | float(0) )
+        / 2 * 150 / 100 
+        }}
+
+  #
+  ## Duco box WTW Rendement
+  #
+  - sensor:
+      - name: "Duco box Rendement"
+        unique_id: duco_box_rendement
+        state_class: measurement
+        unit_of_measurement: "%"
+        availability: >
+          {{  states('sensor.ducobox_temperatuur_toevoer_van_buiten') | is_number | float > 0 and
+              states('sensor.ducobox_temperatuur_toevoer_naar_woning') | is_number | float > 0 and
+              states('sensor.ducobox_temperatuur_afvoer_van_woning') | is_number | float > 0 and
+              states('sensor.ducobox_temperatuur_afvoer_naar_buiten') | is_number | float > 0
+          }}
+        state: >
+          {% set tnw = states("sensor.ducobox_temperatuur_toevoer_naar_woning") | float(0) | round(1) %}
+          {% set tvb = states("sensor.ducobox_temperatuur_toevoer_van_buiten") | float(0) | round(1) %} 
+          {% set avw = states("sensor.ducobox_temperatuur_afvoer_van_woning") | float(0) | round(1) %}  
+          {% set anb = states("sensor.ducobox_temperatuur_afvoer_naar_buiten") | float(0) | round(1) %}
+          {% set rendement = 0 %}
+          {% if avw != tvb %}
+            {% set rendement = (((tnw-tvb)/(avw-tvb))*100)  | float(-1.0) | round(1) %}          
+          {% endif %}
+          {% if rendement < 0 %}
+            {% set rendement = 0 | float(0) | round(1) %} 
+          {% endif %}
+          {% if rendement > 100 %}
+            {% set rendement = 100 | float(0) | round(1) %} 
+          {% endif %}
+          {{ rendement }}
+
+
+        #  '{{ ((states("sensor.ducobox_temperatuur_toevoer_naar_woning")|float
+        #   - states("sensor.ducobox_temperatuur_toevoer_van_buiten")|float)
+        #   / (states("sensor.ducobox_temperatuur_afvoer_van_woning")|float
+        #   - states("sensor.ducobox_temperatuur_toevoer_van_buiten")|float) *100 )| round(1)
+        #   }}'  
+
+  #
+  ## Duco WTW abs humidity
+  #
+  - sensor:
+    - unique_id: absolute_humidity_woonkamer
+      name: "Abolute humidity woonkamer"
+      state_class: measurement
+      unit_of_measurement: 'g/m³'
+      # availability: >
+      #   {{  states('sensor.ducobox_relatieve_vochtigheid') not in ['unavailable', 'unknown']and
+      #         states('sensor.ducobox_temperatuur') not in ['unavailable', 'unknown']
+      #   }}
+      # availability: >
+      #   {{  states('sensor.ducobox_relatieve_vochtigheid') | is_number and
+      #       states('sensor.ducobox_relatieve_vochtigheid') | float > 0 and
+      #       states('sensor.ducobox_temperatuur') | is_number and
+      #       states('sensor.ducobox_temperatuur') | float > 0 
+      #   }}
+      # availability: >
+      #   {{  states('sensor.ducobox_relatieve_vochtigheid') | is_number | float > 0 and
+      #       states('sensor.ducobox_temperatuur') | is_number | float > 0 
+      #   }}
+      # state: >
+      #   {% set h, t = states('sensor.ducobox_relatieve_vochtigheid') | float,
+      #     states('sensor.ducobox_temperatuur') %}
+      #   {% if not h or t == 'unknown' -%}
+      #     'unknown'
+      #   {%- else %}
+      #       {% set t = t | float %}
+      #       {{ (h*6.112*2.1674*e**((t*17.67)/(t+243.5))/(t+273.15))|round(2) }}
+      #     {% endif %}
+      availability: >
+        {{  states('sensor.smart_thermostat_x_luchtvochtigheid') | is_number | float > 0 and
+            states('sensor.smart_thermostat_x_temperatuur') | is_number | float > 0 
+        }}
+      state: >
+        {% set h, t = states('sensor.smart_thermostat_x_luchtvochtigheid') | float,
+          states('sensor.smart_thermostat_x_temperatuur') %}
+        {% if not h or t == 'unknown' -%}
+          'unknown'
+        {%- else %}
+            {% set t = t | float %}
+            {{ (h*6.112*2.1674*e**((t*17.67)/(t+243.5))/(t+273.15))|round(2) }}
+          {% endif %}
+
+  - sensor:
+    - unique_id: absolute_humidity_buiten
+      name: "Abolute humidity buiten"
+      state_class: measurement
+      unit_of_measurement: 'g/m³'
+      state: >
+        {% set h, t = states('sensor.buienradar_humidity') | float,
+          states('sensor.buienradar_temperature') %}
+        {% if not h or t == 'unknown' -%}
+          'unknown'
+        {%- else %}
+            {% set t = t | float %}
+            {{ (h*6.112*2.1674*e**((t*17.67)/(t+243.5))/(t+273.15))|round(2) }}
+          {% endif %}
+
+  # - sensor:
+  #   - name: "Duco RHSetpoint gewenst"
+  #     unique_id: duco_wtw_gewenst_rhsetpoint
+  #     unit_of_measurement: '%'
+  #     availability: >
+  #       {{  states('sensor.smart_thermostat_x_luchtvochtigheid') | is_number | float > 0 }}
+  #     state: >
+  #       {{ (states('sensor.smart_thermostat_x_luchtvochtigheid') , '55' ) | max | int }}
+
+  - sensor:
+    - name: "Duco RHSetpoint gewenst"
+      unique_id: duco_wtw_gewenst_rhsetpoint
+      unit_of_measurement: '%'
+      availability: >
+        {{  states('sensor.smart_thermostat_x_luchtvochtigheid') | is_number | float > 0 }}
+      state: >
+        {{ (((((states('sensor.smart_thermostat_x_luchtvochtigheid') | float ) + 2.5 + 0 ) / 10 ) | round( 1 , "half", 0 ) * 10) , 55) | max | int }}
+  # uitleg + 2,5 = afronding naar 'ceil'en de plus daarna is de offset 

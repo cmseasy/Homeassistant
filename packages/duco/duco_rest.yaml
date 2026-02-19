@@ -1,0 +1,295 @@
+rest:
+
+  # Ducobox
+  - resource: http://192.168.1.73/boxinfoget
+    scan_interval: 10
+    timeout: 8
+    verify_ssl: false 
+    sensor:
+    - name: "DucoBox boxinfoget"
+      unique_id: ducobox_boxinfoget
+      icon: mdi:fan
+      value_template: " OK "
+      json_attributes:
+  #    - General
+      - EnergyInfo
+      - EnergyFan
+  #    - EnergyCalib
+      - NightBoostInfo
+      - VentCoolInfo
+
+  # Ducobox node 1
+  - resource: http://192.168.1.73/nodeinfoget?node=1
+    scan_interval: 10
+    timeout: 8
+    verify_ssl: false
+    sensor:
+    - name: "DucoBox node 1"
+      unique_id: ducobox
+      icon: mdi:fan
+      value_template: "{{ value_json.state }}"
+      json_attributes:
+  #      - node
+  #      - devtype
+  #      - subtype
+  #      - netw
+  #      - addr
+  #      - sub
+  #      - prnt
+  #      - asso
+  #      - location
+        - state
+        - cntdwn
+  #      - endtime
+  #      - mode
+  #      - trgt
+  #      - actl
+  #      - ovrl
+  #      - snsr
+  #      - cerr
+  #      - swversion
+  #      - serialnb
+        - temp
+  #      - co2
+        - rh
+  #      - error
+  #      - show
+  #      - link
+
+  # Kleppen wonen
+  - resource: http://192.168.1.73/nodeinfoget?node=2
+    scan_interval: 15
+    timeout: 12
+    verify_ssl: false
+    sensor:
+    - name: "Duco zoneklep wonen"
+      unique_id: valve_zone_1
+      icon: mdi:fan
+      value_template: "{{ value_json.state }}"
+      json_attributes:
+  #      - node
+  #      - devtype
+  #      - subtype
+  #      - netw
+  #      - addr
+  #      - sub
+  #      - prnt
+  #      - asso
+  #      - location
+        - state
+        - cntdwn
+  #      - endtime
+  #      - mode
+  #      - ovrl
+  #      - snsr
+  #      - cerr
+  #      - swversion
+  #      - serialnb
+  #      - error
+  #      - show
+  #      - link
+
+  # Kleppen slapen
+  - resource: http://192.168.1.73/nodeinfoget?node=3
+    scan_interval: 15
+    timeout: 12
+    verify_ssl: false
+    sensor:
+    - name: "Duco zoneklep slapen"
+      unique_id: valve_zone_2
+      icon: mdi:fan
+      value_template: "{{ value_json.state }}"
+      json_attributes:
+  #      - node
+  #      - devtype
+  #      - subtype
+  #      - netw
+  #      - addr
+  #      - sub
+  #      - prnt
+  #      - asso
+  #      - location
+        - state
+        - cntdwn
+  #      - endtime
+  #      - mode
+  #      - ovrl
+  #      - snsr
+  #      - cerr
+  #      - swversion
+  #      - serialnb
+  #      - error
+  #      - show
+  #      - link
+
+  # Bedieningssensor woonkamer
+  - resource: http://192.168.1.73/nodeinfoget?node=4
+    scan_interval: 60
+    timeout: 8
+    verify_ssl: false
+    sensor:
+    - name: "Duco bedieningssensor woonkamer"
+      unique_id: duco_bedieningssensor_woonkamer
+      icon: mdi:fan
+      value_template: "node: {{ value_json.node }}"
+      json_attributes:
+        - node
+  #      - devtype
+  #      - subtype
+  #      - netw
+  #      - addr
+  #      - sub
+  #      - prnt
+  #      - asso
+  #      - location
+  #      - state
+  #      - cntdwn
+  #      - endtime
+  #      - mode
+  #      - ovrl
+  #      - snsr
+  #      - cerr
+  #      - swversion
+  #      - serialnb
+        - temp
+        - co2
+  #      - rh
+  #      - rssi_n2m
+  #      - hop_via
+  #      - rssi_n2h
+  #      - error
+  #      - show
+  #      - link
+
+  # Sensor slaapkamer
+  - resource: http://192.168.1.73/nodeinfoget?node=5
+    scan_interval: 60
+    timeout: 8
+    verify_ssl: false
+    sensor:
+    - name: "Duco bedieningssensor slaapkamer"
+      unique_id: duco_bedieningssensor_slaapkamer
+      icon: mdi:fan
+      value_template: "node: {{ value_json.node }}"
+      json_attributes:
+  #      - node
+  #      - devtype
+  #      - subtype
+  #      - netw
+  #      - addr
+  #      - sub
+  #      - prnt
+  #      - asso
+  #      - location
+  #      - state
+  #      - cntdwn
+  #      - endtime
+  #      - mode
+  #      - ovrl
+  #      - snsr
+  #      - cerr
+  #      - swversion
+  #      - serialnb
+        - temp
+        - co2
+  #      - rh
+  #      - rssi_n2m
+  #      - hop_via
+  #      - rssi_n2h
+  #      - error
+  #      - show
+  #      - link
+
+  # Ducobox bediening op de box
+  # - resource: http://192.168.1.73/nodeinfoget?node=52
+  #   scan_interval: 60
+  #   timeout: 30
+  #   verify_ssl: false
+  #   sensor:
+  #   - name: "Duco box bediening"
+  #     unique_id: duco_box_bediening
+  #     icon: mdi:fan
+  #     value_template: "{{ value_json.node }}"
+  #     json_attributes:
+  #       - node
+  #       - devtype
+  #       - subtype
+  #       - netw
+  #       - addr
+  #       - sub
+  #       - prnt
+  #       - asso
+  #       - location
+  #       - state
+  #       - cntdwn
+  #       - endtime
+  #       - mode
+  #       - ovrl
+  #       - snsr
+  #       - cerr
+  #       - swversion
+  #       - serialnb
+  #       - error
+  #       - show
+  #       - link
+
+  # Ducobox vochtsensor voor de box
+  # - resource: http://192.168.1.73/nodeinfoget?node=58
+  #   scan_interval: 60
+  #   timeout: 30
+  #   verify_ssl: false
+  #   sensor:
+  #   - name: "Duco box vochtsensor"
+  #     unique_id: duco_box_vochtsensor
+  #     icon: mdi:fan
+  #     value_template: "{{ value_json.node }}"
+  #     json_attributes:
+  #       - node
+  #       - devtype
+  #       - subtype
+  #       - netw
+  #       - addr
+  #       - sub
+  #       - prnt
+  #       - asso
+  #       - location
+  #       - state
+  #       - cntdwn
+  #       - endtime
+  #       - mode
+  #       - ovrl
+  #       - snsr
+  #       - cerr
+  #       - swversion
+  #       - serialnb
+  #       - temp
+  #       - co2
+  #       - rh
+  #       - error
+  #       - show
+  #       - link
+
+  #
+  # Duco WTW scan per 300 seconden
+  #
+
+  - resource: http://192.168.1.73/nodeconfigget?node=58
+    scan_interval: 60
+    timeout: 20
+    verify_ssl: false
+    sensor:
+    - name: "DucoBox node58 configget"
+      unique_id: ducobox_node58_configget
+      icon: mdi:fan
+      value_template: "node: {{ value_json.node }}"
+      json_attributes:
+      - RHSetpoint
+  #    - RHDelta
+  #    - Manual1
+  #    - Manual2
+  #    - Manual3
+  #    - ManualTimeout
+  #    - SensorVisuLevel
+  #    - UcErrorMode
+  #    - Location
+
