@@ -1,0 +1,1157 @@
+esphome:
+  name: "adlar-modbus"
+  friendly_name: Adlar
+  min_version: 2025.11.0
+  name_add_mac_suffix: false
+
+  on_boot:
+    priority: 600
+    then:
+      - text_sensor.template.publish:
+          id: online_template
+          state: "gestart"
+  on_shutdown:
+    priority: 200
+    then:
+      - text_sensor.template.publish:
+          id: online_template
+          state: "gestopt"
+
+esp32:
+  board: esp32dev
+  framework:
+    type: esp-idf
+    advanced:
+      minimum_chip_revision: "3.1"
+
+# Enable logging
+logger:
+
+# Enable Home Assistant API
+api:
+  port: 6053
+  encryption:
+    key: !secret esphome_encryption_key
+  
+
+# Allow Over-The-Air updates
+ota:
+- platform: esphome
+  password: !secret esphome_ota_key
+
+wifi:
+  ssid: !secret wifi_ssid
+  password: !secret wifi_password
+  min_auth_mode: WPA2
+  manual_ip:
+    static_ip: 192.168.1.130
+    gateway: 192.168.1.1
+    subnet: 255.255.255.0
+  ap:
+    ssid: "Adlar ESP"
+    password: "####"
+
+time:
+  - platform: homeassistant
+    id: homeassistant_time
+
+captive_portal:
+
+web_server:
+  port: 80
+  version: 3
+  local: True
+  include_internal: True
+  # auth:
+  #   username: !secret web_server_username
+  #   password: !secret web_server_password
+  sorting_groups:
+    - id: sorting_group_configuration_setup
+      name: "Configuration setup"
+      sorting_weight: 10
+    - id: sorting_group_number_settings
+      name: "Number settings"
+      sorting_weight: 20
+
+# Adlar modbus
+uart:
+  - id: uart_modbus
+    tx_pin: GPIO17
+    rx_pin: GPIO16
+    baud_rate: 9600
+    data_bits: 8
+    stop_bits: 1
+    parity: NONE
+
+modbus:
+  - uart_id: uart_modbus
+    id: modbus_client
+
+modbus_controller:
+  - id: modbus_adlar
+    modbus_id: modbus_client
+    address: 0x01
+    update_interval: 60s
+    command_throttle: 300ms
+    setup_priority: -100
+
+# Global varibelen
+# globals:
+#   - id: id_name
+#     type: int
+#     restore_value: true
+#     initial_value: "0" 
+
+button:
+  - platform: restart
+    name: "Restart ESP"
+    icon: "mdi:restart"
+    web_server:
+      sorting_group_id: sorting_group_configuration_setup
+      sorting_weight: 000
+
+switch:
+  - platform: modbus_controller
+    modbus_controller_id: modbus_adlar
+    name: "Main switch"
+    id: main_switch   # Urenteller warmtepomp
+    icon: "mdi:heat-pump"
+    register_type: holding
+    address: 0x0305
+    web_server:
+      sorting_group_id: sorting_group_configuration_setup
+      sorting_weight: 100
+
+number:
+  # Urenteller compressor
+  - platform: template
+    name: "Compressor uren"
+    icon: "mdi:counter"
+    id: compressor_uren
+    min_value: 0
+    max_value: 999999
+    step: 1
+    mode: box
+    optimistic: true
+    restore_value: true
+    initial_value: 0
+    disabled_by_default: true
+    entity_category: "config"
+    web_server:
+      sorting_group_id: sorting_group_configuration_setup
+      sorting_weight: 102
+
+  - platform: template
+    name: "Compressor starts"
+    icon: "mdi:counter"
+    id: compressor_starts
+    min_value: 0
+    max_value: 999999
+    step: 1
+    mode: box
+    optimistic: true
+    restore_value: true
+    initial_value: 0
+    disabled_by_default: true
+    entity_category: "config"
+    web_server:
+      sorting_group_id: sorting_group_configuration_setup
+      sorting_weight: 103
+
+  - platform: template
+    name: "Defrost starts"
+    icon: "mdi:counter"
+    id: defrost_starts
+    min_value: 0
+    max_value: 999999
+    step: 1
+    mode: box
+    optimistic: true
+    restore_value: true
+    initial_value: 0
+    disabled_by_default: true
+    entity_category: "config"
+    web_server:
+      sorting_group_id: sorting_group_configuration_setup
+      sorting_weight: 104
+
+  - platform: template
+    name: "Oil return starts"
+    icon: "mdi:counter"
+    id: oil_return_starts
+    min_value: 0
+    max_value: 999999
+    step: 1
+    mode: box
+    optimistic: true
+    restore_value: true
+    initial_value: 0
+    disabled_by_default: true
+    entity_category: "config"
+    web_server:
+      sorting_group_id: sorting_group_configuration_setup
+      sorting_weight: 105
+
+  - platform: modbus_controller
+    modbus_controller_id: modbus_adlar
+    name: "Compensation value-Return water temperature"
+    register_type: holding
+    address: 0x0118
+    device_class: temperature
+    value_type: S_WORD
+    min_value: -10
+    max_value: 10
+    step: 1
+    mode: box
+    unit_of_measurement: °C
+    disabled_by_default: true
+    entity_category: "config"
+    web_server:
+      sorting_group_id: sorting_group_configuration_setup
+      sorting_weight: 106
+
+  - platform: modbus_controller
+    modbus_controller_id: modbus_adlar
+    name: "Compensation value-Outlet water temperature"
+    register_type: holding
+    address: 0x0119
+    device_class: temperature
+    value_type: S_WORD
+    min_value: -10
+    max_value: 10
+    step: 1
+    mode: box
+    unit_of_measurement: °C
+    disabled_by_default: true
+    entity_category: "config"
+    web_server:
+      sorting_group_id: sorting_group_configuration_setup
+      sorting_weight: 107
+
+  - platform: modbus_controller
+    modbus_controller_id: modbus_adlar
+    name: "P26 Hysterese watertemperatuur start warmtepomp"
+    register_type: holding
+    address: 0x011A
+    device_class: temperature
+    value_type: S_WORD
+    min_value: 0
+    max_value: 10
+    step: 1
+    mode: box
+    unit_of_measurement: °C
+    disabled_by_default: true
+    entity_category: "config"
+    web_server:
+      sorting_group_id: sorting_group_configuration_setup
+      sorting_weight: 110
+
+  - platform: modbus_controller
+    modbus_controller_id: modbus_adlar
+    name: "P88 Silent mode - compressor maximum frequency"
+    register_type: holding
+    address: 0x0158
+    device_class: frequency
+    value_type: S_WORD
+    min_value: 20
+    max_value: 70
+    step: 1
+    mode: box
+    unit_of_measurement: Hz
+    disabled_by_default: true
+    entity_category: "config"  
+    web_server:
+      sorting_group_id: sorting_group_configuration_setup
+      sorting_weight: 108
+
+  - platform: modbus_controller
+    modbus_controller_id: modbus_adlar
+    name: "P89 Silent mode - fan maximum frequency"
+    register_type: holding
+    address: 0x0159
+    device_class: frequency
+    value_type: S_WORD
+    min_value: 20
+    max_value: 60
+    step: 1
+    mode: box
+    unit_of_measurement: Hz
+    disabled_by_default: true
+    entity_category: "config"
+    web_server:
+      sorting_group_id: sorting_group_configuration_setup
+      sorting_weight: 109
+
+  - platform: modbus_controller
+    modbus_controller_id: modbus_adlar
+    name: "P99 Water pump speed regulation temperature differential"
+    register_type: holding
+    address: 0x0163
+    device_class: temperature
+    value_type: S_WORD
+    min_value: 2
+    max_value: 10
+    step: 1
+    mode: box
+    unit_of_measurement: °C
+    disabled_by_default: true
+    entity_category: "config"
+    web_server:
+      sorting_group_id: sorting_group_configuration_setup
+      sorting_weight: 111
+
+  - platform: modbus_controller
+    modbus_controller_id: modbus_adlar
+    name: "P100 PWM pump minimum speed"
+    register_type: holding
+    address: 0x0164
+    device_class: frequency
+    value_type: S_WORD
+    min_value: 20
+    max_value: 80
+    step: 1
+    mode: box
+    unit_of_measurement: "%" 
+    disabled_by_default: true
+    entity_category: "config"
+    web_server:
+      sorting_group_id: sorting_group_configuration_setup
+      sorting_weight: 112
+
+  - platform: modbus_controller
+    modbus_controller_id: modbus_adlar
+    name: "P111 Heating set temperature - lowest temperature"
+    register_type: holding
+    address: 0x016F
+    device_class: temperature
+    value_type: S_WORD
+    min_value: 15
+    max_value: 30
+    step: 1
+    mode: box
+    unit_of_measurement: "°C" 
+    disabled_by_default: true
+    entity_category: "config"
+    web_server:
+      sorting_group_id: sorting_group_configuration_setup
+      sorting_weight: 113
+
+  - platform: modbus_controller
+    modbus_controller_id: modbus_adlar
+    name: "Water pump PWM - range setting value"
+    register_type: holding
+    address: 0x0192
+    device_class: volume_flow_rate
+    value_type: S_WORD
+    min_value: 0
+    max_value: 100
+    step: 1
+    mode: box
+    unit_of_measurement: L/min
+    disabled_by_default: true
+    entity_category: "config"
+    web_server:
+      sorting_group_id: sorting_group_configuration_setup
+      sorting_weight: 114
+
+  - platform: modbus_controller
+    modbus_controller_id: modbus_adlar
+    name: "P163 Water pump speed regulation - Minimum speed"
+    register_type: holding
+    address: 0x01A3
+    device_class: volume_flow_rate
+    value_type: S_WORD
+    min_value: 0
+    max_value: 19
+    step: 1
+    mode: box
+    unit_of_measurement: L/min
+    disabled_by_default: true
+    entity_category: "config"
+    web_server:
+      sorting_group_id: sorting_group_configuration_setup
+      sorting_weight: 115
+
+  - platform: modbus_controller
+    modbus_controller_id: modbus_adlar
+    name: "P260 Maximum water pump speed"
+    register_type: holding
+    address: 0x0204
+    device_class: frequency
+    value_type: S_WORD
+    min_value: 50
+    max_value: 99
+    step: 1
+    mode: box
+    unit_of_measurement: "%" 
+    disabled_by_default: true
+    entity_category: "config"
+    web_server:
+      sorting_group_id: sorting_group_configuration_setup
+      sorting_weight: 116
+
+  - platform: modbus_controller
+    modbus_controller_id: modbus_adlar
+    name: "P261 Water pump speed - at constant temperature"
+    register_type: holding
+    address: 0x0205
+    device_class: frequency
+    value_type: S_WORD
+    min_value: 20
+    max_value: 99
+    step: 1
+    mode: box
+    unit_of_measurement: "%" 
+    disabled_by_default: true
+    entity_category: "config"
+    web_server:
+      sorting_group_id: sorting_group_configuration_setup
+      sorting_weight: 117
+
+  - platform: modbus_controller
+    modbus_controller_id: modbus_adlar
+    name: "Temp. Set-Cooling"
+    register_type: holding
+    address: 0x0300
+    device_class: temperature
+    value_type: S_WORD
+    min_value: 7
+    max_value: 25
+    step: 1
+    mode: box
+    unit_of_measurement: °C
+    entity_category: "config"
+
+  - platform: modbus_controller
+    modbus_controller_id: modbus_adlar
+    name: "Temp. Set-Heating"
+    register_type: holding
+    address: 0x0301
+    device_class: temperature
+    value_type: S_WORD
+    min_value: 20
+    max_value: 60
+    step: 1
+    mode: box
+    unit_of_measurement: °C
+    entity_category: "config"
+
+  - platform: modbus_controller
+    modbus_controller_id: modbus_adlar
+    name: "Temp. Set-Floor Heating"
+    register_type: holding
+    address: 0x0303
+    device_class: temperature
+    value_type: S_WORD
+    min_value: 20
+    max_value: 60
+    step: 1
+    mode: box
+    unit_of_measurement: °C
+    disabled_by_default: true
+    entity_category: "config"
+
+select:
+  - platform: modbus_controller
+    name: "P116 Regeling in- of outlet"
+    icon: "mdi:form-select"
+    address: 0x0174
+    value_type: U_WORD
+    optionsmap: 
+      "Inlet": 0
+      "Outlet": 1
+    entity_category: "config"
+    web_server:
+      sorting_group_id: sorting_group_configuration_setup
+      sorting_weight: 117
+
+  - platform: modbus_controller
+    name: "MODE"
+    address: 0x0304
+    value_type: U_WORD
+    optionsmap: 
+      "Cooling": 0
+      "Heating": 1
+      "Floor Heating": 3
+    entity_category: "config"
+
+  - platform: modbus_controller
+    name: "Running Mode"
+    address: 0x0307
+    value_type: U_WORD
+    optionsmap: 
+      "Standard": 0
+      "Boost": 1
+      "Silent": 2
+    entity_category: "config"
+
+  - platform: modbus_controller
+    name: "Cooling Setting Curve"
+    address: 0x0313
+    value_type: U_WORD
+    optionsmap: 
+      "Off": 0
+      "H1": 1
+      "H2": 2
+      "H3": 3
+      "H4": 4
+      "H5": 5
+      "H6": 6
+      "H7": 7
+      "H8": 8
+      "L1": 11
+      "L2": 12
+      "L3": 13
+      "L4": 14
+      "L5": 15
+      "L6": 16
+      "L7": 17
+      "L8": 18
+    entity_category: "config"
+
+  - platform: modbus_controller
+    name: "Heating Setting Curve"
+    address: 0x0314
+    value_type: U_WORD
+    optionsmap: 
+      "Off": 0
+      "H1": 1
+      "H2": 2
+      "H3": 3
+      "H4": 4
+      "H5": 5
+      "H6": 6
+      "H7": 7
+      "H8": 8
+      "L1": 11
+      "L2": 12
+      "L3": 13
+      "L4": 14
+      "L5": 15
+      "L6": 16
+      "L7": 17
+      "L8": 18
+    entity_category: "config"
+
+  - platform: modbus_controller
+    name: "Underfloor Heating Setting Curve"
+    address: 0x0316
+    value_type: U_WORD
+    optionsmap: 
+      "Off": 0
+      "H1": 1
+      "H2": 2
+      "H3": 3
+      "H4": 4
+      "H5": 5
+      "H6": 6
+      "H7": 7
+      "H8": 8
+      "L1": 11
+      "L2": 12
+      "L3": 13
+      "L4": 14
+      "L5": 15
+      "L6": 16
+      "L7": 17
+      "L8": 18
+    disabled_by_default: true
+    entity_category: "config" 
+
+binary_sensor:
+  # Urenteller warmtepomp
+  - platform: switch
+    name: "In bedrijf"
+    id: in_bedrijf
+    source_id: main_switch
+    device_class: power # Optional: shows as 'on'/'off' instead of 'open'/'closed'
+
+  - platform: modbus_controller
+    modbus_controller_id: modbus_adlar
+    address: 0x0000    
+    register_type: holding
+    bitmask: 0x01
+    name: "Refrigerant Recovery"
+    disabled_by_default: true
+
+  - platform: modbus_controller
+    modbus_controller_id: modbus_adlar
+    address: 0x0000    
+    register_type: holding
+    bitmask: 0x2
+    name: "Primary Anti-freeze"
+    disabled_by_default: true
+
+  - platform: modbus_controller
+    modbus_controller_id: modbus_adlar
+    address: 0x0000    
+    register_type: holding
+    bitmask: 0x4
+    name: "Secondary Anti-freeze"
+    disabled_by_default: true 
+
+  - platform: modbus_controller
+    modbus_controller_id: modbus_adlar
+    address: 0x0000    
+    register_type: holding
+    bitmask: 0x8
+    name: "Fault Alarm"
+    disabled_by_default: true 
+
+  - platform: modbus_controller
+    modbus_controller_id: modbus_adlar
+    address: 0x0000    
+    register_type: holding
+    bitmask: 0x010
+    name: "System oil return"
+    disabled_by_default: true
+    on_press:
+      - number.increment:
+          id: oil_return_starts
+          cycle: false
+
+  - platform: modbus_controller
+    modbus_controller_id: modbus_adlar
+    address: 0x0000    
+    register_type: holding
+    bitmask: 0x0100
+    name: "Defrost running" # was name: "System Frosting"
+    disabled_by_default: true
+    on_press:
+      - number.increment:
+          id: defrost_starts
+          cycle: false
+
+  - platform: modbus_controller
+    modbus_controller_id: modbus_adlar
+    address: 0x0000    
+    register_type: holding
+    bitmask: 0x01000
+    name: "Compressor active" # was:  name: "Shutdown after Reaching Temp"
+    id: compressor_active
+    disabled_by_default: true
+    on_press:
+      - number.increment:
+          id: compressor_starts
+          cycle: false
+
+  - platform: modbus_controller
+    modbus_controller_id: modbus_adlar
+    address: 0x0000    
+    register_type: holding
+    bitmask: 0x2000
+    name: "Shutdown after Unit Failure"
+    disabled_by_default: true 
+
+  - platform: modbus_controller
+    modbus_controller_id: modbus_adlar
+    address: 0x0000    
+    register_type: holding
+    bitmask: 0x4000
+    name: "Unit Operation"
+    disabled_by_default: true 
+
+  - platform: modbus_controller
+    modbus_controller_id: modbus_adlar
+    address: 0x0000
+    register_type: holding
+    bitmask: 0x8000
+    name: "Unit Waiting for Operation"
+    disabled_by_default: true
+
+sensor:
+  - platform: uptime
+    name: Adlar Uptime
+    disabled_by_default: true
+
+  - platform: wifi_signal
+    name: Adlar WiFi Signal
+    update_interval: 60s
+    disabled_by_default: true
+
+  - platform: modbus_controller
+    modbus_controller_id: modbus_adlar
+    name: "Compressor Target Frequency"
+    register_type: holding
+    address: 0x0027
+    device_class: frequency
+    value_type: S_WORD
+    accuracy_decimals: 0
+    unit_of_measurement: Hz
+    disabled_by_default: true
+
+  - platform: modbus_controller
+    modbus_controller_id: modbus_adlar
+    name: "Compressor Running Frequency"
+    register_type: holding
+    address: 0x0040
+    device_class: frequency
+    value_type: S_WORD
+    accuracy_decimals: 0
+    unit_of_measurement: Hz
+    filters:
+      - heartbeat:
+          period: 10s #60s
+  #        optimistic: true
+      - clamp:
+          min_value: 0
+          max_value: 150
+          ignore_out_of_range: true
+
+  - platform: modbus_controller
+    modbus_controller_id: modbus_adlar
+    name: "Fan Running Speed"
+    register_type: holding
+    address: 0x0041
+    device_class: frequency
+    value_type: S_WORD
+    accuracy_decimals: 0
+    unit_of_measurement: Hz
+    filters:
+      - heartbeat:
+          period: 10s #60s
+    #      optimistic: true
+      - clamp:
+          min_value: 0
+          max_value: 999
+          ignore_out_of_range: true
+
+  - platform: modbus_controller
+    modbus_controller_id: modbus_adlar
+    name: "EEV Open Step"
+    id: "eev_open_step"
+    register_type: holding
+    address: 0x0042
+    value_type: S_WORD
+    accuracy_decimals: 0
+    unit_of_measurement: P
+    disabled_by_default: true
+
+  - platform: modbus_controller
+    modbus_controller_id: modbus_adlar
+    name: "EVI Valve Open Step"
+    register_type: holding
+    address: 0x0043
+    value_type: S_WORD
+    accuracy_decimals: 0
+    unit_of_measurement: P
+    disabled_by_default: true
+
+  - platform: modbus_controller
+    modbus_controller_id: modbus_adlar
+    name: "AC Input Voltage"
+    id: voltage
+    register_type: holding
+    address: 0x0044
+    value_type: S_WORD
+    accuracy_decimals: 0
+    device_class: voltage
+    unit_of_measurement: V
+    filters:
+      - multiply: 0.99
+      - clamp:
+          min_value: 207
+          max_value: 253
+          ignore_out_of_range: false  
+      # - heartbeat:
+      #     period: 60s
+      #     optimistic: false
+      - median:
+          window_size: 5
+          send_every: 1
+          send_first_at: 1
+
+  - platform: modbus_controller
+    modbus_controller_id: modbus_adlar
+    name: "AC Input Current"
+    id: current
+    register_type: holding
+    address: 0x0045
+    value_type: S_WORD
+    accuracy_decimals: 1
+    device_class: current
+    unit_of_measurement: A
+    filters:
+      # - heartbeat:
+      #     period: 60s
+      #     optimistic: true
+      - multiply: 0.1
+      - clamp:
+          min_value: 0
+          max_value: 16
+          ignore_out_of_range: false  
+      - calibrate_linear:
+          method: exact
+          datapoints:
+           - 0.0 -> 0.0 # Map 0.0 (from sensor) to 0.0 (true value)
+           - 1.0 -> 1.0 #?
+           - 2.0 -> 1.8 #?
+           - 3.0 -> 2.5 #?
+           - 4.0 -> 2.9
+           - 5.0 -> 3.4
+           - 6.0 -> 4.6 #?
+           - 7.0 -> 5.5 #5.9?
+           - 8.0 -> 6.8 #6.4?
+           - 9.0 -> 7.8 
+           - 10.0 -> 8.5
+           - 11.0 -> 9.0
+
+  - platform: modbus_controller
+    modbus_controller_id: modbus_adlar
+    name: "Compressor Phase Current"
+    register_type: holding
+    address: 0x0046
+    value_type: S_WORD
+    accuracy_decimals: 1
+    device_class: current
+    unit_of_measurement: A
+    filters:
+      - multiply: 0.1
+    disabled_by_default: true
+
+  - platform: modbus_controller
+    modbus_controller_id: modbus_adlar
+    name: "Compressor IPM Temp."
+    register_type: holding
+    address: 0x0047
+    value_type: S_WORD
+    accuracy_decimals: 0
+    device_class: temperature
+    unit_of_measurement: °C
+    disabled_by_default: true
+
+  - platform: modbus_controller
+    modbus_controller_id: modbus_adlar
+    name: "High Pressure Saturation Temp."
+    register_type: holding
+    address: 0x0048
+    value_type: S_WORD
+    accuracy_decimals: 0
+    device_class: temperature
+    unit_of_measurement: °C
+    disabled_by_default: true
+
+  - platform: modbus_controller
+    modbus_controller_id: modbus_adlar
+    name: "Low  Pressure Saturation Temp."
+    register_type: holding
+    address: 0x0049
+    value_type: S_WORD
+    accuracy_decimals: 0
+    device_class: temperature
+    unit_of_measurement: °C
+    disabled_by_default: true
+
+  - platform: modbus_controller
+    modbus_controller_id: modbus_adlar
+    name: "Ambient Temp. T1"
+    register_type: holding
+    address: 0x004A
+    value_type: S_WORD
+    accuracy_decimals: 0
+    device_class: temperature
+    unit_of_measurement: °C
+    filters:
+      - filter_out: NAN
+      - heartbeat:
+          period: 60s
+          optimistic: true
+      - median:
+          window_size: 5
+          send_every: 5
+          send_first_at: 1
+      - clamp:
+          min_value: -40
+          max_value: 140
+          ignore_out_of_range: true
+
+  - platform: modbus_controller
+    modbus_controller_id: modbus_adlar
+    name: "Outer Coil Temp. T2"
+    register_type: holding
+    address: 0x004B
+    value_type: S_WORD
+    accuracy_decimals: 0
+    device_class: temperature
+    unit_of_measurement: °C
+    disabled_by_default: true
+
+  - platform: modbus_controller
+    modbus_controller_id: modbus_adlar
+    name: "Inner Coil Temp. T3"
+    register_type: holding
+    address: 0x004C
+    value_type: S_WORD
+    accuracy_decimals: 0
+    device_class: temperature
+    unit_of_measurement: °C
+    disabled_by_default: true
+
+  - platform: modbus_controller
+    modbus_controller_id: modbus_adlar
+    name: "Suction Temp. T4"
+    register_type: holding
+    address: 0x004D
+    value_type: S_WORD
+    accuracy_decimals: 0
+    device_class: temperature
+    unit_of_measurement: °C
+    disabled_by_default: true
+
+  - platform: modbus_controller
+    modbus_controller_id: modbus_adlar
+    name: "Exhaust Temp. T5"
+    register_type: holding
+    address: 0x004E
+    value_type: S_WORD
+    accuracy_decimals: 0
+    device_class: temperature
+    unit_of_measurement: °C
+    disabled_by_default: true
+
+  - platform: modbus_controller
+    modbus_controller_id: modbus_adlar
+    name: "Water Inlet Temp. T6"
+    id: temp_inlet
+    register_type: holding
+    address: 0x004F
+    device_class: temperature
+    value_type: S_WORD
+    accuracy_decimals: 1
+    unit_of_measurement: °C
+    filters:
+      - clamp:
+          min_value: -40
+          max_value: 140
+          ignore_out_of_range: false  
+
+  - platform: modbus_controller
+    modbus_controller_id: modbus_adlar
+    name: "Water Outlet Temp. T7"
+    id: temp_outlet
+    register_type: holding
+    address: 0x0050
+    device_class: temperature
+    value_type: S_WORD
+    accuracy_decimals: 1
+    unit_of_measurement: °C
+    filters:
+      - clamp:
+          min_value: -40
+          max_value: 140
+          ignore_out_of_range: false
+
+  - platform: modbus_controller
+    modbus_controller_id: modbus_adlar
+    name: "Economizer Inlet Temp. T8"
+    register_type: holding
+    address: 0x0051
+    device_class: temperature
+    value_type: S_WORD
+    accuracy_decimals: 0
+    unit_of_measurement: °C
+    disabled_by_default: true
+
+  - platform: modbus_controller
+    modbus_controller_id: modbus_adlar
+    name: "Economizer Outlet Temp. T9"
+    register_type: holding
+    address: 0x0052
+    device_class: temperature
+    value_type: S_WORD
+    accuracy_decimals: 0
+    unit_of_measurement: °C
+    disabled_by_default: true
+
+  - platform: modbus_controller
+    modbus_controller_id: modbus_adlar
+    name: "Plate Heat Exchanger Exhaust Temp."
+    register_type: holding
+    address: 0x0055
+    device_class: temperature
+    value_type: S_WORD
+    accuracy_decimals: 0
+    unit_of_measurement: °C
+    disabled_by_default: true
+
+  - platform: modbus_controller
+    modbus_controller_id: modbus_adlar
+    name: "Water Pump Speed PWM"
+    register_type: holding
+    address: 0x0057
+    device_class: frequency
+    value_type: S_WORD
+    accuracy_decimals: 0
+    unit_of_measurement: Hz
+    disabled_by_default: true
+
+  - platform: modbus_controller
+    modbus_controller_id: modbus_adlar
+    name: "Water Flow"
+    id: flow
+    register_type: holding
+    address: 0x0058
+    device_class: volume_flow_rate
+    value_type: S_WORD
+    accuracy_decimals: 0
+    filters:
+      - filter_out: NAN
+      - heartbeat:
+          period: 60s
+          optimistic: true
+      - lambda: |-
+          if (x < 0 || x > 18 || isnan(x)) {
+            return {}; // This ignores the value; the sensor keeps the last state
+          }
+          return x; // This accepts and publishes the new value
+    unit_of_measurement: L/min
+
+  - platform: modbus_controller
+    modbus_controller_id: modbus_adlar
+    name: "P26 Hysterese watertemperatuur start warmtepomp"
+    register_type: holding
+    address: 0x011A
+    device_class: temperature
+    value_type: S_WORD
+    accuracy_decimals: 0
+    unit_of_measurement: °C
+    disabled_by_default: true
+
+  - platform: modbus_controller
+    modbus_controller_id: modbus_adlar
+    name: "P111 Heating set temperature - lowest temperature"
+    register_type: holding
+    address: 0x016F
+    device_class: temperature
+    value_type: S_WORD
+    accuracy_decimals: 0
+    unit_of_measurement: °C
+    disabled_by_default: true
+
+  - platform: template
+    name: "AC Input Power"
+    id: power_in
+    lambda: |-
+      return int(id(voltage).state * id(current).state);
+    accuracy_decimals: 0
+    filters:
+      - skip_initial: 1
+      - median:
+          window_size: 5
+          send_every: 1
+      - clamp:
+          min_value: 0
+          max_value: 2000
+          ignore_out_of_range: false 
+    unit_of_measurement: "W"
+    device_class: power
+
+  - platform: template
+    name: "Thermal Output Power"
+    id: power_out
+    filters:
+      - skip_initial: 1
+      - median:
+          window_size: 5
+          send_every: 1
+      - clamp:
+          min_value: 0
+          max_value: 10000
+          ignore_out_of_range: true 
+    lambda: |-
+      const float smw = 0.998;  // soortelijke massa water
+      const float sww = 4186;   // soortelijke warmte water
+      return int((id(flow).state / 1000 / 60) * smw * sww * (id(temp_outlet).state - id(temp_inlet).state) * 1000);
+    accuracy_decimals: 0
+    unit_of_measurement: "W"
+    device_class: power
+    disabled_by_default: true
+
+  - platform: template
+    name: "COP"
+    id: cop
+    filters:
+      - clamp:
+          min_value: 0
+          max_value: 10
+          ignore_out_of_range: false
+    lambda: |-
+      if (id(power_out).state > 0 && id(power_in).state > 0) {
+        return id(power_out).state / id(power_in).state;
+      } else {
+        return 0;
+      }
+    accuracy_decimals: 1
+    unit_of_measurement: ""
+    state_class: measurement
+
+  # Urenteller compressor
+  - platform: duty_time
+    name: "Compressor urenteller"
+    sensor: compressor_active
+    id: compressor_urenteller
+    icon: "mdi:counter"
+    filters:
+      - lambda: return x / 3600.0; # Meet in uren (default is seconden, dus we delen door 3600)
+      - offset: 1925
+    accuracy_decimals: 0
+    unit_of_measurement: "u"
+    restore: true
+
+  # Urenteller warmtepomp
+  - platform: duty_time
+    name: "Warmtepomp urenteller"
+    sensor: in_bedrijf
+    id: warmtepomp_urenteller
+    icon: "mdi:counter"
+    filters:
+      - lambda: return x / 3600.0; # Meet in uren (default is seconden, dus we delen door 3600)
+      - offset: 7400
+    accuracy_decimals: 0
+    unit_of_measurement: "u"
+    restore: true
+
+text_sensor:
+  - platform: version
+    name: Adlar ESPHome Version
+
+  - platform: wifi_info
+    ip_address:
+      name: Adlar IP
+    ssid:
+      name: Adlar SSID
+    bssid:
+      name: Adlar BSSID
+
+  - platform: template
+    name: "ESP Online sensor"
+    id: online_template
+    entity_category: "diagnostic"
+
+  - platform: template
+    name: "Compressor starts"
+    device_class: "" 
+    icon: "mdi:counter"
+    disabled_by_default: true
+    entity_category: "diagnostic"
+    lambda: |-
+      return std::to_string((int)id(compressor_starts).state);
+
+  - platform: template
+    name: "Defrost starts"
+    device_class: "" 
+    icon: "mdi:counter"
+    disabled_by_default: true
+    entity_category: "diagnostic"
+    lambda: |-
+      return std::to_string((int)id(defrost_starts).state);
+
+  - platform: template
+    name: "Oil return starts"
+    device_class: "" 
+    icon: "mdi:counter"
+    disabled_by_default: true
+    entity_category: "diagnostic"
+    lambda: |-
+      return std::to_string((int)id(oil_return_starts).state);
+
