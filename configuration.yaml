@@ -59,16 +59,6 @@ recorder:
 # InfluxDB: database met history: lange termijn data
 #
 influxdb:
-  host: !secret influxdb_host
-  port: !secret influxdb_port
-  api_version: 1
-  database: homeassistant
-  username: homeassistant
-  password: !secret influxdb_pass
-  ssl: false
-  verify_ssl: false
-  max_retries: 3
-  default_measurement: state
   include:
     entity_globs:
       - sensor.smartmeter_*
@@ -128,3 +118,9 @@ logbook:
 shell_command:
   run_remote_db_backup: !secret mariadb_backup
 
+
+# device_tracker:
+# - platform: ddwrt
+#   host: 192.168.1.2
+#   username: admin
+#   password: Ell82saS!@

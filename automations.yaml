@@ -70,7 +70,6 @@
       seconds: 10
     trigger: state
     from:
-    - geen
     to:
     - pmd
     - papier
@@ -585,77 +584,22 @@
     data: {}
     action: media_player.turn_off
   mode: single
-- id: '1716298182056'
-  alias: WP Count defrost starts
-  description: ''
-  triggers:
-  - entity_id:
-    - binary_sensor.adlar_warmtepomp_wp_defrosting
-    from: 'off'
-    to: 'on'
-    trigger: state
-  conditions:
-  - condition: device
-    type: is_on
-    device_id: 8fe73d3f492bff3665c627a0366203e1
-    entity_id: 5b4cd23b8f07ee081f84f496ae2b4673
-    domain: switch
-  actions:
-  - metadata: {}
-    data: {}
-    target:
-      entity_id: counter.defrosting_count
-    action: counter.increment
-  mode: single
-- id: '1716298312398'
-  alias: WP Count compressor starts
-  description: ''
-  triggers:
-  - trigger: state
-    entity_id:
-    - binary_sensor.wp_compressor
-    from:
-    - 'off'
-    to:
-    - 'on'
-    for:
-      hours: 0
-      minutes: 0
-      seconds: 2
-  conditions:
-  - condition: device
-    type: is_on
-    device_id: 8fe73d3f492bff3665c627a0366203e1
-    entity_id: 5b4cd23b8f07ee081f84f496ae2b4673
-    domain: switch
-  actions:
-  - metadata: {}
-    data: {}
-    target:
-      entity_id: counter.compressor_counts
-    action: counter.increment
-  mode: single
 - id: '1716300437676'
   alias: WP kouderegeling setup
   description: ''
   triggers:
-  - type: turned_on
-    device_id: 8fe73d3f492bff3665c627a0366203e1
-    entity_id: 5b4cd23b8f07ee081f84f496ae2b4673
-    domain: switch
-    trigger: device
-  - device_id: 8fe73d3f492bff3665c627a0366203e1
-    domain: select
-    entity_id: 2860a2c2ab84a463f8830ff36188554d
-    type: current_option_changed
-    to: Koelen
-    for:
-      hours: 0
-      minutes: 0
-      seconds: 5
-    trigger: device
+  - trigger: state
+    entity_id:
+    - select.adlar_mode
+    to:
+    - Cooling
+  - trigger: state
+    entity_id:
+    - switch.adlar_main_switch
+    to:
+    - 'on'
   - entity_id:
-    - sensor.adlar_warmtepomp_wp_water_flow
+    - sensor.adlar_water_flow
     for:
       hours: 0
       minutes: 0
@@ -664,58 +608,45 @@
     enabled: false
     trigger: numeric_state
   conditions:
-  - condition: device
-    type: is_on
-    device_id: 8fe73d3f492bff3665c627a0366203e1
-    entity_id: 5b4cd23b8f07ee081f84f496ae2b4673
-    domain: switch
-    enabled: true
-  - condition: device
-    device_id: 8fe73d3f492bff3665c627a0366203e1
-    domain: select
-    entity_id: 2860a2c2ab84a463f8830ff36188554d
-    type: selected_option
-    option: Koelen
+  - condition: state
+    entity_id: switch.adlar_main_switch
+    state:
+    - 'on'
+  - condition: state
+    entity_id: select.adlar_mode
+    state:
+    - Cooling
   - condition: state
     entity_id: input_select.wp_selecteer_bedrijfsmodus
     state:
     - Auto koelen
   actions:
-  - device_id: 8fe73d3f492bff3665c627a0366203e1
-    domain: select
-    entity_id: 22fd6216c41c44589ba3e336875e303c
-    type: select_option
-    option: sluiting
-  - device_id: 8fe73d3f492bff3665c627a0366203e1
-    domain: select
-    entity_id: 7f38202ef83365cd00a43a72844d6a23
-    type: select_option
-    option: Eco
+  - action: select.select_option
+    metadata: {}
+    target:
+      entity_id: select.adlar_cooling_setting_curve
+    data:
+      option: 'Off'
+  - action: select.select_option
+    metadata: {}
+    target:
+      entity_id: select.adlar_running_mode
+    data:
+      option: Silent
   mode: single
 - id: '1718177271678'
   alias: WP pomp debiet te laag
   description: ''
   triggers:
-  - type: volume_flow_rate
-    device_id: 8fe73d3f492bff3665c627a0366203e1
-    entity_id: 4142ffb21caf942d695f7bfca2805fdf
-    domain: sensor
+  - trigger: numeric_state
+    entity_id:
+    - sensor.adlar_water_flow
     below: 1
-    for:
-      hours: 0
-      minutes: 0
-      seconds: 30
-    trigger: device
   conditions:
-  - condition: device
-    type: is_on
-    device_id: 8fe73d3f492bff3665c627a0366203e1
-    entity_id: 5b4cd23b8f07ee081f84f496ae2b4673
-    domain: switch
-    for:
-      hours: 0
-      minutes: 0
-      seconds: 30
+  - condition: state
+    entity_id: switch.adlar_main_switch
+    state:
+    - 'on'
   actions:
   - metadata: {}
     data:
@@ -728,7 +659,7 @@
   description: ''
   triggers:
   - entity_id:
-    - sensor.adlar_warmtepomp_wp_fault
+    - binary_sensor.adlar_fault_alarm
     for:
       hours: 0
       minutes: 1
@@ -740,14 +671,16 @@
   - condition: not
     conditions:
     - condition: state
-      entity_id: sensor.adlar_warmtepomp_wp_fault
-      state: '0'
+      entity_id: binary_sensor.adlar_fault_alarm
+      state:
+      - '0'
   actions:
   - metadata: {}
     data:
       title: Waarschuwing
-      message: 'Warmtepomp in storing, code: {{ states("sensor.adlar_warmtepomp_wp_fault")
-        }}'
+      message: 'Warmtepomp in storing, code: ?
+
+        '
     action: notify.mobile_app_gsm_martin
   mode: single
 - id: '1719346872778'
@@ -755,7 +688,7 @@
   description: ''
   triggers:
   - entity_id:
-    - sensor.adlar_warmtepomp_wp_inlet_temp
+    - sensor.adlar_water_inlet_temp_t6
     from:
     to:
     for:
@@ -765,7 +698,7 @@
     trigger: state
     enabled: false
   - entity_id:
-    - sensor.adlar_warmtepomp_wp_outlet_temp
+    - sensor.adlar_water_outlet_temp_t7
     from:
     to:
     for:
@@ -783,34 +716,27 @@
       seconds: 1
     trigger: state
   conditions:
-  - condition: device
-    type: is_on
-    device_id: 8fe73d3f492bff3665c627a0366203e1
-    entity_id: 5b4cd23b8f07ee081f84f496ae2b4673
-    domain: switch
-    enabled: true
-  - condition: device
-    device_id: 8fe73d3f492bff3665c627a0366203e1
-    domain: select
-    entity_id: 2860a2c2ab84a463f8830ff36188554d
-    type: selected_option
-    option: Koelen
-  - condition: device
-    device_id: 8fe73d3f492bff3665c627a0366203e1
-    domain: select
-    entity_id: 22fd6216c41c44589ba3e336875e303c
-    type: selected_option
-    option: sluiting
   - condition: state
     entity_id: timer.wachttijd_koelcurve_veranderen
     state: idle
   - condition: numeric_state
-    entity_id: sensor.adlar_warmtepomp_wp_outlet_temp
+    entity_id: sensor.adlar_water_outlet_temp_t7
     below: sensor.dauwpunt_woonkamer
   - condition: state
     entity_id: input_select.wp_selecteer_bedrijfsmodus
     state:
     - Auto koelen
+  - condition: state
+    entity_id: switch.adlar_main_switch
+    state: []
+  - condition: state
+    entity_id: select.adlar_mode
+    state:
+    - Cooling
+  - condition: state
+    entity_id: select.adlar_cooling_setting_curve
+    state:
+    - 'Off'
   actions:
   - delay:
       hours: 0
@@ -819,9 +745,9 @@
       milliseconds: 0
     enabled: false
   - target:
-      entity_id: number.adlar_warmtepomp_wp_temp_set
+      entity_id: number.adlar_temp_set_cooling
     data:
-      value: '{{states (''number.adlar_warmtepomp_wp_temp_set'') | int + 2 }}'
+      value: '{{states (''number.adlar_temp_set_cooling'') | int + 2 }}'
     action: number.set_value
   - metadata: {}
     data: {}
@@ -1094,32 +1020,29 @@
   triggers:
   - trigger: state
     entity_id:
-    - select.adlar_warmtepomp_wp_mode
+    - switch.adlar_main_switch
+  - trigger: state
+    entity_id:
+    - select.adlar_mode
     from:
     to:
   - trigger: state
     entity_id:
-    - binary_sensor.wp_compressor
+    - binary_sensor.adlar_compressor_active
     from:
     to:
-  - type: changed_states
-    device_id: 8fe73d3f492bff3665c627a0366203e1
-    entity_id: 5b4cd23b8f07ee081f84f496ae2b4673
-    domain: switch
-    trigger: device
   conditions: []
   actions:
   - choose:
     - conditions:
-      - condition: device
-        device_id: 8fe73d3f492bff3665c627a0366203e1
-        domain: select
-        entity_id: 2860a2c2ab84a463f8830ff36188554d
-        type: selected_option
-        option: Koelen
       - condition: state
-        entity_id: binary_sensor.wp_compressor
-        state: 'on'
+        entity_id: select.adlar_mode
+        state:
+        - Cooling
+      - condition: state
+        entity_id: binary_sensor.adlar_compressor_active
+        state:
+        - 'on'
       sequence:
       - action: select.select_option
         metadata: {}
@@ -1128,15 +1051,14 @@
         target:
           entity_id: select.warmtepomp_energieverbruik_e
     - conditions:
-      - condition: device
-        device_id: 8fe73d3f492bff3665c627a0366203e1
-        domain: select
-        entity_id: 2860a2c2ab84a463f8830ff36188554d
-        type: selected_option
-        option: Verwarmen
       - condition: state
-        entity_id: binary_sensor.wp_compressor
-        state: 'on'
+        entity_id: select.adlar_mode
+        state:
+        - Heating
+      - condition: state
+        entity_id: binary_sensor.adlar_compressor_active
+        state:
+        - 'on'
       sequence:
       - action: select.select_option
         metadata: {}
@@ -1146,8 +1068,9 @@
           entity_id: select.warmtepomp_energieverbruik_e
     - conditions:
       - condition: state
-        entity_id: binary_sensor.wp_compressor
-        state: 'off'
+        entity_id: binary_sensor.adlar_compressor_active
+        state:
+        - 'off'
       sequence:
       - action: select.select_option
         metadata: {}
@@ -1170,17 +1093,14 @@
     at: 05:00:00
     id: dag opwarrmen
   conditions:
-  - condition: device
-    type: is_on
-    device_id: 8fe73d3f492bff3665c627a0366203e1
-    entity_id: 5b4cd23b8f07ee081f84f496ae2b4673
-    domain: switch
-  - condition: device
-    device_id: 8fe73d3f492bff3665c627a0366203e1
-    domain: select
-    entity_id: 2860a2c2ab84a463f8830ff36188554d
-    type: selected_option
-    option: Verwarmen
+  - condition: state
+    entity_id: switch.adlar_main_switch
+    state:
+    - 'on'
+  - condition: state
+    entity_id: select.adlar_mode
+    state:
+    - Heating
   - condition: state
     entity_id: input_select.wp_selecteer_bedrijfsmodus
     state: Auto warmtecurves
@@ -1195,31 +1115,34 @@
         id:
         - dag
       sequence:
-      - device_id: 8fe73d3f492bff3665c627a0366203e1
-        domain: select
-        entity_id: 22fd6216c41c44589ba3e336875e303c
-        type: select_option
-        option: Lage temp 5
+      - action: select.select_option
+        metadata: {}
+        target:
+          entity_id: select.adlar_heating_setting_curve
+        data:
+          option: L5
     - conditions:
       - condition: trigger
         id:
         - nacht
       sequence:
-      - device_id: 8fe73d3f492bff3665c627a0366203e1
-        domain: select
-        entity_id: 22fd6216c41c44589ba3e336875e303c
-        type: select_option
-        option: Lage temp 7
+      - action: select.select_option
+        metadata: {}
+        target:
+          entity_id: select.adlar_heating_setting_curve
+        data:
+          option: L7
     - conditions:
       - condition: trigger
         id:
         - dag opwarrmen
       sequence:
-      - device_id: 8fe73d3f492bff3665c627a0366203e1
-        domain: select
-        entity_id: 22fd6216c41c44589ba3e336875e303c
-        type: select_option
-        option: Lage temp 6
+      - action: select.select_option
+        metadata: {}
+        target:
+          entity_id: select.adlar_heating_setting_curve
+        data:
+          option: L6
   mode: single
 - id: '1739362408029'
   alias: WP energiemodus selecteren
@@ -1240,7 +1163,7 @@
     id: Tijdpatroon
   - trigger: numeric_state
     entity_id:
-    - sensor.adlar_warmtepomp_wp_ambient_temp
+    - sensor.adlar_ambient_temp_t1
     for:
       hours: 0
       minutes: 15
@@ -1249,7 +1172,7 @@
     id: Onder 5
   - trigger: numeric_state
     entity_id:
-    - sensor.adlar_warmtepomp_wp_ambient_temp
+    - sensor.adlar_ambient_temp_t1
     for:
       hours: 0
       minutes: 15
@@ -1281,15 +1204,10 @@
     - 'off'
     id: Start dag
   conditions:
-  - condition: device
-    type: is_on
-    device_id: 8fe73d3f492bff3665c627a0366203e1
-    entity_id: 5b4cd23b8f07ee081f84f496ae2b4673
-    domain: switch
-    for:
-      hours: 0
-      minutes: 0
-      seconds: 5
+  - condition: state
+    entity_id: switch.adlar_main_switch
+    state:
+    - 'on'
   actions:
   - choose:
     - conditions:
@@ -1304,11 +1222,12 @@
         id:
         - Energiemodus verandering
       sequence:
-      - device_id: 8fe73d3f492bff3665c627a0366203e1
-        domain: select
-        entity_id: 7f38202ef83365cd00a43a72844d6a23
-        type: select_option
-        option: Normaal
+      - action: select.select_option
+        metadata: {}
+        target:
+          entity_id: select.adlar_running_mode
+        data:
+          option: Standard
     - conditions:
       - condition: state
         entity_id: input_select.wp_selecteer_energiemodus
@@ -1321,11 +1240,12 @@
         id:
         - Energiemodus verandering
       sequence:
-      - device_id: 8fe73d3f492bff3665c627a0366203e1
-        domain: select
-        entity_id: 7f38202ef83365cd00a43a72844d6a23
-        type: select_option
-        option: Eco
+      - action: select.select_option
+        metadata: {}
+        target:
+          entity_id: select.adlar_running_mode
+        data:
+          option: Silent
     - conditions:
       - condition: state
         entity_id: input_select.wp_selecteer_energiemodus
@@ -1338,11 +1258,12 @@
         id:
         - Energiemodus verandering
       sequence:
-      - device_id: 8fe73d3f492bff3665c627a0366203e1
-        domain: select
-        entity_id: 7f38202ef83365cd00a43a72844d6a23
-        type: select_option
-        option: Boost
+      - action: select.select_option
+        metadata: {}
+        target:
+          entity_id: select.adlar_running_mode
+        data:
+          option: Boost
     - conditions:
       - condition: state
         entity_id: input_select.wp_selecteer_energiemodus
@@ -1359,11 +1280,12 @@
             - Boven 6
             - Start nacht
           sequence:
-          - device_id: 8fe73d3f492bff3665c627a0366203e1
-            domain: select
-            entity_id: 7f38202ef83365cd00a43a72844d6a23
-            type: select_option
-            option: Eco
+          - action: select.select_option
+            metadata: {}
+            target:
+              entity_id: select.adlar_running_mode
+            data:
+              option: Silent
           alias: Eco energiemodus
         - conditions:
           - condition: or
@@ -1374,7 +1296,7 @@
                 id:
                 - Start dag
               - condition: numeric_state
-                entity_id: sensor.adlar_warmtepomp_wp_ambient_temp
+                entity_id: sensor.adlar_ambient_temp_t1
                 below: 5
             - condition: and
               conditions:
@@ -1385,11 +1307,12 @@
                 after: 09:00:00
                 before: '23:00:00'
           sequence:
-          - device_id: 8fe73d3f492bff3665c627a0366203e1
-            domain: select
-            entity_id: 7f38202ef83365cd00a43a72844d6a23
-            type: select_option
-            option: Normaal
+          - action: select.select_option
+            metadata: {}
+            target:
+              entity_id: select.adlar_running_mode
+            data:
+              option: Standard
           alias: Normaal energiemodus
   mode: single
 - id: '1741689683630'
@@ -1398,15 +1321,22 @@
   triggers:
   - trigger: state
     entity_id:
-    - climate.smart_thermostat_x
-    attribute: current_temperature
+    - sensor.adlar_esp_online_sensor
+    to:
+    - gestart
+    for:
+      hours: 0
+      minutes: 0
+      seconds: 10
+  - trigger: state
+    entity_id:
+    - timer.wachttijd_temp_set_veranderen
+    to:
+    - idle
     for:
       hours: 0
       minutes: 0
       seconds: 1
-    enabled: false
-  - trigger: time_pattern
-    minutes: /30
   - trigger: state
     entity_id:
     - sensor.smart_thermostat_x_temperatuur
@@ -1416,34 +1346,72 @@
       hours: 0
       minutes: 0
       seconds: 1
+    enabled: true
+  - trigger: time_pattern
+    minutes: /30
+    enabled: false
+  - trigger: state
+    entity_id:
+    - sensor.water_temperature_controlled
+    for:
+      hours: 0
+      minutes: 0
+      seconds: 10
+    enabled: false
+  - trigger: state
+    entity_id:
+    - sensor.smart_thermostat_x_delta_t
+    for:
+      hours: 0
+      minutes: 0
+      seconds: 10
+    enabled: false
   conditions:
-  - condition: device
-    type: is_on
-    device_id: 8fe73d3f492bff3665c627a0366203e1
-    entity_id: 5b4cd23b8f07ee081f84f496ae2b4673
-    domain: switch
+  - condition: state
+    entity_id: sensor.adlar_esp_online_sensor
+    state:
+    - gestart
+  - condition: state
+    entity_id: switch.adlar_main_switch
+    state:
+    - 'on'
   - condition: state
     entity_id: input_select.wp_selecteer_bedrijfsmodus
     state: Auto verwarmen
     enabled: true
   - condition: state
-    entity_id: binary_sensor.adlar_warmtepomp_wp_defrosting
+    entity_id: select.adlar_mode
+    state:
+    - Heating
+  - condition: state
+    entity_id: binary_sensor.adlar_defrost_running
     state:
     - 'off'
     for:
       hours: 0
-      minutes: 15
+      minutes: 10
+      seconds: 0
+  - condition: state
+    entity_id: binary_sensor.adlar_system_oil_return
+    state:
+    - 'off'
+    for:
+      hours: 0
+      minutes: 5
       seconds: 0
   actions:
   - choose:
     - conditions:
+      - condition: state
+        entity_id: timer.wachttijd_temp_set_veranderen
+        state: idle
       - condition: state
         entity_id: sensor.kamertemperatuur_waardering
         state:
         - Te koud
         for:
           hours: 0
-          minutes: 1
+          minutes: 2
           seconds: 0
       - condition: or
         conditions:
@@ -1465,141 +1433,229 @@
             minutes: 15
             seconds: 0
           enabled: true
+      sequence:
+      - action: number.set_value
+        metadata: {}
+        data:
+          value: "{% set max_set_temp = 60 %}\n{% set temp_set = states('number.adlar_temp_set_heating')
+            | int %}\n{% set delta_t = states('sensor.smart_thermostat_x_delta_t')
+            | float %}\n{% set gradient = states('sensor.kamertemperatuur_gradient')
+            | float %}\n{% if delta_t < -0.5 and gradient < 0.5 %}\n  {{ [temp_set
+            + 2, max_set_temp] | min }}\n{% else %}\n  {{ [temp_set + 1, max_set_temp]
+            | min }}\n{% endif %}\n"
+        enabled: true
+        target:
+          entity_id: number.adlar_temp_set_heating
+      - action: timer.start
+        metadata: {}
+        data:
+          duration: 00:{{ states('input_number.temperatuurvertraging') | int }}
+        target:
+          entity_id: timer.wachttijd_temp_set_veranderen
+      - action: logbook.log
+        metadata: {}
+        data:
+          entity_id: number.adlar_temp_set_heating
+          name: Adlar automation
+          message: 'WP Auto Verwarmen: optie 1'
+      alias: Temp set verhogen bij te koud en niet stijgende kamertemperatuur
+    - conditions:
+      - condition: state
+        entity_id: timer.wachttijd_temp_set_veranderen
+        state: idle
+      - condition: state
+        entity_id: binary_sensor.adlar_compressor_active
+        state:
+        - 'on'
+      - condition: or
+        conditions:
+        - condition: state
+          entity_id: sensor.kamertemperatuur_waardering
+          state:
+          - Te warm
+          enabled: true
+          for:
+            hours: 0
+            minutes: 2
+            seconds: 0
+        - condition: and
+          conditions:
+          - condition: state
+            entity_id: sensor.kamertemperatuur_waardering
+            state:
+            - Ok
+            enabled: true
+            for:
+              hours: 0
+              minutes: 10
+              seconds: 0
+          - condition: state
+            entity_id: sensor.water_temperature_controlled
+            state:
+            - 'off'
+            enabled: true
+          - condition: not
+            conditions:
+            - condition: numeric_state
+              entity_id: number.adlar_temp_set_heating
+              below: sensor.water_temperature_controlled
+        - condition: and
+          conditions:
+          - condition: numeric_state
+            entity_id: sensor.smart_thermostat_x_delta_t
+            below: 0
+            above: -0.1
+            enabled: true
+          - condition: numeric_state
+            entity_id: sensor.kamertemperatuur_gradient
+            above: 0.8
+          enabled: true
+      sequence:
+      - action: number.set_value
+        metadata: {}
+        data:
+          value: '{% set min_set_temp = 18 %}
+
+            {% set temp_set = states(''number.adlar_temp_set_heating'') | int %}
+
+            {{ [temp_set - 1, min_set_temp] | max }}
+
+            '
+        enabled: true
+        target:
+          entity_id: number.adlar_temp_set_heating
+      - action: timer.start
+        metadata: {}
+        data:
+          duration: '{# 00:{{ states(''input_number.temperatuurvertraging'') | int
+            }} #}
+
+            00:05'
+        target:
+          entity_id: timer.wachttijd_temp_set_veranderen
+        enabled: true
+      - action: logbook.log
+        metadata: {}
+        data:
+          entity_id: number.adlar_temp_set_heating
+          name: Adlar automation
+          message: 'WP Auto Verwarmen: optie 2'
+      alias: Temp set verlagen bij te warm, stijgende kamertemperatuur en compressor
+        actief
+    - conditions:
+      - condition: state
+        entity_id: timer.wachttijd_temp_set_veranderen
+        state: idle
+        enabled: true
+      - condition: state
+        entity_id: binary_sensor.adlar_compressor_active
+        state:
+        - 'off'
+      - condition: state
+        entity_id: sensor.kamertemperatuur_waardering
+        state:
+        - Te warm
+        - Ok
+        for:
+          hours: 0
+          minutes: 0
+          seconds: 30
       - condition: not
         conditions:
         - condition: state
-          entity_id: sensor.kamertemperatuur_verandering
+          entity_id: sensor.kamertemperatuur_waardering
           state:
-          - Stijgt
-          for:
-            hours: 0
-            minutes: 5
-            seconds: 0
+          - Te koud
         enabled: false
       - condition: numeric_state
-        entity_id: number.adlar_warmtepomp_wp_temp_set
-        above: sensor.adlar_warmtepomp_wp_inlet_temp
-        value_template: '{{state.state | float -2}}'
-        alias: Temp set is 3 graden meer dan inlet temp
+        entity_id: sensor.smart_thermostat_x_delta_t
+        above: 0
         enabled: false
+      - condition: or
+        conditions:
+        - condition: numeric_state
+          entity_id: number.adlar_temp_set_heating
+          below: sensor.water_temperature_controlled
+        - condition: state
+          entity_id: sensor.kamertemperatuur_waardering
+          state:
+          - Te warm
+          enabled: true
+          for:
+            hours: 0
+            minutes: 2
+            seconds: 0
+        - condition: and
+          conditions:
+          - condition: state
+            entity_id: sensor.kamertemperatuur_waardering
+            state:
+            - Ok
+            enabled: true
+            for:
+              hours: 0
+              minutes: 10
+              seconds: 0
+          - condition: state
+            entity_id: binary_sensor.inlettemperatuur_daalt
+            state:
+            - 'off'
+            enabled: true
+        - condition: and
+          conditions:
+          - condition: numeric_state
+            entity_id: sensor.smart_thermostat_x_delta_t
+            below: 0.2
+            above: -0.4
+            enabled: true
+          - condition: numeric_state
+            entity_id: sensor.kamertemperatuur_gradient
+            above: 0.7
+        enabled: false
+      sequence:
+      - action: number.set_value
+        metadata: {}
+        data:
+          value: '{% set min_set_temp = 18 %}
+
+            {% set controlled_temp = states(''sensor.water_temperature_controlled'')
+            | int %}
+
+            {{ [controlled_temp - 1, min_set_temp] | max }}
+
+            '
+        enabled: true
+        target:
+          entity_id: number.adlar_temp_set_heating
+      - action: timer.start
+        metadata: {}
+        data:
+          duration: '{# 00:{{ states(''input_number.temperatuurvertraging'') | int
+            }} #}
+
+            00:10'
+        target:
+          entity_id: timer.wachttijd_temp_set_veranderen
+        enabled: false
+      - action: logbook.log
+        metadata: {}
+        data:
+          entity_id: number.adlar_temp_set_heating
+          name: Adlar automation
+          message: 'WP Auto Verwarmen: optie 3'
+      alias: Temp set verlagen bij te warme kamertemperatuur en compressor inactief
+    - conditions:
       - condition: state
         entity_id: timer.wachttijd_temp_set_veranderen
         state: idle
       - condition: state
-        entity_id: binary_sensor.adlar_warmtepomp_maintenance
-        state:
-        - 'off'
-        for:
-          hours: 0
-          minutes: 0
-          seconds: 0
-      - condition: state
-        entity_id: binary_sensor.adlar_warmtepomp_wp_defrosting
-        state:
-        - 'off'
-        for:
-          hours: 0
-          minutes: 0
-          seconds: 0
-      sequence:
-      - if:
-        - condition: device
-          device_id: 8fe73d3f492bff3665c627a0366203e1
-          domain: select
-          entity_id: 7f38202ef83365cd00a43a72844d6a23
-          type: selected_option
-          option: Eco
-        then:
-        - action: number.set_value
-          metadata: {}
-          data:
-            value: '{% set hysterese_p26 = 2 %}
-
-              {% set inlet_temp = states(''sensor.adlar_warmtepomp_wp_inlet_temp'')
-              | float %}
-
-              {% set max_set_temp = (inlet_temp + hysterese_p26 + 1)  | int %}
-
-              {% set current_temp_set = states(''number.adlar_warmtepomp_wp_temp_set'')
-              | float %}
-
-              {{ [current_temp_set + 1, max_set_temp] | min }}
-
-              '
-          target:
-            entity_id: number.adlar_warmtepomp_wp_temp_set
-          enabled: true
-        - action: timer.start
-          metadata: {}
-          data:
-            duration: 00:{{ states('input_number.temperatuurvertraging') | int }}
-          target:
-            entity_id: timer.wachttijd_temp_set_veranderen
-        - action: logbook.log
-          metadata: {}
-          data:
-            entity_id: number.adlar_warmtepomp_wp_temp_set
-            name: Adlar automation
-            message: 'WP Auto Verwarmen: temp set temperatuur regeling door woonkamer
-              temperatuur: eco mode temp set'
-        else:
-        - action: number.set_value
-          metadata: {}
-          data:
-            value: '{% set max_set_temp = 50 %}
-
-              {% set current_temp_set = states(''number.adlar_warmtepomp_wp_temp_set'')
-              | float %}
-
-              {% set opt_temp_set = states(''input_number.wp_berekende_optimale_temp_set'')
-              | int %}
-
-              {{ [current_temp_set + 1, max_set_temp] | min }}
-
-              '
-          target:
-            entity_id: number.adlar_warmtepomp_wp_temp_set
-          enabled: true
-        - action: timer.start
-          metadata: {}
-          data:
-            duration: 00:{{ states('input_number.temperatuurvertraging') | int }}
-          target:
-            entity_id: timer.wachttijd_temp_set_veranderen
-        - action: logbook.log
-          metadata: {}
-          data:
-            entity_id: number.adlar_warmtepomp_wp_temp_set
-            name: Adlar automation
-            message: 'WP Auto Verwarmen: temp set temperatuur regeling door woonkamer
-              temperatuur: temp set + 1'
-      alias: Temp set 1 graad verhogen bij te koud en niet stijgende kamertemperatuur
-    - conditions:
-      - condition: state
-        entity_id: binary_sensor.adlar_warmtepomp_wp_defrosting
-        state:
-        - 'off'
-        for:
-          hours: 0
-          minutes: 30
-          seconds: 0
-        enabled: false
-      - condition: state
-        entity_id: binary_sensor.wp_compressor
+        entity_id: binary_sensor.adlar_compressor_active
         state:
         - 'on'
       - condition: state
-        entity_id: timer.wachttijd_temp_set_veranderen
-        state: idle
-      - condition: state
-        entity_id: binary_sensor.adlar_warmtepomp_maintenance
+        entity_id: binary_sensor.adlar_compressor_active
         state:
         - 'off'
-        enabled: true
-        for:
-          hours: 0
-          minutes: 0
-          seconds: 0
       - condition: or
         conditions:
         - condition: state
@@ -1626,32 +1682,37 @@
             entity_id: binary_sensor.inlettemperatuur_daalt
             state:
             - 'off'
+            enabled: true
           - condition: not
             conditions:
             - condition: numeric_state
-              entity_id: number.adlar_warmtepomp_wp_temp_set
-              below: sensor.adlar_warmtepomp_wp_inlet_temp
+              entity_id: number.adlar_temp_set_heating
+              below: sensor.water_temperature_controlled
         - condition: and
           conditions:
           - condition: numeric_state
             entity_id: sensor.smart_thermostat_x_delta_t
-            below: 0.2
-            above: -0.4
+            below: 0
+            above: -0.1
             enabled: true
           - condition: numeric_state
             entity_id: sensor.kamertemperatuur_gradient
-            above: 0.7
+            above: 0.8
+          enabled: true
       sequence:
       - action: number.set_value
         metadata: {}
         data:
-          value: "{% set current_temp_set = states('number.adlar_warmtepomp_wp_temp_set')
-            | float %} \n{% set opt_temp_set = states('input_number.wp_berekende_optimale_temp_set')
-            | int %}\n{% set inlet_temp = states('sensor.adlar_warmtepomp_wp_inlet_temp')
-            | float %} \n{{ current_temp_set - 1 }}\n"
-        target:
-          entity_id: number.adlar_warmtepomp_wp_temp_set
+          value: '{% set min_set_temp = 18 %}
+
+            {% set temp_set = states(''number.adlar_temp_set_heating'') | int %}
+
+            {{ [temp_set - 1, min_set_temp] | max }}
+
+            '
         enabled: true
+        target:
+          entity_id: number.adlar_temp_set_heating
       - action: timer.start
         metadata: {}
         data:
@@ -1661,12 +1722,11 @@
       - action: logbook.log
         metadata: {}
         data:
-          entity_id: number.adlar_warmtepomp_wp_temp_set
+          entity_id: number.adlar_temp_set_heating
           name: Adlar automation
-          message: 'WP Auto Verwarmen: temp set temperatuur regeling door woonkamer
-            temperatuur: temp set - 1'
-      alias: Temp set 1 graad verlagen bij te warm, stijgende kamertemperatuur en
-        compressor actief
+          message: 'WP Auto Verwarmen: optie 2'
+      alias: Temp set verlagen bij te warm, stijgende kamertemperatuur en compressor
+        actief
   mode: single
 - id: '1741943333563'
   alias: 'WP AV: temp set door thermosstaat aanpassing'
@@ -1682,6 +1742,10 @@
     from:
     to:
   conditions:
+  - condition: state
+    entity_id: binary_sensor.192_168_1_130
+    state:
+    - 'on'
   - condition: state
     entity_id: input_select.wp_selecteer_bedrijfsmodus
     state: Auto verwarmen
@@ -1710,15 +1774,15 @@
       - action: number.set_value
         metadata: {}
         data:
-          value: '{% set current_temp_set =  states(''number.adlar_warmtepomp_wp_temp_set'')
-            | float %}
+          value: '{% set temp_set = states(''number.adlar_temp_set_heating'') | int
+            %}
 
-            {{ [current_temp_set - 8, 20 ] | max }}
+            {{ [temp_set - 5, 20 ] | max }}
 
             '
-        target:
-          entity_id: number.adlar_warmtepomp_wp_temp_set
         enabled: true
+        target:
+          entity_id: number.adlar_temp_set_heating
       - action: timer.start
         metadata: {}
         target:
@@ -1727,18 +1791,18 @@
       - action: logbook.log
         metadata: {}
         data:
-          entity_id: number.adlar_warmtepomp_wp_temp_set
+          entity_id: number.adlar_temp_set_heating
           name: Adlar automation
-          message: 'WP Auto Verwarmen: temp set temperatuur regeling door thermostaat
-            aanpassing: verlagen'
+          message: 'WP thermostaat: optie 1'
       alias: Temp set bij thermostaat verlaging
     - conditions:
       - condition: numeric_state
         entity_id: sensor.smart_thermostat_x_set_temperatuur
         above: sensor.smart_thermostat_x_temperatuur
       - condition: state
-        entity_id: binary_sensor.wp_compressor
-        state: 'off'
+        entity_id: binary_sensor.adlar_compressor_active
+        state:
+        - 'off'
       - condition: template
         value_template: "{# Verandering is minimaal de temp_delta waarde #}\n{% set
           temp_from = trigger.from_state.state | float(0)  %} \n{% set temp_to = trigger.to_state.state
@@ -1751,18 +1815,18 @@
       - action: number.set_value
         metadata: {}
         data:
-          value: '{% set current_temp_set = states(''number.adlar_warmtepomp_wp_temp_set'')
-            | float %}
+          value: '{% set temp_set = states(''number.adlar_temp_set_heating'') | int
+            %}
 
             {% set opt_set_temp = states(''input_number.wp_berekende_optimale_temp_set'')
-            | float %}
+            | int %}
 
-            {{ [current_temp_set +2 , opt_set_temp] | max }}
+            {{ [temp_set + 2 , opt_set_temp] | max }}
 
             '
-        target:
-          entity_id: number.adlar_warmtepomp_wp_temp_set
         enabled: true
+        target:
+          entity_id: number.adlar_temp_set_heating
       - action: timer.start
         metadata: {}
         data:
@@ -1773,15 +1837,15 @@
       - action: logbook.log
         metadata: {}
         data:
-          entity_id: number.adlar_warmtepomp_wp_temp_set
+          entity_id: number.adlar_temp_set_heating
           name: Adlar automation
-          message: 'WP Auto Verwarmen: temp set temperatuur regeling door thermostaat
-            aanpassing: verhogen compressor niet actief'
+          message: 'WP thermostaat: optie 2'
       - wait_for_trigger:
         - trigger: state
           entity_id:
-          - binary_sensor.wp_compressor
-          to: 'on'
+          - binary_sensor.adlar_compressor_active
+          to:
+          - 'on'
           for:
             hours: 0
             minutes: 0
@@ -1790,26 +1854,27 @@
       - action: number.set_value
         metadata: {}
         data:
-          value: '{% set current_temp_set = states(''number.adlar_warmtepomp_wp_temp_set'')
-            | float %}
+          value: '{% set temp_set = states(''number.adlar_temp_set_heating'') | int
+            %}
 
             {% set opt_set_temp = states(''input_number.wp_berekende_optimale_temp_set'')
-            | float %}
+            | int %}
 
-            {{ [current_temp_set -1 , opt_set_temp] | max }}
+            {{ [temp_set - 1 , opt_set_temp] | max }}
 
             '
-        target:
-          entity_id: number.adlar_warmtepomp_wp_temp_set
         enabled: true
+        target:
+          entity_id: number.adlar_temp_set_heating
       alias: Temp set bij thermostaat verhoging en compressor is niet actief
     - conditions:
       - condition: numeric_state
         entity_id: sensor.smart_thermostat_x_set_temperatuur
         above: sensor.smart_thermostat_x_temperatuur
       - condition: state
-        entity_id: binary_sensor.wp_compressor
-        state: 'on'
+        entity_id: binary_sensor.adlar_compressor_active
+        state:
+        - 'on'
       - condition: template
         value_template: "{# Verandering is minimaal de temp_delta waarde #}\n{% set
           temp_from = trigger.from_state.state | float(0)  %} \n{% set temp_to = trigger.to_state.state
@@ -1822,18 +1887,18 @@
       - action: number.set_value
         metadata: {}
         data:
-          value: '{% set current_temp_set = states(''number.adlar_warmtepomp_wp_temp_set'')
-            | float %}
+          value: '{% set temp_set = states(''number.adlar_temp_set_heating'') | int
+            %}
 
             {% set opt_set_temp = states(''input_number.wp_berekende_optimale_temp_set'')
-            | float %}
+            | int %}
 
-            {{ [current_temp_set +1 , opt_set_temp] | max }}
+            {{ [temp_set + 1 , opt_set_temp] | max }}
 
             '
-        target:
-          entity_id: number.adlar_warmtepomp_wp_temp_set
         enabled: true
+        target:
+          entity_id: number.adlar_temp_set_heating
       - action: timer.start
         metadata: {}
         target:
@@ -1842,35 +1907,9 @@
       - action: logbook.log
         metadata: {}
         data:
-          entity_id: number.adlar_warmtepomp_wp_temp_set
+          entity_id: number.adlar_temp_set_heating
           name: Adlar automation
-          message: 'WP Auto Verwarmen: temp set temperatuur regeling door thermostaat
-            aanpassing: verhogen compressor is actief'
-      - wait_for_trigger:
-        - trigger: state
-          entity_id:
-          - binary_sensor.wp_compressor
-          to: 'on'
-          for:
-            hours: 0
-            minutes: 0
-            seconds: 30
-        enabled: false
-      - action: number.set_value
-        metadata: {}
-        data:
-          value: '{% set current_temp_set = states(''number.adlar_warmtepomp_wp_temp_set'')
-            | float %}
-
-            {% set opt_set_temp = states(''input_number.wp_berekende_optimale_temp_set'')
-            | float %}
-
-            {{ [current_temp_set -1 , opt_set_temp] | max }}
-
-            '
-        target:
-          entity_id: number.adlar_warmtepomp_wp_temp_set
-        enabled: false
+          message: 'WP thermostaat: optie 3'
       alias: Temp set bij thermostaat verhoging en compressor is actief
     default:
     - action: timer.start
@@ -1886,30 +1925,33 @@
   triggers:
   - trigger: state
     entity_id:
-    - sensor.adlar_warmtepomp_wp_inlet_temp
+    - sensor.water_temperature_controlled
     for:
       hours: 0
       minutes: 0
-      seconds: 30
+      seconds: 10
   conditions:
   - condition: state
     entity_id: input_select.wp_selecteer_bedrijfsmodus
     state: Auto verwarmen
   - condition: state
-    entity_id: binary_sensor.adlar_warmtepomp_wp_defrosting
-    state: 'off'
+    entity_id: binary_sensor.adlar_defrost_running
+    state:
+    - 'off'
   - condition: state
-    entity_id: binary_sensor.adlar_warmtepomp_maintenance
-    state: 'off'
+    entity_id: binary_sensor.adlar_system_oil_return
+    state:
+    - 'off'
   - condition: numeric_state
     entity_id: sensor.smart_thermostat_x_set_temperatuur
     below: sensor.smart_thermostat_x_temperatuur
   - condition: numeric_state
     entity_id: sensor.smart_thermostat_x_set_temperatuur
     below: 20
+    enabled: true
   - condition: numeric_state
-    entity_id: number.adlar_warmtepomp_wp_temp_set
-    above: sensor.adlar_warmtepomp_wp_inlet_temp
+    entity_id: number.adlar_temp_set_heating
+    above: sensor.water_temperature_controlled
   - condition: not
     conditions:
     - condition: state
@@ -1920,15 +1962,15 @@
   - action: number.set_value
     metadata: {}
     data:
-      value: "{% set inlet_temp = states('sensor.adlar_warmtepomp_wp_inlet_temp')
-        | float %} \n{{ [ inlet_temp -1 , 18] | max }}\n"
-    target:
-      entity_id: number.adlar_warmtepomp_wp_temp_set
+      value: "{% set controlled_water_temp = states('sensor.water_temperature_controlled')
+        | float %} \n{{ [ controlled_water_temp -1 , 18] | max }}\n"
     enabled: true
+    target:
+      entity_id: number.adlar_temp_set_heating
   - action: logbook.log
     metadata: {}
     data:
-      entity_id: number.adlar_warmtepomp_wp_temp_set
+      entity_id: number.adlar_temp_set_heating
       name: Adlar automation
       message: 'WP Auto Verwarmen: stel in temp set = inlet bij afkoelen'
   mode: single
@@ -1953,100 +1995,138 @@
         entity_id: input_select.wp_selecteer_bedrijfsmodus
         state: Uit
       sequence:
-      - type: turn_off
-        device_id: 8fe73d3f492bff3665c627a0366203e1
-        entity_id: 5b4cd23b8f07ee081f84f496ae2b4673
-        domain: switch
+      - action: switch.turn_off
+        metadata: {}
+        target:
+          entity_id: switch.adlar_main_switch
+        data: {}
     - conditions:
       - condition: state
         entity_id: input_select.wp_selecteer_bedrijfsmodus
         state: Aan (geen automatisering)
       sequence:
-      - type: turn_on
-        device_id: 8fe73d3f492bff3665c627a0366203e1
-        entity_id: 5b4cd23b8f07ee081f84f496ae2b4673
-        domain: switch
-      - device_id: 8fe73d3f492bff3665c627a0366203e1
-        domain: select
-        entity_id: 2860a2c2ab84a463f8830ff36188554d
-        type: select_option
-        option: Verwarmen
-      - device_id: 8fe73d3f492bff3665c627a0366203e1
-        domain: select
-        entity_id: 22fd6216c41c44589ba3e336875e303c
-        type: select_option
-        option: sluiting
-      - device_id: 8fe73d3f492bff3665c627a0366203e1
-        domain: number
-        entity_id: 21ff12f925185010d372ccba66d93e0b
-        type: set_value
-        value: 20
+      - action: switch.turn_on
+        metadata: {}
+        target:
+          entity_id: switch.adlar_main_switch
+        data: {}
+      - action: select.select_option
+        metadata: {}
+        target:
+          entity_id: select.adlar_mode
+        data:
+          option: Heating
+      - action: select.select_option
+        metadata: {}
+        data:
+          option: 'Off'
+        target:
+          entity_id: select.adlar_heating_setting_curve
+      - action: number.set_value
+        metadata: {}
+        target:
+          entity_id: number.adlar_temp_set_heating
+        data:
+          value: '20'
     - conditions:
       - condition: state
         entity_id: input_select.wp_selecteer_bedrijfsmodus
         state: Auto (LT8/JAN thermostaat)
       sequence:
-      - type: turn_on
-        device_id: 8fe73d3f492bff3665c627a0366203e1
-        entity_id: 5b4cd23b8f07ee081f84f496ae2b4673
-        domain: switch
-      - device_id: 8fe73d3f492bff3665c627a0366203e1
-        domain: select
-        entity_id: 2860a2c2ab84a463f8830ff36188554d
-        type: select_option
-        option: Verwarmen
-      - device_id: 8fe73d3f492bff3665c627a0366203e1
-        domain: select
-        entity_id: 22fd6216c41c44589ba3e336875e303c
-        type: select_option
-        option: LT8 - thermostaat
+      - action: switch.turn_on
+        metadata: {}
+        target:
+          entity_id: switch.adlar_main_switch
+        data: {}
+      - action: select.select_option
+        metadata: {}
+        target:
+          entity_id: select.adlar_mode
+        data:
+          option: Heating
+      - action: select.select_option
+        metadata: {}
+        data:
+          option: L8
+        target:
+          entity_id: select.adlar_heating_setting_curve
     - conditions:
       - condition: state
         entity_id: input_select.wp_selecteer_bedrijfsmodus
         state: Auto verwarmen
       sequence:
-      - type: turn_on
-        device_id: 8fe73d3f492bff3665c627a0366203e1
-        entity_id: 5b4cd23b8f07ee081f84f496ae2b4673
-        domain: switch
-      - device_id: 8fe73d3f492bff3665c627a0366203e1
-        domain: select
-        entity_id: 2860a2c2ab84a463f8830ff36188554d
-        type: select_option
-        option: Verwarmen
-      - device_id: 8fe73d3f492bff3665c627a0366203e1
-        domain: select
-        entity_id: 22fd6216c41c44589ba3e336875e303c
-        type: select_option
-        option: sluiting
+      - action: switch.turn_on
+        metadata: {}
+        target:
+          entity_id: switch.adlar_main_switch
+        data: {}
+      - action: select.select_option
+        metadata: {}
+        target:
+          entity_id: select.adlar_mode
+        data:
+          option: Heating
+      - action: select.select_option
+        metadata: {}
+        data:
+          option: 'Off'
+        target:
+          entity_id: select.adlar_heating_setting_curve
     - conditions:
       - condition: state
         entity_id: input_select.wp_selecteer_bedrijfsmodus
         state: Auto warmtecurves
       sequence:
-      - type: turn_on
-        device_id: 8fe73d3f492bff3665c627a0366203e1
-        entity_id: 5b4cd23b8f07ee081f84f496ae2b4673
-        domain: switch
-      - device_id: 8fe73d3f492bff3665c627a0366203e1
-        domain: select
-        entity_id: 2860a2c2ab84a463f8830ff36188554d
-        type: select_option
-        option: Verwarmen
+      - action: switch.turn_on
+        metadata: {}
+        target:
+          entity_id: switch.adlar_main_switch
+        data: {}
+      - action: select.select_option
+        metadata: {}
+        target:
+          entity_id: select.adlar_mode
+        data:
+          option: Heating
     - conditions:
       - condition: state
         entity_id: input_select.wp_selecteer_bedrijfsmodus
         state: Auto koelen
       sequence:
-      - type: turn_on
-        device_id: 8fe73d3f492bff3665c627a0366203e1
-        entity_id: 5b4cd23b8f07ee081f84f496ae2b4673
-        domain: switch
-      - device_id: 8fe73d3f492bff3665c627a0366203e1
-        domain: select
-        entity_id: 2860a2c2ab84a463f8830ff36188554d
-        type: select_option
-        option: Koelen
+      - action: switch.turn_on
+        metadata: {}
+        target:
+          entity_id: switch.adlar_main_switch
+        data: {}
+      - action: select.select_option
+        metadata: {}
+        target:
+          entity_id: select.adlar_mode
+        data:
+          option: Cooling
+    - conditions:
+      - condition: state
+        entity_id: input_select.wp_selecteer_bedrijfsmodus
+        state:
+        - Auto Homey PID
+      sequence:
+      - action: switch.turn_on
+        metadata: {}
+        target:
+          entity_id: switch.adlar_main_switch
+        data: {}
+      - action: select.select_option
+        metadata: {}
+        target:
+          entity_id: select.adlar_mode
+        data:
+          option: Heating
+      - action: select.select_option
+        metadata: {}
+        data:
+          option: 'Off'
+        target:
+          entity_id: select.adlar_heating_setting_curve
   mode: single
 - id: '1751898950379'
   alias: Ducobox bypass modus
@@ -2085,42 +2165,6 @@
       - action: rest_command.ducobox_bypassmode_closed
         data: {}
   mode: single
-- id: '1753224163827'
-  alias: Warmtepomp bedrijfsuren
-  description: ''
-  triggers:
-  - trigger: time
-    at: '23:59:50'
-  conditions: []
-  actions:
-  - action: counter.set_value
-    metadata: {}
-    target:
-      entity_id:
-      - counter.warmtepomp_bedrijfsuren_totaal
-    data:
-      value: "{% set totaal = states('counter.warmtepomp_bedrijfsuren_totaal') | float(0)
-        %} \n{% set vandaag = states('sensor.warmtepomp_bedrijfsuren_vandaag') | float(0)
-        %}\n{% set bedrijfsuren = totaal + vandaag %}\n{{ bedrijfsuren |round(0) }}"
-  mode: single
-- id: '1753264904251'
-  alias: Warmtepomp compressor bedrijfsuren
-  description: ''
-  triggers:
-  - trigger: time
-    at: '23:59:50'
-  conditions: []
-  actions:
-  - action: counter.set_value
-    metadata: {}
-    target:
-      entity_id: counter.warmtepomp_compressor_bedrijfsuren_totaal
-    data:
-      value: "{% set totaal = states('counter.warmtepomp_compressor_bedrijfsuren_totaal')
-        | float(0) %} \n{% set vandaag = states('sensor.warmtepomp_compressor_bedrijfsuren_vandaag')
-        | float(0) %}\n{% set bedrijfsuren = totaal + vandaag %}\n{{ bedrijfsuren
-        |round(0) }}"
-  mode: single
 - id: '1755242855174'
   alias: WP kouderegeling dauwpunt (wp op inlet)
   description: ''
@@ -2141,8 +2185,8 @@
     trigger: state
   - trigger: state
     entity_id:
-    - sensor.adlar_warmtepomp_wp_outlet_temp
-    - sensor.adlar_warmtepomp_wp_inlet_temp
+    - sensor.adlar_water_inlet_temp_t6
+    - sensor.adlar_water_outlet_temp_t7
     for:
       hours: 0
       minutes: 0
@@ -2158,26 +2202,18 @@
     trigger: state
     enabled: false
   conditions:
-  - condition: device
-    type: is_on
-    device_id: 8fe73d3f492bff3665c627a0366203e1
-    entity_id: 5b4cd23b8f07ee081f84f496ae2b4673
-    domain: switch
-    enabled: true
-  - condition: device
-    device_id: 8fe73d3f492bff3665c627a0366203e1
-    domain: select
-    entity_id: 2860a2c2ab84a463f8830ff36188554d
-    type: selected_option
-    option: Koelen
-    enabled: true
-  - condition: device
-    device_id: 8fe73d3f492bff3665c627a0366203e1
-    domain: select
-    entity_id: 22fd6216c41c44589ba3e336875e303c
-    type: selected_option
-    option: sluiting
-    enabled: true
+  - condition: state
+    entity_id: switch.adlar_main_switch
+    state:
+    - 'on'
+  - condition: state
+    entity_id: select.adlar_mode
+    state:
+    - Cooling
+  - condition: state
+    entity_id: select.adlar_cooling_setting_curve
+    state:
+    - 'Off'
   - condition: state
     entity_id: timer.wachttijd_koelcurve_veranderen
     state: idle
@@ -2191,23 +2227,24 @@
   actions:
   - if:
     - condition: numeric_state
-      entity_id: sensor.adlar_warmtepomp_wp_outlet_temp
+      entity_id: sensor.adlar_water_outlet_temp_t7
       value_template: '{{ float(state.state) -1 }}'
       above: sensor.dauwpunt_woonkamer
     then:
-    - target:
-        entity_id: number.adlar_warmtepomp_wp_temp_set
+    - alias: Temp set bij start kouderegeling (WP op inlet)
+      target:
+        entity_id: number.adlar_temp_set_cooling
       data:
         value: '{{states (''sensor.dauwpunt_woonkamer'') | int(0) + 2 }}'
       action: number.set_value
-      alias: Temp set bij start kouderegeling (WP op inlet)
       enabled: true
     else:
     - target:
-        entity_id: number.adlar_warmtepomp_wp_temp_set
+        entity_id:
+        - number.adlar_temp_set_cooling
       data:
-        value: '{{((states (''number.adlar_warmtepomp_wp_temp_set'') | int(0) + 1),
-          20) | min }}'
+        value: '{{((states (''number.adlar_temp_set_cooling'') | int(0) + 1), 20)
+          | min }}'
       action: number.set_value
       enabled: true
     - action: timer.start
@@ -2508,7 +2545,7 @@
         entity_id: sensor.duco_rhsetpoint_gewenst
         state: '55'
       sequence:
-      - action: rest_command.duco_box_rhsetpoint_60
+      - action: rest_command.duco_box_rhsetpoint_55
         data: {}
   - action: timer.start
     metadata: {}
@@ -2517,14 +2554,16 @@
       entity_id: timer.wtw_rh_setting_wachttijd
   mode: single
 - id: '1761382213410'
-  alias: 'WP AV: stel in de optimale en temp set temperatuur'
+  alias: 'WP AV: optimale temp set'
   description: ''
   triggers:
   - trigger: state
     entity_id:
-    - binary_sensor.wp_compressor
-    to: 'off'
-    from: 'on'
+    - binary_sensor.adlar_compressor_active
+    to:
+    - 'off'
+    from:
+    - 'on'
     for:
       hours: 0
       minutes: 0
@@ -2533,9 +2572,11 @@
     enabled: true
   - trigger: state
     entity_id:
-    - binary_sensor.wp_compressor
-    to: 'on'
-    from: 'off'
+    - binary_sensor.adlar_compressor_active
+    to:
+    - 'on'
+    from:
+    - 'off'
     for:
       hours: 0
       minutes: 0
@@ -2549,7 +2590,11 @@
     - Te koud
     to:
     - Ok
-    id: waardering ok
+    id: kamertemperatuur ok
+    for:
+      hours: 0
+      minutes: 1
+      seconds: 0
   - trigger: state
     entity_id:
     - sensor.kamertemperatuur_waardering
@@ -2557,279 +2602,168 @@
     - Ok
     to:
     - Te warm
-    id: waardering warm
+    id: kamertemperatuur te warm
+    for:
+      hours: 0
+      minutes: 1
+      seconds: 0
   conditions:
-  - condition: device
-    type: is_on
-    device_id: 8fe73d3f492bff3665c627a0366203e1
-    entity_id: 5b4cd23b8f07ee081f84f496ae2b4673
-    domain: switch
+  - condition: state
+    entity_id: binary_sensor.192_168_1_130
+    state:
+    - 'on'
+  - condition: state
+    entity_id: switch.adlar_main_switch
+    state:
+    - 'on'
+  - condition: state
+    entity_id: binary_sensor.adlar_defrost_running
+    state:
+    - 'off'
+    for:
+      hours: 0
+      minutes: 30
+      seconds: 0
+  - condition: state
+    entity_id: binary_sensor.adlar_system_oil_return
+    state:
+    - 'off'
+    for:
+      hours: 0
+      minutes: 10
+      seconds: 0
   - condition: state
     entity_id: input_select.wp_selecteer_bedrijfsmodus
     state: Auto verwarmen
     enabled: true
+  - condition: numeric_state
+    entity_id: climate.smart_thermostat_x
+    attribute: temperature
+    above: 20
   - condition: state
-    entity_id: binary_sensor.adlar_warmtepomp_wp_defrosting
+    entity_id: binary_sensor.adlar_defrost_running
     state:
     - 'off'
     for:
       hours: 0
       minutes: 0
       seconds: 0
-  - condition: state
-    entity_id: binary_sensor.adlar_warmtepomp_maintenance
-    state:
-    - 'off'
-  - condition: numeric_state
-    entity_id: climate.smart_thermostat_x
-    attribute: temperature
-    above: 20
-  - condition: state
-    entity_id: select.adlar_warmtepomp_wp_working_mode
-    state:
-    - Normaal
+    enabled: false
   actions:
   - choose:
     - conditions:
       - condition: trigger
         id:
         - Compressor stopt
-      sequence:
-      - if:
-        - condition: state
-          entity_id: sensor.kamertemperatuur_waardering
-          state: Te koud
-        then:
-        - action: input_number.set_value
-          metadata: {}
-          data:
-            value: '{% set current_temp_set = states(''number.adlar_warmtepomp_wp_temp_set'')
-              | float %}
-
-              {% set inlet_temp = states(''sensor.adlar_warmtepomp_wp_inlet_temp'')
-              | float %}
-
-              {{ current_temp_set + 1 }}
-
-              '
-          target:
-            entity_id: input_number.wp_berekende_optimale_temp_set
-        - if:
-          - condition: state
-            entity_id: timer.wachttijd_temp_set_veranderen
-            state:
-            - idle
-          then:
-          - action: number.set_value
-            metadata: {}
-            data:
-              value: '{% set opt_temp_set = states(''input_number.wp_berekende_optimale_temp_set'')
-                | int %}
-
-                {{ opt_temp_set }}
-
-                '
-            target:
-              entity_id: number.adlar_warmtepomp_wp_temp_set
-            enabled: true
-          enabled: true
-        - action: logbook.log
-          metadata: {}
-          data:
-            entity_id: number.adlar_warmtepomp_wp_temp_set
-            name: Adlar automation
-            message: 'WP Auto Verwarmen: stel in de optimale en de temp set temperatuur:
-              optie 1, temp set + 1'
-        - action: timer.start
-          metadata: {}
-          data:
-            duration: 00:{{ states('input_number.temperatuurvertraging') | int }}
-          target:
-            entity_id: timer.wachttijd_temp_set_veranderen
-        else:
-        - if:
-          - condition: state
-            entity_id: sensor.kamertemperatuur_waardering
-            state: Te warm
-            for:
-              hours: 0
-              minutes: 10
-              seconds: 0
-          - condition: state
-            entity_id: sensor.kamertemperatuur_verandering
-            for:
-              hours: 0
-              minutes: 10
-              seconds: 0
-            state: Stijgt
-          then:
-          - action: input_number.set_value
-            metadata: {}
-            data:
-              value: '{% set temp_set = states(''number.adlar_warmtepomp_wp_temp_set'')
-                | float %}
-
-                {% set inlet_temp = states(''sensor.adlar_warmtepomp_wp_inlet_temp'')
-                | float %}
-
-                {{ [([temp_set - 1, inlet_temp - 1]  | min), 24] |max }}
-
-                '
-            target:
-              entity_id: input_number.wp_berekende_optimale_temp_set
-            enabled: true
-          - if:
-            - condition: state
-              entity_id: timer.wachttijd_temp_set_veranderen
-              state:
-              - idle
-            then:
-            - action: number.set_value
-              metadata: {}
-              data:
-                value: '{% set opt_temp_set = states(''input_number.wp_berekende_optimale_temp_set'')
-                  | int %}
-
-                  {{ opt_temp_set }}
-
-                  '
-              target:
-                entity_id: number.adlar_warmtepomp_wp_temp_set
-              enabled: true
-            enabled: true
-          - action: logbook.log
-            metadata: {}
-            data:
-              entity_id: number.adlar_warmtepomp_wp_temp_set
-              name: Adlar automation
-              message: 'WP Auto Verwarmen: stel in de optimale en de temp set temperatuur:
-                optie 1, temp set of inlet - 1'
-          - action: timer.start
-            metadata: {}
-            data:
-              duration: 00:{{ states('input_number.temperatuurvertraging') | int }}
-            target:
-              entity_id: timer.wachttijd_temp_set_veranderen
-          else:
-          - action: logbook.log
-            metadata: {}
-            data:
-              entity_id: number.adlar_warmtepomp_wp_temp_set
-              name: Adlar automation
-              message: 'WP Auto Verwarmen: stel in de optimale en de temp set temperatuur:
-                optie 1, geen actie'
-        enabled: true
-    - conditions:
-      - condition: trigger
-        id:
-        - Compressor start
       - condition: state
-        entity_id: timer.wachttijd_temp_set_veranderen
-        state: idle
-        enabled: false
-      - condition: not
-        conditions:
-        - condition: state
-          entity_id: sensor.kamertemperatuur_waardering
-          state: Te koud
+        entity_id: sensor.kamertemperatuur_waardering
+        state: Te koud
       sequence:
       - action: input_number.set_value
         metadata: {}
         data:
-          value: '{% set temp_set = states(''number.adlar_warmtepomp_wp_temp_set'')
-            | float %}
+          value: '{% set current_temp = states(''sensor.water_temperature_controlled'')
+            | int %}
 
-            {% set inlet_temp = states(''sensor.adlar_warmtepomp_wp_inlet_temp'')
-            | float %}
-
-            {{ [([temp_set - 1, inlet_temp - 1]  | min), 24] |max }}
+            {{ current_temp + 1 }}
 
             '
         target:
           entity_id: input_number.wp_berekende_optimale_temp_set
-        enabled: true
-      - if:
-        - condition: state
-          entity_id: timer.wachttijd_temp_set_veranderen
-          state:
-          - idle
-        then:
-        - action: number.set_value
-          metadata: {}
-          data:
-            value: '{% set opt_temp_set = states(''input_number.wp_berekende_optimale_temp_set'')
-              | int %}
-
-              {{ opt_temp_set }}
-
-              '
-          target:
-            entity_id: number.adlar_warmtepomp_wp_temp_set
-          enabled: true
-        enabled: true
-      - action: number.set_value
-        metadata: {}
-        data:
-          value: '{% set opt_temp_set = states(''input_number.wp_berekende_optimale_temp_set'')
-            | int %}
-
-            {{ opt_temp_set }}
-
-            '
-        target:
-          entity_id: number.adlar_warmtepomp_wp_temp_set
-        enabled: false
-      - action: timer.start
-        metadata: {}
-        data:
-          duration: 00:{{ states('input_number.temperatuurvertraging') | int }}
-        target:
-          entity_id: timer.wachttijd_temp_set_veranderen
       - action: logbook.log
         metadata: {}
         data:
-          entity_id: number.adlar_warmtepomp_wp_temp_set
+          entity_id: input_number.wp_berekende_optimale_temp_set
           name: Adlar automation
-          message: 'WP Auto Verwarmen: stel in de optimale en de temp set temperatuur:
-            optie 2, temp set of inlet - 1'
+          message: 'WP Opt temp set: optie 1'
+      alias: Compressor stopt en kamertemperatuur te koud
     - conditions:
       - condition: trigger
         id:
-        - waardering ok
+        - Compressor stopt
+      - condition: state
+        entity_id: sensor.kamertemperatuur_waardering
+        state: Te warm
+        for:
+          hours: 0
+          minutes: 10
+          seconds: 0
+      - condition: state
+        entity_id: sensor.kamertemperatuur_verandering
+        for:
+          hours: 0
+          minutes: 10
+          seconds: 0
+        state: Stijgt
       sequence:
       - action: input_number.set_value
         metadata: {}
         data:
-          value: '{% set current_temp_set = states(''number.adlar_warmtepomp_wp_temp_set'')
-            | float %}
+          value: '{% set current_temp = states(''sensor.water_temperature_controlled'')
+            | int %}
 
-            {% set inlet_temp = states(''sensor.adlar_warmtepomp_wp_inlet_temp'')
-            | float %}
-
-            {{ inlet_temp }}
+            {{ current_temp - 1 }}
 
             '
         target:
           entity_id: input_number.wp_berekende_optimale_temp_set
+      - action: logbook.log
+        metadata: {}
+        data:
+          entity_id: input_number.wp_berekende_optimale_temp_set
+          name: Adlar automation
+          message: 'WP Opt temp set: optie 2'
+      alias: Compressor stopt en kamertemperatuur te warm en stijgt
     - conditions:
       - condition: trigger
         id:
-        - waardering warm
+        - kamertemperatuur ok
       sequence:
       - action: input_number.set_value
         metadata: {}
         data:
-          value: '{% set current_temp_set = states(''number.adlar_warmtepomp_wp_temp_set'')
-            | float %}
+          value: '{% set current_temp = states(''sensor.water_temperature_controlled'')
+            | int %}
 
-            {% set inlet_temp = states(''sensor.adlar_warmtepomp_wp_inlet_temp'')
-            | float %}
-
-            {{ inlet_temp - 1 }}
+            {{ current_temp }}
 
             '
         target:
           entity_id: input_number.wp_berekende_optimale_temp_set
+        enabled: false
+      - action: logbook.log
+        metadata: {}
+        data:
+          entity_id: input_number.wp_berekende_optimale_temp_set
+          name: Adlar automation
+          message: 'WP Opt temp set: optie 3'
+        enabled: false
+      alias: Kamertemperatuur is ok
+    - conditions:
+      - condition: trigger
+        id:
+        - kamertemperatuur te warm
+      sequence:
+      - action: input_number.set_value
+        metadata: {}
+        data:
+          value: '{% set current_temp = states(''sensor.water_temperature_controlled'')
+            | int %}
+
+            {{ current_temp - 1 }}
+
+            '
+        target:
+          entity_id: input_number.wp_berekende_optimale_temp_set
+        enabled: false
+      - action: logbook.log
+        metadata: {}
+        data:
+          entity_id: input_number.wp_berekende_optimale_temp_set
+          name: Adlar automation
+          message: 'WP Opt temp set: optie 4'
+        enabled: false
+      alias: Kamertemperatuur is te warm
   mode: single
 - id: '1762763030484'
   alias: WP aan/uit thermostaat gestuurd
@@ -2858,30 +2792,30 @@
       - condition: trigger
         id:
         - Verwarmen
-      - condition: device
-        type: is_off
-        device_id: 8fe73d3f492bff3665c627a0366203e1
-        entity_id: 5b4cd23b8f07ee081f84f496ae2b4673
-        domain: switch
+      - condition: state
+        entity_id: switch.adlar_main_switch
+        state:
+        - 'off'
       sequence:
-      - type: turn_on
-        device_id: 8fe73d3f492bff3665c627a0366203e1
-        entity_id: 5b4cd23b8f07ee081f84f496ae2b4673
-        domain: switch
+      - action: switch.turn_on
+        metadata: {}
+        target:
+          entity_id: switch.adlar_main_switch
+        data: {}
     - conditions:
       - condition: trigger
         id:
         - Uit
-      - condition: device
-        type: is_on
-        device_id: 8fe73d3f492bff3665c627a0366203e1
-        entity_id: 5b4cd23b8f07ee081f84f496ae2b4673
-        domain: switch
+      - condition: state
+        entity_id: switch.adlar_main_switch
+        state:
+        - 'on'
       sequence:
-      - type: turn_off
-        device_id: 8fe73d3f492bff3665c627a0366203e1
-        entity_id: 5b4cd23b8f07ee081f84f496ae2b4673
-        domain: switch
+      - action: switch.turn_off
+        metadata: {}
+        target:
+          entity_id: switch.adlar_main_switch
+        data: {}
   mode: single
 - id: '1763719969937'
   alias: WP Eco bij defrost
@@ -2889,7 +2823,7 @@
   triggers:
   - trigger: state
     entity_id:
-    - binary_sensor.adlar_warmtepomp_wp_defrosting
+    - binary_sensor.adlar_defrost_running
     to:
     - 'off'
     id: Defrost voorbij
@@ -2897,6 +2831,8 @@
       hours: 0
       minutes: 0
       seconds: 1
+    from:
+    - 'on'
   - trigger: state
     entity_id:
     - timer.tijd_eco_na_defrost
@@ -2915,22 +2851,21 @@
       id:
       - Defrost voorbij
     - condition: numeric_state
-      entity_id: sensor.adlar_warmtepomp_wp_ambient_temp
+      entity_id: sensor.adlar_ambient_temp_t1
       above: 5
     - condition: not
       conditions:
-      - condition: device
-        device_id: 8fe73d3f492bff3665c627a0366203e1
-        domain: select
-        entity_id: 7f38202ef83365cd00a43a72844d6a23
-        type: selected_option
-        option: Eco
+      - condition: state
+        entity_id: select.adlar_running_mode
+        state:
+        - Silent
     then:
-    - device_id: 8fe73d3f492bff3665c627a0366203e1
-      domain: select
-      entity_id: 7f38202ef83365cd00a43a72844d6a23
-      type: select_option
-      option: Eco
+    - action: select.select_option
+      metadata: {}
+      target:
+        entity_id: select.adlar_running_mode
+      data:
+        option: Silent
     - action: timer.start
       metadata: {}
       data: {}
@@ -2944,21 +2879,20 @@
         entity_id: binary_sensor.eco_mode_in_de_nacht
         state:
         - 'off'
-      - condition: device
-        device_id: 8fe73d3f492bff3665c627a0366203e1
-        domain: select
-        entity_id: 7f38202ef83365cd00a43a72844d6a23
-        type: selected_option
-        option: Eco
+      - condition: state
+        entity_id: select.adlar_running_mode
+        state:
+        - Silent
       then:
-      - device_id: 8fe73d3f492bff3665c627a0366203e1
-        domain: select
-        entity_id: 7f38202ef83365cd00a43a72844d6a23
-        type: select_option
-        option: Normaal
+      - action: select.select_option
+        metadata: {}
+        target:
+          entity_id: select.adlar_running_mode
+        data:
+          option: Standard
   mode: single
 - id: '1764318076054'
-  alias: Wp debouncing bij start waterpomp
+  alias: 'Wp AV: debouncing bij start waterpomp'
   description: ''
   triggers:
   - trigger: state
@@ -2969,36 +2903,68 @@
     for:
       hours: 0
       minutes: 0
-      seconds: 10
+      seconds: 2
   conditions:
   - condition: state
-    entity_id: binary_sensor.wp_compressor
+    entity_id: binary_sensor.192_168_1_130
     state:
-    - 'off'
+    - 'on'
   - condition: state
-    entity_id: binary_sensor.adlar_warmtepomp_maintenance
+    entity_id: switch.adlar_main_switch
     state:
-    - 'off'
+    - 'on'
   - condition: state
-    entity_id: binary_sensor.adlar_warmtepomp_wp_defrosting
+    entity_id: input_select.wp_selecteer_bedrijfsmodus
+    state: Auto verwarmen
+    enabled: true
+  - condition: state
+    entity_id: select.adlar_mode
+    state:
+    - Heating
+  - condition: state
+    entity_id: binary_sensor.adlar_defrost_running
     state:
     - 'off'
+    for:
+      hours: 0
+      minutes: 10
+      seconds: 0
+    enabled: false
+  - condition: state
+    entity_id: binary_sensor.adlar_system_oil_return
+    state:
+    - 'off'
+    for:
+      hours: 0
+      minutes: 5
+      seconds: 0
+    enabled: false
   actions:
   - action: number.set_value
     metadata: {}
     data:
-      value: '{% set max_set_temp = 45  | int %}
+      value: '{% set max_set_temp = 60  | int %}
 
-        {% set current_temp_set = states(''number.adlar_warmtepomp_wp_temp_set'')
-        | float %}
+        {% set current_temp_set = states(''number.adlar_temp_set_heating'') | float
+        %}
 
         {{ [current_temp_set + 1, max_set_temp] | min }}
 
         '
-    target:
-      entity_id: number.adlar_warmtepomp_wp_temp_set
     enabled: true
-  - delay:
+    target:
+      entity_id: number.adlar_temp_set_heating
+  - wait_for_trigger:
+    - trigger: state
+      entity_id:
+      - binary_sensor.adlar_compressor_active
+      to:
+      - 'on'
+      for:
+        hours: 0
+        minutes: 0
+        seconds: 30
+    timeout:
       hours: 0
       minutes: 3
       seconds: 0
@@ -3006,15 +2972,21 @@
   - action: number.set_value
     metadata: {}
     data:
-      value: '{% set current_temp_set = states(''number.adlar_warmtepomp_wp_temp_set'')
+      value: '{% set current_temp_set = states(''number.adlar_temp_set_heating'')
         | float %}
 
         {{ current_temp_set - 1 }}
 
         '
-    target:
-      entity_id: number.adlar_warmtepomp_wp_temp_set
     enabled: true
+    target:
+      entity_id: number.adlar_temp_set_heating
+  - action: logbook.log
+    metadata: {}
+    data:
+      name: Adlar automation
+      entity_id: number.adlar_temp_set_heating
+      message: WP debounce waterpomp
   mode: single
 - id: '1767366388506'
   alias: Test
@@ -3036,7 +3008,7 @@
   triggers:
   - trigger: state
     entity_id:
-    - binary_sensor.adlar_warmtepomp_wp_defrosting
+    - binary_sensor.adlar_defrost_running
     to:
     - 'on'
     for:
@@ -3048,7 +3020,7 @@
     enabled: true
   - trigger: state
     entity_id:
-    - binary_sensor.adlar_warmtepomp_wp_defrosting
+    - binary_sensor.adlar_defrost_running
     to:
     - 'off'
     for:
@@ -3059,7 +3031,7 @@
     - 'on'
   conditions:
   - condition: state
-    entity_id: switch.adlar_warmtepomp_wp_hoofdschakelaar
+    entity_id: switch.adlar_main_switch
     state:
     - 'on'
   - condition: state
@@ -3080,7 +3052,7 @@
   triggers:
   - trigger: state
     entity_id:
-    - binary_sensor.adlar_warmtepomp_wp_defrosting
+    - binary_sensor.adlar_defrost_running
     to:
     - 'on'
     from:
@@ -3091,7 +3063,7 @@
       seconds: 1
   - trigger: state
     entity_id:
-    - binary_sensor.adlar_warmtepomp_wp_defrosting
+    - binary_sensor.adlar_defrost_running
     to:
     - 'off'
     from:
@@ -3150,4 +3122,325 @@
         data: {}
         target:
           entity_id: switch.switch_2
+  mode: single
+- id: '1772525913437'
+  alias: WP via Homey PID
+  description: ''
+  triggers:
+  - trigger: state
+    entity_id:
+    - input_select.wp_selecteer_bedrijfsmodus
+    for:
+      hours: 0
+      minutes: 0
+      seconds: 5
+    to:
+    - Auto Homey PID
+    id: Homey PID Aan
+  - trigger: state
+    entity_id:
+    - input_select.wp_selecteer_bedrijfsmodus
+    for:
+      hours: 0
+      minutes: 0
+      seconds: 5
+    id: Homey PID Uit
+    from:
+    - Auto Homey PID
+  conditions: []
+  actions:
+  - choose:
+    - conditions:
+      - condition: trigger
+        id:
+        - Homey PID Aan
+      sequence:
+      - action: homey.trigger_flow
+        metadata: {}
+        data:
+          flow_name: HA Adlar PID aan
+      - action: select.select_option
+        metadata: {}
+        target:
+          entity_id: select.adlar_p116_regeling_in_of_outlet
+        data:
+          option: Outlet
+        enabled: false
+    - conditions:
+      - condition: trigger
+        id:
+        - Homey PID Uit
+      sequence:
+      - action: homey.trigger_flow
+        metadata: {}
+        data:
+          flow_name: HA Adlar PID uit
+      - action: select.select_option
+        metadata: {}
+        target:
+          entity_id: select.adlar_p116_regeling_in_of_outlet
+        data:
+          option: Inlet
+        enabled: false
+  mode: single
+- id: '1772837374373'
+  alias: WP nacht op sluiting 20gr water, geen regeling
+  description: ''
+  triggers:
+  - trigger: time_pattern
+    hours: '*'
+    minutes: '00'
+    seconds: '00'
+    id: Elk uur
+  - trigger: time
+    at: 00:00:00
+    id: middernacht
+  conditions:
+  - condition: time
+    after: '23:55:00'
+    before: 08:00:00
+  - condition: numeric_state
+    entity_id: sensor.buienradar_temperature
+    above: 3
+  - condition: numeric_state
+    entity_id: number.adlar_temp_set_heating
+    above: sensor.water_temperature_controlled
+  actions:
+  - action: number.set_value
+    metadata: {}
+    target:
+      entity_id: number.adlar_temp_set_heating
+    data:
+      value: '20'
+  - if:
+    - condition: trigger
+      id:
+      - middernacht
+    then:
+    - action: input_select.select_option
+      metadata: {}
+      target:
+        entity_id: input_select.wp_selecteer_bedrijfsmodus
+      data:
+        option: Adlar handbediend
+  mode: single
+- id: '1773011502664'
+  alias: WP uit 's  nachts
+  description: ''
+  triggers:
+  - trigger: time_pattern
+    hours: '23'
+    minutes: '45'
+    seconds: '00'
+    id: Nacht
+  - trigger: time_pattern
+    hours: '7'
+    minutes: '55'
+    seconds: '0'
+    id: Dag
+  conditions: []
+  actions:
+  - choose:
+    - conditions:
+      - condition: trigger
+        id:
+        - Nacht
+      - condition: numeric_state
+        entity_id: sensor.adlar_warmtepomp_wp_ambient_temp
+        above: 1
+      sequence:
+      - type: turn_off
+        device_id: 8fe73d3f492bff3665c627a0366203e1
+        entity_id: 5b4cd23b8f07ee081f84f496ae2b4673
+        domain: switch
+    - conditions:
+      - condition: trigger
+        id:
+        - Dag
+      sequence:
+      - type: turn_on
+        device_id: 8fe73d3f492bff3665c627a0366203e1
+        entity_id: 5b4cd23b8f07ee081f84f496ae2b4673
+        domain: switch
+  mode: single
+- id: '1773961754232'
+  alias: 'WP AV: stel in temp_set na compressor aanpassing'
+  description: ''
+  triggers:
+  - trigger: state
+    entity_id:
+    - binary_sensor.adlar_compressor_active
+    to:
+    - 'off'
+    from:
+    - 'on'
+    for:
+      hours: 0
+      minutes: 0
+      seconds: 0
+    id: Compressor stopt
+    enabled: true
+  - trigger: state
+    entity_id:
+    - binary_sensor.adlar_compressor_active
+    to:
+    - 'on'
+    from:
+    - 'off'
+    for:
+      hours: 0
+      minutes: 0
+      seconds: 0
+    id: Compressor start
+    enabled: true
+  conditions:
+  - condition: state
+    entity_id: input_select.wp_selecteer_bedrijfsmodus
+    state: Auto verwarmen
+    enabled: true
+  - condition: state
+    entity_id: switch.adlar_main_switch
+    state:
+    - 'on'
+  - condition: state
+    entity_id: binary_sensor.adlar_defrost_running
+    state:
+    - 'off'
+    for:
+      hours: 0
+      minutes: 0
+      seconds: 0
+  - condition: state
+    entity_id: binary_sensor.adlar_system_oil_return
+    state:
+    - 'off'
+  - condition: numeric_state
+    entity_id: climate.smart_thermostat_x
+    attribute: temperature
+    above: 20
+  actions:
+  - choose:
+    - conditions:
+      - condition: trigger
+        id:
+        - Compressor stopt
+      - condition: state
+        entity_id: sensor.kamertemperatuur_waardering
+        state: Te koud
+      sequence:
+      - action: number.set_value
+        metadata: {}
+        data:
+          value: '{% set temp_set = states(''input_number.wp_berekende_optimale_temp_set'')
+            | int %}
+
+            {{ temp_set }}
+
+            '
+        enabled: true
+        target:
+          entity_id: number.adlar_temp_set_heating
+      - action: logbook.log
+        metadata: {}
+        data:
+          entity_id: number.adlar_temp_set_heating
+          name: Adlar automation
+          message: 'WP Auto Verwarmen: stel in de optimale en de temp set temperatuur:
+            optie 1, temp set + 1'
+      - action: timer.start
+        metadata: {}
+        data:
+          duration: 00:{{ states('input_number.temperatuurvertraging') | int }}
+        target:
+          entity_id: timer.wachttijd_temp_set_veranderen
+      alias: Compressor stopt en kamertemperatuur te koud
+    - conditions:
+      - condition: trigger
+        id:
+        - Compressor stopt
+      - condition: state
+        entity_id: sensor.kamertemperatuur_waardering
+        state: Te warm
+        for:
+          hours: 0
+          minutes: 10
+          seconds: 0
+      - condition: state
+        entity_id: sensor.kamertemperatuur_verandering
+        for:
+          hours: 0
+          minutes: 10
+          seconds: 0
+        state: Stijgt
+      - condition: state
+        entity_id: timer.wachttijd_temp_set_veranderen
+        state:
+        - idle
+      sequence:
+      - action: number.set_value
+        metadata: {}
+        data:
+          value: '{% set temp_set = states(''input_number.wp_berekende_optimale_temp_set'')
+            | int %}
+
+            {{ temp_set }}
+
+            '
+        enabled: true
+        target:
+          entity_id: number.adlar_temp_set_heating
+      - action: logbook.log
+        metadata: {}
+        data:
+          entity_id: number.adlar_temp_set_heating
+          name: Adlar automation
+          message: 'WP Auto Verwarmen: stel in de optimale en de temp set temperatuur:
+            optie 1, temp set of inlet - 1'
+      - action: timer.start
+        metadata: {}
+        data:
+          duration: 00:{{ states('input_number.temperatuurvertraging') | int }}
+        target:
+          entity_id: timer.wachttijd_temp_set_veranderen
+      alias: Compressor stopt en kamertemperatuur te warm en stijgt
+    - conditions:
+      - condition: trigger
+        id:
+        - Compressor start
+      - condition: not
+        conditions:
+        - condition: state
+          entity_id: sensor.kamertemperatuur_waardering
+          state: Te koud
+      - condition: state
+        entity_id: timer.wachttijd_temp_set_veranderen
+        state:
+        - idle
+      sequence:
+      - action: number.set_value
+        metadata: {}
+        data:
+          value: '{% set temp_set = states(''input_number.wp_berekende_optimale_temp_set'')
+            | int %}
+
+            {{ temp_set }}
+
+            '
+        enabled: true
+        target:
+          entity_id: number.adlar_temp_set_heating
+      - action: logbook.log
+        metadata: {}
+        data:
+          entity_id: number.adlar_temp_set_heating
+          name: Adlar automation
+          message: 'WP Auto Verwarmen: stel in de optimale en de temp set temperatuur:
+            optie 2, temp set of inlet - 1'
+      - action: timer.start
+        metadata: {}
+        data:
+          duration: 00:{{ states('input_number.temperatuurvertraging') | int }}
+        target:
+          entity_id: timer.wachttijd_temp_set_veranderen
+      alias: Compressor start en kamertemperatuur is niet te koud
   mode: single

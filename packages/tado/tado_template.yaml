@@ -1,0 +1,21 @@
+#
+# Templates
+#
+template:
+
+  - sensor:
+    - name: "Smart Thermostat X delta T"
+      unique_id: smart_thermostat_x_delta_t
+      device_class: temperature
+      state_class: measurement
+      unit_of_measurement: '°C'
+      availability: >
+        {{  state_attr('climate.smart_thermostat_x', "current_temperature") | is_number and
+          state_attr('climate.smart_thermostat_x', "current_temperature") | float > 0 and
+          state_attr('climate.smart_thermostat_x', "temperature") | is_number and
+          state_attr('climate.smart_thermostat_x', "temperature") | float > 0 
+        }}
+      state: >-
+        {{ (state_attr('climate.smart_thermostat_x', "current_temperature") 
+        - state_attr('climate.smart_thermostat_x', "temperature")) | float(0) | round(1)
+        }}
