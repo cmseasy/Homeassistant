@@ -4,6 +4,22 @@
 template:
 
   - sensor:
+    - unique_id: smart_thermostat_x_set_temperatuur
+      name: "Smart Thermostat X Set Temperatuur"
+      device_class: temperature
+      state_class: measurement
+      unit_of_measurement: '°C'
+      availability: >
+        {{  state_attr('climate.smart_thermostat_x', "current_temperature") | is_number and
+            state_attr('climate.smart_thermostat_x', "current_temperature") | float > 0 and
+            state_attr('climate.smart_thermostat_x', "temperature") | is_number and
+            state_attr('climate.smart_thermostat_x', "temperature") | float > 0 
+        }}
+      state: >-
+        {{ state_attr('climate.smart_thermostat_x', "temperature") | float(18)
+          }}
+
+  - sensor:
     - name: "Smart Thermostat X delta T"
       unique_id: smart_thermostat_x_delta_t
       device_class: temperature
@@ -19,3 +35,35 @@ template:
         {{ (state_attr('climate.smart_thermostat_x', "current_temperature") 
         - state_attr('climate.smart_thermostat_x', "temperature")) | float(0) | round(1)
         }}
+
+  - sensor:
+    - name: "Dauwpunt woonkamer"
+      unique_id: dauwpunt_woonkamer
+      device_class: temperature
+      unit_of_measurement: "°C"
+      availability: >
+        {{  states('sensor.smart_thermostat_x_luchtvochtigheid') | is_number | float > 0 and
+            states('sensor.smart_thermostat_x_temperatuur') | is_number | float > 0
+        }}  
+      state: >
+          {% set RH = states('sensor.smart_thermostat_x_luchtvochtigheid') |float %}
+          {% set temp = states('sensor.smart_thermostat_x_temperatuur') |int %}
+          {% set dewpoint = 243.04*(log(RH/100)+(17.625*temp/(243.04+temp)))
+            /(17.625-log(RH/100)-(17.625*temp/(243.04+temp))) %}
+          {{ dewpoint | float(20) | round(2) }}
+
+  - sensor:
+    - name: "Dauwpunt buiten"
+      unique_id: dauwpunt_buiten
+      device_class: temperature
+      unit_of_measurement: "°C"
+      availability: >
+        {{  states('sensor.buienradar_humidity') | is_number | float > 0 and
+            states('sensor.buienradar_temperature') | is_number | float > 0
+        }}
+      state: >
+          {% set temp = states('sensor.buienradar_temperature') |float %}
+          {% set RH = states('sensor.buienradar_humidity') |int %}
+          {% set dewpoint = 243.04*(log(RH/100)+(17.625*temp/(243.04+temp)))
+            /(17.625-log(RH/100)-(17.625*temp/(243.04+temp))) %}
+          {{ dewpoint | float | round(2) }}

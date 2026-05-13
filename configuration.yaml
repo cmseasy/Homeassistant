@@ -44,8 +44,15 @@ tts:
 recorder:
   db_url: !secret mariadb_url
   purge_keep_days: 31
-  commit_interval: 1
+  commit_interval: 5
   exclude:
+    entity_globs:
+      - sensor.time*
+      - sensor.date*
+    # entities:
+    #   - sensor.date_and_time
+    #   - sensor.date_time
+    #   - sensor.date_time_iso
     #    entities:
     #      - sensor.watermeter_totaal_water_verbruik_cost
     #      - sensor.ha_uptime_minutes
@@ -109,9 +116,14 @@ logbook:
       - sensor.warmtepomp_meter_last_seen
     entity_globs:
       - sensor.envoy_*_inverter_*
+      - sensor.inverter_*
+      - sensor.time*
+      - sensor.date*
     domains:
       - Envoy-S-Metered-EU
       - Forecast.Solar
+#      - time_date
+#      - date_time
       - Uptime
       - OpenTherm
 
@@ -124,3 +136,31 @@ shell_command:
 #   host: 192.168.1.2
 #   username: admin
 #   password: Ell82saS!@
+
+frontend:
+  extra_module_url:
+    - /hacsfiles/sidebar-organizer/sidebar-organizer.js?hacstag=932534411341
+
+
+# utility_meter:
+#   energy_hourly_slim:
+#     name: Frank slim terugleveren hourly
+#     source: sensor.energie_verbruik_kwh
+#     cycle: hourly
+#     tariffs:
+#       - normal
+#       - slim
+#   energy_daily_slim:
+#     name: Frank slim terugleveren daily
+#     source: sensor.energie_verbruik_kwh
+#     cycle: daily
+#     tariffs:
+#       - normal
+#       - slim
+#   energy_montly_slim:
+#     name: Frank slim terugleveren monthly
+#     source: sensor.energie_verbruik_kwh
+#     cycle: monthly
+#     tariffs:
+#       - normal
+#       - slim

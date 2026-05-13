@@ -1437,12 +1437,14 @@
       - action: number.set_value
         metadata: {}
         data:
-          value: "{% set max_set_temp = 60 %}\n{% set temp_set = states('number.adlar_temp_set_heating')
-            | int %}\n{% set delta_t = states('sensor.smart_thermostat_x_delta_t')
-            | float %}\n{% set gradient = states('sensor.kamertemperatuur_gradient')
-            | float %}\n{% if delta_t < -0.5 and gradient < 0.5 %}\n  {{ [temp_set
-            + 2, max_set_temp] | min }}\n{% else %}\n  {{ [temp_set + 1, max_set_temp]
-            | min }}\n{% endif %}\n"
+          value: "{% set max_set_temp = 60 %}\n{% set opt = states('input_number.wp_berekende_optimale_temp_set')
+            | int %}\n{% set temp_set = states('number.adlar_temp_set_heating') |
+            int %}\n{% set delta_t = states('sensor.smart_thermostat_x_delta_t') |
+            float %}\n{% set gradient = states('sensor.kamertemperatuur_gradient')
+            | float %}\n{% if delta_t < -0.5 and gradient < 0.5 %}\n{#  {{ [temp_set
+            + 2, max_set_temp] | min }} #}\n  {{ [[temp_set + 2, opt] | max , max_set_temp]
+            | min }}\n{% else %}\n{#  {{ [temp_set + 1, max_set_temp] | min }} #}\n
+            \ {{ [[temp_set + 1, opt] | max , max_set_temp] | min }}\n{% endif %}\n"
         enabled: true
         target:
           entity_id: number.adlar_temp_set_heating
@@ -1616,7 +1618,7 @@
       - action: number.set_value
         metadata: {}
         data:
-          value: '{% set min_set_temp = 18 %}
+          value: '{% set min_set_temp = 20 %}
 
             {% set controlled_temp = states(''sensor.water_temperature_controlled'')
             | int %}
@@ -1703,7 +1705,7 @@
       - action: number.set_value
         metadata: {}
         data:
-          value: '{% set min_set_temp = 18 %}
+          value: '{% set min_set_temp = 20 %}
 
             {% set temp_set = states(''number.adlar_temp_set_heating'') | int %}
 
@@ -2166,8 +2168,8 @@
         data: {}
   mode: single
 - id: '1755242855174'
-  alias: WP kouderegeling dauwpunt (wp op inlet)
-  description: ''
+  alias: WP kouderegeling dauwpunt
+  description: WP op inlet
   triggers:
   - entity_id:
     - automation.wp_kouderegeling_nw
@@ -2191,6 +2193,8 @@
       hours: 0
       minutes: 0
       seconds: 1
+    from:
+    to:
   - entity_id:
     - timer.wachttijd_koelcurve_veranderen
     from: active
@@ -2315,7 +2319,12 @@
     metadata: {}
     data:
       title: Let op!
-      message: Afwasmachine start over 15m en de deur staat open
+      message: 'Afwasmachine start over 15m en de deur staat open: sluit de deur.'
+  - action: notify.mobile_app_gsm_marjan
+    metadata: {}
+    data:
+      message: 'Afwasmachine start over 15m en de deur staat open: sluit de deur.'
+      title: Let op!
   mode: single
 - id: '1759157266823'
   alias: Afwasmachine filters wisselen
@@ -2988,20 +2997,6 @@
       entity_id: number.adlar_temp_set_heating
       message: WP debounce waterpomp
   mode: single
-- id: '1767366388506'
-  alias: Test
-  description: ''
-  triggers:
-  - trigger: time_pattern
-    seconds: /10
-  conditions: []
-  actions:
-  - action: input_boolean.toggle
-    metadata: {}
-    target:
-      entity_id: input_boolean.test
-    data: {}
-  mode: single
 - id: '1767434192463'
   alias: 'WP AV: wachttijd temp set na defrost'
   description: ''
@@ -3159,6 +3154,7 @@
         metadata: {}
         data:
           flow_name: HA Adlar PID aan
+        enabled: false
       - action: select.select_option
         metadata: {}
         target:
@@ -3175,6 +3171,7 @@
         metadata: {}
         data:
           flow_name: HA Adlar PID uit
+        enabled: false
       - action: select.select_option
         metadata: {}
         target:
@@ -3443,4 +3440,308 @@
         target:
           entity_id: timer.wachttijd_temp_set_veranderen
       alias: Compressor start en kamertemperatuur is niet te koud
+  mode: single
+- id: '1776241498992'
+  alias: Overstroom bewaking fases
+  description: ''
+  triggers:
+  - trigger: numeric_state
+    entity_id:
+    - sensor.phases_stroom_verbruikt_fase_l1
+    for:
+      hours: 0
+      minutes: 10
+      seconds: 0
+    above: 6200
+    id: L1+
+  - trigger: numeric_state
+    entity_id:
+    - sensor.phases_stroom_verbruikt_fase_l2
+    for:
+      hours: 0
+      minutes: 10
+      seconds: 0
+    above: 6200
+    id: L2+
+  - trigger: numeric_state
+    entity_id:
+    - sensor.phases_stroom_verbruikt_fase_l3
+    for:
+      hours: 0
+      minutes: 10
+      seconds: 0
+    above: 6200
+    id: L3+
+  - trigger: numeric_state
+    entity_id:
+    - sensor.phases_stroom_verbruikt_fase_l1
+    for:
+      hours: 0
+      minutes: 10
+      seconds: 0
+    id: L1-
+    below: 5200
+  - trigger: numeric_state
+    entity_id:
+    - sensor.phases_stroom_verbruikt_fase_l2
+    for:
+      hours: 0
+      minutes: 10
+      seconds: 0
+    id: L2-
+    below: 5200
+  - trigger: numeric_state
+    entity_id:
+    - sensor.phases_stroom_verbruikt_fase_l3
+    for:
+      hours: 0
+      minutes: 10
+      seconds: 0
+    id: L3-
+    below: 5200
+  conditions: []
+  actions:
+  - choose:
+    - conditions:
+      - condition: trigger
+        id:
+        - L1+
+      sequence:
+      - metadata: {}
+        data:
+          message: Overstroom op fase L1
+          title: Meterkast
+        action: notify.mobile_app_gsm_martin
+    - conditions:
+      - condition: trigger
+        id:
+        - L2+
+      sequence:
+      - metadata: {}
+        data:
+          message: Overstroom op fase L2
+          title: Meterkast
+        action: notify.mobile_app_gsm_martin
+    - conditions:
+      - condition: trigger
+        id:
+        - L3+
+      sequence:
+      - metadata: {}
+        data:
+          message: Overstroom op fase L3
+          title: Meterkast
+        action: notify.mobile_app_gsm_martin
+    - conditions:
+      - condition: trigger
+        id:
+        - L1-
+      sequence:
+      - metadata: {}
+        data:
+          message: Overstroom op fase L1 opgelost
+          title: Meterkast
+        action: notify.mobile_app_gsm_martin
+    - conditions:
+      - condition: trigger
+        id:
+        - L2-
+      sequence:
+      - metadata: {}
+        data:
+          message: Overstroom op fase L2 opgelost
+          title: Meterkast
+        action: notify.mobile_app_gsm_martin
+    - conditions:
+      - condition: trigger
+        id:
+        - L3-
+      sequence:
+      - metadata: {}
+        data:
+          message: Overstroom op fase L3 opgelost
+          title: Meterkast
+        action: notify.mobile_app_gsm_martin
+  mode: single
+- id: '1776252284275'
+  alias: Afwasser tijdelijk stop bij te veel L3 vermogen
+  description: ''
+  triggers:
+  - trigger: time_pattern
+    minutes: '1'
+    enabled: true
+  conditions:
+  - condition: state
+    entity_id: switch.bosch_dishwasher_aan_uit
+    state:
+    - 'on'
+  actions:
+  - choose:
+    - conditions:
+      - condition: numeric_state
+        entity_id: sensor.phases_stroom_verbruikt_fase_l3
+        above: 5750
+      - condition: state
+        entity_id: sensor.bosch_dishwasher_bedrijfsstatus
+        state:
+        - Run
+      - condition: state
+        entity_id: sensor.bosch_dishwasher_programmafase
+        state:
+        - PreRinse
+        - MainWash
+        - FinalRinse
+      sequence:
+      - action: button.press
+        metadata: {}
+        target:
+          entity_id: button.bosch_dishwasher_afbreken
+        data: {}
+    - conditions:
+      - condition: numeric_state
+        entity_id: sensor.phases_stroom_verbruikt_fase_l3
+        below: 3000
+      - condition: state
+        entity_id: sensor.bosch_dishwasher_bedrijfsstatus
+        state:
+        - Pause
+        - Aborting
+        for:
+          hours: 0
+          minutes: 10
+          seconds: 0
+        enabled: false
+      - condition: state
+        entity_id: sensor.bosch_dishwasher_programma_afrondingsstatus
+        state:
+        - programabortedbyuser
+        for:
+          hours: 0
+          minutes: 10
+          seconds: 0
+      sequence:
+      - action: button.press
+        metadata: {}
+        target:
+          entity_id: button.bosch_dishwasher_start
+        data: {}
+  mode: single
+- id: '1778085570099'
+  alias: Frank slim terugleveren
+  description: ''
+  triggers:
+  - trigger: state
+    entity_id:
+    - binary_sensor.frank_slim_terugleveren
+    to:
+    - 'on'
+    from:
+    - 'off'
+    for:
+      hours: 0
+      minutes: 0
+      seconds: 1
+    id: Aan
+  - trigger: state
+    entity_id:
+    - binary_sensor.frank_slim_terugleveren
+    to:
+    - 'off'
+    from:
+    - 'on'
+    for:
+      hours: 0
+      minutes: 0
+      seconds: 1
+    id: Uit
+  conditions: []
+  actions:
+  - choose:
+    - conditions:
+      - condition: trigger
+        id:
+        - Aan
+      sequence:
+      - action: select.select_option
+        metadata: {}
+        target:
+          entity_id:
+          - select.energy_hourly_slim
+        data:
+          option: slim
+      - action: select.select_option
+        metadata: {}
+        target:
+          entity_id: select.energy_daily_slim
+        data:
+          option: slim
+      - action: select.select_option
+        metadata: {}
+        target:
+          entity_id:
+          - select.energy_montly_slim
+        data:
+          option: slim
+    - conditions:
+      - condition: trigger
+        id:
+        - Uit
+      sequence:
+      - action: select.select_option
+        metadata: {}
+        target:
+          entity_id:
+          - select.energy_hourly_slim
+        data:
+          option: normal
+      - action: select.select_option
+        metadata: {}
+        target:
+          entity_id: select.energy_daily_slim
+        data:
+          option: normal
+      - action: select.select_option
+        metadata: {}
+        target:
+          entity_id:
+          - select.energy_montly_slim
+        data:
+          option: normal
+  mode: single
+- id: '1778598700959'
+  alias: Frank slim terugleveren
+  description: ''
+  triggers:
+  - trigger: state
+    entity_id:
+    - sensor.frank_energie_prijzen_huidige_elektriciteitsprijs_all_in
+    from:
+    to:
+  - trigger: state
+    entity_id:
+    - binary_sensor.frank_slim_terugleveren
+    from:
+    - 'off'
+    to:
+    - 'on'
+    id: Slim terugleveren aan
+  - trigger: state
+    entity_id:
+    - binary_sensor.frank_slim_terugleveren
+    from:
+    - 'on'
+    to:
+    - 'off'
+    id: Slim terugleveren uit
+  conditions: []
+  actions:
+  - choose:
+    - conditions:
+      - condition: state
+        entity_id: binary_sensor.frank_slim_terugleveren
+        state:
+        - 'on'
+      sequence:
+      - action: number.set_value
+        data: {}
   mode: single

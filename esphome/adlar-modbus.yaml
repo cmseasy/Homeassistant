@@ -19,13 +19,17 @@ esphome:
 
 esp32:
   board: esp32dev
+#  cpu_frequency: 160MHZ
   framework:
     type: esp-idf
     advanced:
       minimum_chip_revision: "3.1"
+      sram1_as_iram: true
 
 # Enable logging
 logger:
+  level: info
+  baud_rate: 0
 
 # Enable Home Assistant API
 api:
@@ -37,12 +41,13 @@ api:
 # Allow Over-The-Air updates
 ota:
 - platform: esphome
-  password: !secret adlar_modbus_ota_key
+  password: !secret adlar_modbus_ota_pass
 
 wifi:
   ssid: !secret wifi_ssid
   password: !secret wifi_password
   min_auth_mode: WPA2
+  power_save_mode: none
   manual_ip:
     static_ip: 192.168.1.130
     gateway: 192.168.1.1
@@ -50,7 +55,7 @@ wifi:
   ap:
     ssid: !secret adlar_modbus_wifi_ap_ssid
     password: !secret adlar_modbus_wifi_ap_password
-
+ 
 time:
   - platform: homeassistant
     id: homeassistant_time
@@ -82,18 +87,22 @@ uart:
     data_bits: 8
     stop_bits: 1
     parity: NONE
+#    rx_full_threshold: 1
 
 modbus:
   - uart_id: uart_modbus
     id: modbus_client
+    send_wait_time: 500ms
+    turnaround_time: 300ms # default 100ms
 
 modbus_controller:
   - id: modbus_adlar
     modbus_id: modbus_client
     address: 0x01
     update_interval: 60s
-    command_throttle: 300ms
-    setup_priority: -100
+    command_throttle: 600ms # 300 geeft een paar time issues
+    setup_priority: -10
+
 
 # Global varibelen
 # globals:
@@ -467,6 +476,7 @@ select:
 
   - platform: modbus_controller
     name: "MODE"
+    id: mode
     address: 0x0304
     value_type: U_WORD
     optionsmap: 
@@ -559,12 +569,28 @@ select:
     entity_category: "config" 
 
 binary_sensor:
+
+# Update manager
+  - platform: status
+    name: "Status"
+
   # Urenteller warmtepomp
   - platform: switch
     name: "In bedrijf"
     id: in_bedrijf
     source_id: main_switch
     device_class: power # Optional: shows as 'on'/'off' instead of 'open'/'closed'
+
+  - platform: template
+    name: "Waterpomp in bedrijf"
+#    id: waterpomp_in_bedrijf
+    device_class: running
+    lambda: |-
+      if (id(water_flow).state > 5.0) {
+        return true;
+      } else {
+        return false;
+      } 
 
   - platform: modbus_controller
     modbus_controller_id: modbus_adlar
@@ -662,11 +688,13 @@ binary_sensor:
 sensor:
   - platform: uptime
     name: Adlar Uptime
+    accuracy_decimals: 0
     disabled_by_default: true
 
   - platform: wifi_signal
     name: Adlar WiFi Signal
-    update_interval: 60s
+#    update_interval: 60s staat als default
+    accuracy_decimals: 0
     disabled_by_default: true
 
   - platform: modbus_controller
@@ -768,7 +796,7 @@ sensor:
     register_type: holding
     address: 0x0045
     value_type: S_WORD
-    accuracy_decimals: 1
+    accuracy_decimals: 3
     device_class: current
     unit_of_measurement: A
     filters:
@@ -988,7 +1016,7 @@ sensor:
   - platform: modbus_controller
     modbus_controller_id: modbus_adlar
     name: "Water Flow"
-    id: flow
+    id: water_flow
     register_type: holding
     address: 0x0058
     device_class: volume_flow_rate
@@ -1035,37 +1063,136 @@ sensor:
       return int(id(voltage).state * id(current).state);
     accuracy_decimals: 0
     filters:
-      - skip_initial: 1
-      - median:
-          window_size: 5
-          send_every: 1
+#      - skip_initial: 1
+      # - median:
+      #     window_size: 3
+      #     send_every: 1
+      # - lambda: |-
+      #     if (id(power_out).state > 0) {
+      #       return x; // Pass the current value through
+      #     } else {
+      #       return {}; // Drop the value (no update)
+      #     }
       - clamp:
-          min_value: 0
+          min_value: -1 # 0
           max_value: 2000
-          ignore_out_of_range: false 
+          ignore_out_of_range: true # false
     unit_of_measurement: "W"
     device_class: power
+
+  - platform: template
+    name: "AC Input Power Heating"
+    id: power_in_heating
+    unit_of_measurement: "W"
+    device_class: power
+    accuracy_decimals: 0
+    state_class: "measurement"
+    disabled_by_default: true
+    filters:
+      - lambda: |-
+          if (id(mode).current_option() == "Heating" ) {
+            return x;     // publish value
+          } else {
+            return 0; //  {};    // skip publishing
+          }
+    lambda: |-
+      return id(power_in).state;
+
+  - platform: template
+    name: "AC Input Power Cooling"
+    id: power_in_cooling
+    unit_of_measurement: "W"
+    device_class: power
+    accuracy_decimals: 0
+    state_class: "measurement"
+    disabled_by_default: true
+    filters:
+      - lambda: |-
+          if (id(mode).current_option() == "Cooling") {
+            return x;     // publish value
+          } else {
+            return 0; //  {};    // skip publishing
+          }
+    lambda: |-
+      return id(power_in).state;
+
+
+
+
+
 
   - platform: template
     name: "Thermal Output Power"
     id: power_out
     filters:
-      - skip_initial: 1
-      - median:
-          window_size: 5
-          send_every: 1
+      # - median:
+      #     window_size: 3
+      #     send_every: 1
+      #     send_first_at: 1
+      # - skip_initial: 1
       - clamp:
-          min_value: 0
-          max_value: 10000
-          ignore_out_of_range: true 
+          min_value: -1 # 0
+          max_value: 9000
+          ignore_out_of_range: true # false
+      - lambda: |-
+          if (id(power_in).state > 0) {
+            return x; // Pass the current value through
+          } else {
+            return 0;  // Drop the value (no update)
+          }
     lambda: |-
       const float smw = 0.998;  // soortelijke massa water
       const float sww = 4186;   // soortelijke warmte water
-      return int((id(flow).state / 1000 / 60) * smw * sww * (id(temp_outlet).state - id(temp_inlet).state) * 1000);
+      return int((id(water_flow).state / 1000 / 60) * smw * sww * (id(temp_outlet).state - id(temp_inlet).state) * 1000);
     accuracy_decimals: 0
     unit_of_measurement: "W"
     device_class: power
+    state_class: "measurement"
     disabled_by_default: true
+
+  - platform: template
+    name: "Thermal Output Power Heating"
+    id: power_out_heating
+    unit_of_measurement: "W"
+    device_class: power
+    accuracy_decimals: 0
+    state_class: "measurement"
+    disabled_by_default: true
+    filters:
+      - lambda: |-
+          if (id(mode).current_option() == "Heating" ) {
+            return x;     // publish value
+          } else {
+            return 0; //  {};    // skip publishing
+          }
+    lambda: |-
+      return id(power_out).state;
+
+  - platform: template
+    name: "Thermal Output Power Cooling"
+    id: power_out_cooling
+    unit_of_measurement: "W"
+    device_class: power
+    accuracy_decimals: 0
+    state_class: "measurement"
+    disabled_by_default: true
+    filters:
+      - lambda: |-
+          if (id(mode).current_option() == "Cooling") {
+            return x;     // publish value
+          } else {
+            return 0; //  {};    // skip publishing
+          }
+    lambda: |-
+      return id(power_out).state;
+
+
+
+
+
+
+
+
 
   - platform: template
     name: "COP"
@@ -1095,7 +1222,7 @@ sensor:
       - lambda: return x / 3600.0; # Meet in uren (default is seconden, dus we delen door 3600)
       - offset: 1925
     accuracy_decimals: 0
-    unit_of_measurement: "u"
+    unit_of_measurement: "h"
     restore: true
 
   # Urenteller warmtepomp
@@ -1108,7 +1235,7 @@ sensor:
       - lambda: return x / 3600.0; # Meet in uren (default is seconden, dus we delen door 3600)
       - offset: 7400
     accuracy_decimals: 0
-    unit_of_measurement: "u"
+    unit_of_measurement: "h"
     restore: true
 
 text_sensor:
