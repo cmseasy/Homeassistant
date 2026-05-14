@@ -88,6 +88,16 @@
           {% endfor %}
           {{ ns.items | sort(attribute='start_time') }}
 
+
+# Frank slim terugleveren
+- binary_sensor:
+    unique_id: frank_slim_terugleveren
+    name: "Frank slim terugleveren"
+    state: >
+      {{ iif (states('sensor.envoy_122025007960_power_production')|float(1) == 0 )
+      and (states('sensor.buienradar_irradiance') | float(0) > 20 )
+      }}
+
 # - sensor:
 #     - name: "Frank slim terugleveren tijdsduur"
 #       state: >
