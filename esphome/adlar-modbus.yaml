@@ -545,10 +545,10 @@ select:
     value_type: U_WORD
     optionsmap: 
       "Running": 0
-      "Stop": 1
-      "Running in cooling mode": 2
-      "Running in cooling/heating mode": 3
-      "Running in underfloor heating mode": 4
+      "Cycling": 1
+      "Running in cooling mode, else cycling": 2
+      "Running in cooling/heating mode else cycling": 3
+      "Running in underfloor heating mode else cycling": 4
     entity_category: "config"
     web_server:
       sorting_group_id: sorting_group_configuration_setup
