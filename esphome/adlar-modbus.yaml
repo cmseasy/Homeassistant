@@ -537,6 +537,22 @@ select:
     web_server:
       sorting_group_id: sorting_group_configuration_setup
       sorting_weight: 117
+
+  - platform: modbus_controller
+    name: "P28 Waterpump mode"
+    icon: "mdi:form-select"
+    address: 0x011C
+    value_type: U_WORD
+    optionsmap: 
+      "Running": 0
+      "Stop": 1
+      "Running in cooling mode": 2
+      "Running in cooling/heating mode": 3
+      "Running in underfloor heating mode": 4
+    entity_category: "config"
+    web_server:
+      sorting_group_id: sorting_group_configuration_setup
+      sorting_weight: 119
   
   - platform: modbus_controller
     name: "P116 Regeling in- of outlet"
