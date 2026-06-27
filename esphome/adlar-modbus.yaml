@@ -525,6 +525,20 @@ number:
 
 select:
   - platform: modbus_controller
+    name: "P37 Shutdown mode"
+    icon: "mdi:form-select"
+    address: 0x0125
+    value_type: U_WORD
+    optionsmap: 
+      "Intelligent shutdown": 0
+      "Temperature shutdown": 1
+      "Cooling intelligent": 2
+    entity_category: "config"
+    web_server:
+      sorting_group_id: sorting_group_configuration_setup
+      sorting_weight: 117
+  
+  - platform: modbus_controller
     name: "P116 Regeling in- of outlet"
     icon: "mdi:form-select"
     address: 0x0174
@@ -535,7 +549,7 @@ select:
     entity_category: "config"
     web_server:
       sorting_group_id: sorting_group_configuration_setup
-      sorting_weight: 117
+      sorting_weight: 118
 
   - platform: modbus_controller
     name: "MODE"
