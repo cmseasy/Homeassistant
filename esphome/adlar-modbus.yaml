@@ -1095,8 +1095,11 @@ sensor:
     value_type: S_WORD
     accuracy_decimals: 1
     unit_of_measurement: °C
-    skip_updates: 1
+#    skip_updates: 1
     filters:
+      - heartbeat:
+          period: 10s #60s
+    #      optimistic: true
       - clamp:
           min_value: -40
           max_value: 140
@@ -1112,8 +1115,11 @@ sensor:
     value_type: S_WORD
     accuracy_decimals: 1
     unit_of_measurement: °C
-    skip_updates: 1
+#    skip_updates: 1
     filters:
+      - heartbeat:
+          period: 10s #60s
+    #      optimistic: true
       - clamp:
           min_value: -40
           max_value: 140
