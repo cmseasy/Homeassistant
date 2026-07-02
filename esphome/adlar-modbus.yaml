@@ -5,13 +5,13 @@ esphome:
   name_add_mac_suffix: false
 
   on_boot:
-    priority: 600
+    priority: -100
     then:
       - text_sensor.template.publish:
           id: online_template
           state: "gestart"
   on_shutdown:
-    priority: 200
+#    priority: 200
     then:
       - text_sensor.template.publish:
           id: online_template
@@ -19,7 +19,7 @@ esphome:
 
 esp32:
   board: esp32dev
-#  cpu_frequency: 160MHZ
+  cpu_frequency: 240MHZ
   framework:
     type: esp-idf
     advanced:
@@ -105,7 +105,7 @@ modbus_controller:
     address: 0x01
     update_interval: 10s
     command_throttle: 600ms # 300 geeft een paar time issues
-    setup_priority: -10
+    setup_priority: -100
 
 
 # Global varibelen
