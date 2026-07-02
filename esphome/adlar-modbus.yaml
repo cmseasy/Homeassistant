@@ -53,7 +53,7 @@ wifi:
     gateway: 192.168.1.1
     dns1: 192.168.1.5 
     subnet: 255.255.255.0
-  #use_address: 192.168.1.130
+  use_address: 192.168.1.40   # Dit dwingt het ESPHome dashboard om ALTIJD naar dit IP te kijken bij OTA updates
  
   ap:
     ssid: !secret adlar_modbus_wifi_ap_ssid
@@ -65,6 +65,9 @@ time:
     id: homeassistant_time
 
 captive_portal:
+
+mdns:
+  disabled: false
 
 web_server:
   port: 80
@@ -98,6 +101,7 @@ modbus:
     id: modbus_client
     send_wait_time: 500ms
     turnaround_time: 300ms # default 100ms
+
 
 modbus_controller:
   - id: modbus_adlar
