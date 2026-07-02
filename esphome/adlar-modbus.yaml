@@ -131,6 +131,7 @@ switch:
     icon: "mdi:heat-pump"
     register_type: holding
     address: 0x0305
+    skip_updates: 0
     web_server:
       sorting_group_id: sorting_group_configuration_setup
       sorting_weight: 100
@@ -219,6 +220,7 @@ number:
     unit_of_measurement: °C
     disabled_by_default: true
     entity_category: "config"
+    skip_updates: 0
     web_server:
       sorting_group_id: sorting_group_configuration_setup
       sorting_weight: 106
@@ -237,6 +239,7 @@ number:
     unit_of_measurement: °C
     disabled_by_default: true
     entity_category: "config"
+    skip_updates: 0
     web_server:
       sorting_group_id: sorting_group_configuration_setup
       sorting_weight: 107
@@ -255,6 +258,7 @@ number:
     unit_of_measurement: °C
     disabled_by_default: true
     entity_category: "config"
+    skip_updates: 0
     web_server:
       sorting_group_id: sorting_group_configuration_setup
       sorting_weight: 110
@@ -273,6 +277,7 @@ number:
     unit_of_measurement: Hz
     disabled_by_default: true
     entity_category: "config"  
+    skip_updates: 0
     web_server:
       sorting_group_id: sorting_group_configuration_setup
       sorting_weight: 108
@@ -291,6 +296,7 @@ number:
     unit_of_measurement: Hz
     disabled_by_default: true
     entity_category: "config"
+    skip_updates: 0
     web_server:
       sorting_group_id: sorting_group_configuration_setup
       sorting_weight: 109
@@ -309,6 +315,7 @@ number:
     unit_of_measurement: °C
     disabled_by_default: true
     entity_category: "config"
+    skip_updates: 0
     web_server:
       sorting_group_id: sorting_group_configuration_setup
       sorting_weight: 111
@@ -327,6 +334,7 @@ number:
     unit_of_measurement: "%" 
     disabled_by_default: true
     entity_category: "config"
+    skip_updates: 0
     web_server:
       sorting_group_id: sorting_group_configuration_setup
       sorting_weight: 112
@@ -345,6 +353,7 @@ number:
     unit_of_measurement: "°C" 
     disabled_by_default: true
     entity_category: "config"
+    skip_updates: 0
     web_server:
       sorting_group_id: sorting_group_configuration_setup
       sorting_weight: 113
@@ -386,6 +395,7 @@ number:
     unit_of_measurement: "°C" 
     disabled_by_default: true
     entity_category: "config"
+    skip_updates: 0
     # web_server:
     #   sorting_group_id: sorting_group_configuration_setup
     #   sorting_weight: 113
@@ -404,6 +414,7 @@ number:
     unit_of_measurement: "°C" 
     disabled_by_default: true
     entity_category: "config"
+    skip_updates: 0
     # web_server:
     #   sorting_group_id: sorting_group_configuration_setup
     #   sorting_weight: 113
@@ -422,6 +433,7 @@ number:
     unit_of_measurement: L/min
     disabled_by_default: true
     entity_category: "config"
+    skip_updates: 0
     web_server:
       sorting_group_id: sorting_group_configuration_setup
       sorting_weight: 114
@@ -440,6 +452,7 @@ number:
     unit_of_measurement: L/min
     disabled_by_default: true
     entity_category: "config"
+    skip_updates: 0
     web_server:
       sorting_group_id: sorting_group_configuration_setup
       sorting_weight: 115
@@ -458,6 +471,7 @@ number:
     unit_of_measurement: "%" 
     disabled_by_default: true
     entity_category: "config"
+    skip_updates: 0
     web_server:
       sorting_group_id: sorting_group_configuration_setup
       sorting_weight: 116
@@ -476,6 +490,7 @@ number:
     unit_of_measurement: "%" 
     disabled_by_default: true
     entity_category: "config"
+    skip_updates: 0
     web_server:
       sorting_group_id: sorting_group_configuration_setup
       sorting_weight: 117
@@ -493,6 +508,7 @@ number:
     mode: box
     unit_of_measurement: °C
     entity_category: "config"
+    skip_updates: 0
 
   - platform: modbus_controller
     modbus_controller_id: modbus_adlar
@@ -507,6 +523,7 @@ number:
     mode: box
     unit_of_measurement: °C
     entity_category: "config"
+    skip_updates: 0
 
   - platform: modbus_controller
     modbus_controller_id: modbus_adlar
@@ -522,6 +539,7 @@ number:
     unit_of_measurement: °C
     disabled_by_default: true
     entity_category: "config"
+    skip_updates: 0
 
 select:
   - platform: modbus_controller
@@ -534,9 +552,11 @@ select:
       "Temperature shutdown": 1
       "Cooling intelligent": 2
     entity_category: "config"
+    skip_updates: 0
     web_server:
       sorting_group_id: sorting_group_configuration_setup
       sorting_weight: 117
+      
 
   - platform: modbus_controller
     name: "P28 Waterpump mode"
@@ -550,6 +570,7 @@ select:
       "Running in cooling/heating mode else cycling": 3
       "Running in underfloor heating mode else cycling": 4
     entity_category: "config"
+    skip_updates: 0
     web_server:
       sorting_group_id: sorting_group_configuration_setup
       sorting_weight: 119
@@ -563,6 +584,7 @@ select:
       "Inlet": 0
       "Outlet": 1
     entity_category: "config"
+    skip_updates: 0
     web_server:
       sorting_group_id: sorting_group_configuration_setup
       sorting_weight: 118
@@ -577,6 +599,7 @@ select:
       "Heating": 1
       "Floor Heating": 3
     entity_category: "config"
+    skip_updates: 0
 
   - platform: modbus_controller
     name: "Running Mode"
@@ -587,6 +610,7 @@ select:
       "Boost": 1
       "Silent": 2
     entity_category: "config"
+    skip_updates: 0
 
   - platform: modbus_controller
     name: "Cooling Setting Curve"
@@ -611,6 +635,7 @@ select:
       "L7": 17
       "L8": 18
     entity_category: "config"
+    skip_updates: 0
 
   - platform: modbus_controller
     name: "Heating Setting Curve"
@@ -635,6 +660,7 @@ select:
       "L7": 17
       "L8": 18
     entity_category: "config"
+    skip_updates: 0
 
   - platform: modbus_controller
     name: "Underfloor Heating Setting Curve"
@@ -659,7 +685,8 @@ select:
       "L7": 17
       "L8": 18
     disabled_by_default: true
-    entity_category: "config" 
+    entity_category: "config"
+    skip_updates: 0
 
 binary_sensor:
 
@@ -673,6 +700,7 @@ binary_sensor:
     id: in_bedrijf
     source_id: main_switch
     device_class: power # Optional: shows as 'on'/'off' instead of 'open'/'closed'
+    
 
   - platform: template
     name: "Waterpomp in bedrijf"
@@ -692,6 +720,7 @@ binary_sensor:
     bitmask: 0x01
     name: "Refrigerant Recovery"
     disabled_by_default: true
+    skip_updates: 0
 
   - platform: modbus_controller
     modbus_controller_id: modbus_adlar
@@ -700,6 +729,7 @@ binary_sensor:
     bitmask: 0x2
     name: "Primary Anti-freeze"
     disabled_by_default: true
+    skip_updates: 0
 
   - platform: modbus_controller
     modbus_controller_id: modbus_adlar
@@ -708,6 +738,7 @@ binary_sensor:
     bitmask: 0x4
     name: "Secondary Anti-freeze"
     disabled_by_default: true 
+    skip_updates: 0
 
   - platform: modbus_controller
     modbus_controller_id: modbus_adlar
@@ -724,6 +755,7 @@ binary_sensor:
     bitmask: 0x010
     name: "System oil return"
     disabled_by_default: true
+    skip_updates: 0
     on_press:
       - number.increment:
           id: oil_return_starts
@@ -736,6 +768,7 @@ binary_sensor:
     bitmask: 0x0100
     name: "Defrost running" # was name: "System Frosting"
     disabled_by_default: true
+    skip_updates: 0
     on_press:
       - number.increment:
           id: defrost_starts
@@ -749,6 +782,7 @@ binary_sensor:
     name: "Compressor active" # was:  name: "Shutdown after Reaching Temp"
     id: compressor_active
     disabled_by_default: true
+    skip_updates: 0
     on_press:
       - number.increment:
           id: compressor_starts
@@ -761,6 +795,7 @@ binary_sensor:
     bitmask: 0x2000
     name: "Shutdown after Unit Failure"
     disabled_by_default: true 
+    skip_updates: 0
 
   - platform: modbus_controller
     modbus_controller_id: modbus_adlar
@@ -769,6 +804,7 @@ binary_sensor:
     bitmask: 0x4000
     name: "Unit Operation"
     disabled_by_default: true 
+    skip_updates: 0
 
   - platform: modbus_controller
     modbus_controller_id: modbus_adlar
@@ -777,6 +813,7 @@ binary_sensor:
     bitmask: 0x8000
     name: "Unit Waiting for Operation"
     disabled_by_default: true
+    skip_updates: 0
 
 sensor:
 
@@ -790,7 +827,7 @@ sensor:
 #    update_interval: 60s staat als default
     accuracy_decimals: 0
     disabled_by_default: true
-
+    
   - platform: modbus_controller
     modbus_controller_id: modbus_adlar
     name: "Compressor Target Frequency"
@@ -801,6 +838,7 @@ sensor:
     accuracy_decimals: 0
     unit_of_measurement: Hz
     disabled_by_default: true
+    skip_updates: 0
 
   - platform: modbus_controller
     modbus_controller_id: modbus_adlar
@@ -811,6 +849,7 @@ sensor:
     value_type: S_WORD
     accuracy_decimals: 0
     unit_of_measurement: Hz
+    skip_updates: 0
     filters:
       - heartbeat:
           period: 10s #60s
@@ -829,6 +868,7 @@ sensor:
     value_type: S_WORD
     accuracy_decimals: 0
     unit_of_measurement: Hz
+    skip_updates: 0
     filters:
       - heartbeat:
           period: 10s #60s
@@ -848,6 +888,7 @@ sensor:
     accuracy_decimals: 0
     unit_of_measurement: P
     disabled_by_default: true
+    skip_updates: 0
 
   - platform: modbus_controller
     modbus_controller_id: modbus_adlar
@@ -858,6 +899,7 @@ sensor:
     accuracy_decimals: 0
     unit_of_measurement: P
     disabled_by_default: true
+    skip_updates: 0
 
   - platform: modbus_controller
     modbus_controller_id: modbus_adlar
@@ -869,6 +911,7 @@ sensor:
     accuracy_decimals: 0
     device_class: voltage
     unit_of_measurement: V
+    skip_updates: 0
     filters:
       - multiply: 0.99
       - clamp:
@@ -893,6 +936,7 @@ sensor:
     accuracy_decimals: 3
     device_class: current
     unit_of_measurement: A
+    skip_updates: 0
     filters:
       # - heartbeat:
       #     period: 60s
@@ -927,6 +971,7 @@ sensor:
     accuracy_decimals: 1
     device_class: current
     unit_of_measurement: A
+    skip_updates: 0
     filters:
       - multiply: 0.1
     disabled_by_default: true
@@ -941,6 +986,7 @@ sensor:
     device_class: temperature
     unit_of_measurement: °C
     disabled_by_default: true
+    skip_updates: 0
 
   - platform: modbus_controller
     modbus_controller_id: modbus_adlar
@@ -952,6 +998,7 @@ sensor:
     device_class: temperature
     unit_of_measurement: °C
     disabled_by_default: true
+    skip_updates: 0
 
   - platform: modbus_controller
     modbus_controller_id: modbus_adlar
@@ -963,6 +1010,7 @@ sensor:
     device_class: temperature
     unit_of_measurement: °C
     disabled_by_default: true
+    skip_updates: 0
 
   - platform: modbus_controller
     modbus_controller_id: modbus_adlar
@@ -973,6 +1021,7 @@ sensor:
     accuracy_decimals: 0
     device_class: temperature
     unit_of_measurement: °C
+    skip_updates: 0
     filters:
       - filter_out: NAN
       - heartbeat:
