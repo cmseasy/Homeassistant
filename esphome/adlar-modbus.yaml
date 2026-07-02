@@ -692,7 +692,8 @@ binary_sensor:
 
 # Update manager
   - platform: status
-    name: "Status"
+    name: "Adlar Modbus Status"
+    id: adlar_modbus_status
 
   # Urenteller warmtepomp
   - platform: switch
