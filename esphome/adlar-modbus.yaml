@@ -850,10 +850,10 @@ sensor:
     value_type: S_WORD
     accuracy_decimals: 0
     unit_of_measurement: Hz
-    skip_updates: 5
+#    skip_updates: 5
     filters:
-      - heartbeat:
-          period: 10s #60s
+#      - heartbeat:
+#          period: 10s #60s
   #        optimistic: true
       - clamp:
           min_value: 0
@@ -869,10 +869,10 @@ sensor:
     value_type: S_WORD
     accuracy_decimals: 0
     unit_of_measurement: Hz
-    skip_updates: 5
+  #  skip_updates: 5
     filters:
-      - heartbeat:
-          period: 10s #60s
+  #    - heartbeat:
+  #        period: 10s #60s
     #      optimistic: true
       - clamp:
           min_value: 0
@@ -1022,7 +1022,7 @@ sensor:
     accuracy_decimals: 0
     device_class: temperature
     unit_of_measurement: °C
-    skip_updates: 5
+#    skip_updates: 5
     filters:
       - filter_out: NAN
       - heartbeat:
@@ -1097,8 +1097,8 @@ sensor:
     unit_of_measurement: °C
 #    skip_updates: 1
     filters:
-      - heartbeat:
-          period: 10s #60s
+#      - heartbeat:
+#          period: 10s #60s
     #      optimistic: true
       - clamp:
           min_value: -40
@@ -1117,8 +1117,8 @@ sensor:
     unit_of_measurement: °C
 #    skip_updates: 1
     filters:
-      - heartbeat:
-          period: 10s #60s
+#      - heartbeat:
+#          period: 10s #60s
     #      optimistic: true
       - clamp:
           min_value: -40
@@ -1182,12 +1182,12 @@ sensor:
     device_class: volume_flow_rate
     value_type: S_WORD
     accuracy_decimals: 0
-    skip_updates: 5
+#    skip_updates: 5
     filters:
       - filter_out: NAN
-      - heartbeat:
-          period: 60s
-          optimistic: true
+#      - heartbeat:
+#          period: 60s
+#          optimistic: true
       - lambda: |-
           if (x < 0 || x > 18 || isnan(x)) {
             return {}; // This ignores the value; the sensor keeps the last state
