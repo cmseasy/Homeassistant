@@ -94,13 +94,13 @@ uart:
     data_bits: 8
     stop_bits: 1
     parity: NONE
-    rx_full_threshold: 1 # Helpt om de buffer direct te legen en timeouts 
+#    rx_full_threshold: 1 # Helpt om de buffer direct te legen en timeouts 
 
 modbus:
   - uart_id: uart_modbus
     id: modbus_client
-    send_wait_time: 500ms
-    turnaround_time: 300ms # default 100ms
+    send_wait_time: 1000ms # was 500
+    turnaround_time: 200ms # default 100ms
 
 
 modbus_controller:
@@ -108,7 +108,7 @@ modbus_controller:
     modbus_id: modbus_client
     address: 0x01
     update_interval: 10s
-    command_throttle: 600ms # 300 geeft een paar time issues
+    command_throttle: 500ms # 300 geeft een paar time issues
     setup_priority: -100
 
 
