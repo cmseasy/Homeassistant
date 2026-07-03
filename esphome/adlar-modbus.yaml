@@ -47,13 +47,14 @@ wifi:
   ssid: !secret wifi_ssid
   password: !secret wifi_password
   min_auth_mode: WPA2
-  power_save_mode: none  ##
   manual_ip:
     static_ip: 192.168.1.40
     gateway: 192.168.1.1
     dns1: 192.168.1.5 
     subnet: 255.255.255.0
   use_address: 192.168.1.40   # Dit dwingt het ESPHome dashboard om ALTIJD naar dit IP te kijken bij OTA updates
+  fast_connect: true
+  power_save_mode: NONE
  
   ap:
     ssid: !secret adlar_modbus_wifi_ap_ssid
