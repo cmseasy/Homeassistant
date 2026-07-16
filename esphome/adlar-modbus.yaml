@@ -100,8 +100,8 @@ uart:
 modbus:
   - uart_id: uart_modbus
     id: modbus_client
-    send_wait_time: 1000ms # was 500
-    turnaround_time: 200ms # default 100ms
+#    send_wait_time: 1000ms # was 500 # default nu 2000ms
+#    turnaround_time: 200ms # default 100ms # default nu 600ms
 
 
 modbus_controller:
