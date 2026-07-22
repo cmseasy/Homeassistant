@@ -188,7 +188,7 @@ number:
     name: "WTW RH setpoint"
     id: rh_setpoint
     icon: "mdi:water-percent"
-    register_type: holding
+    register_type: holding       # Terug naar holding om de echte 60% te kunnen lezen
     address: 582
     value_type: S_WORD
     min_value: 0
@@ -199,15 +199,14 @@ number:
     disabled_by_default: false
     force_new_range: true 
     
-    # FIX: Voorkomt de automatische 0x03 lees-polls die Exception 4 veroorzaken
-    skip_updates: 9999 
+    # CRUCIALE FIX: Polled deze holding slechts 1x per minuut (12 x 5s) om Exception 4 te voorkomen
+    skip_updates: 12 
 
-    # Correcte ESPHome methode om waarden naar Modbus te schrijven via het component
     write_lambda: |-
-      ESP_LOGW("main", "Schrijf setpoint %d%% naar Modbus via Function Code 0x06.", (int)x);
+      ESP_LOGW("main", "Schrijf setpoint %d%% naar Modbus.", (int)x);
       return x;
 
-    # Jouw complete automatische/handmatige regellogica behouden
+    # Jouw complete ongewijzigde regellogica
     on_value:
       then:
         - lambda: |-
@@ -397,15 +396,15 @@ binary_sensor:
     
 sensor:
 
-  # Veilig en storingsvrij uitlezen van het actuele setpoint via Function Code 0x04
-  - platform: modbus_controller
-    modbus_controller_id: duco_box
-    name: "Duco RH Setpoint Actueel"
-    id: rh_setpoint_sensor
-    register_type: read
-    address: 582
-    value_type: S_WORD
-    unit_of_measurement: "%"
+  # # Veilig en storingsvrij uitlezen van het actuele setpoint via Function Code 0x04
+  # - platform: modbus_controller
+  #   modbus_controller_id: duco_box
+  #   name: "Duco RH Setpoint Actueel"
+  #   id: rh_setpoint_sensor
+  #   register_type: read
+  #   address: 582
+  #   value_type: S_WORD
+  #   unit_of_measurement: "%"
 
 
   
