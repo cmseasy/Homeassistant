@@ -83,23 +83,25 @@ uart:
     data_bits: 8
     stop_bits: 1
     parity: NONE
-    rx_buffer_size: 512  # Vergroot de buffer zodat er geen Modbus-pakketjes omvallen
+    rx_buffer_size: 512
+    rx_timeout: 4       # ESP32-specifiek: geeft de Adlar-chip meer tijd tussen losse bytes
 
-# Geoptimaliseerde Modbus-hub met stabiele timings voor Adlar
+# De juiste plek voor de maximale wachttijd (timeout)
 modbus:
   - uart_id: uart_modbus
     id: modbus_client
-    send_wait_time: 250ms    # Tijd die ESP wacht tussen opeenvolgende lees/schrijf-commando's
-    turnaround_time: 150ms   # Minimale rusttijd op de bus na een pakket (Adlar hersteltijd)
+    send_wait_time: 3000ms  # DIT IS DE TIMEOUT: wacht tot 3 seconden op het eerste byte
+    turnaround_time: 300ms  # Rusttijd op de bus na een bericht
 
-# Controller instellingen strakgetrokken
 modbus_controller:
   - id: modbus_adlar
     modbus_id: modbus_client
     address: 0x01
-    update_interval: 15s     # Verhoogd van 10s naar 15s om de warmtepomp-processor meer ademruimte te geven
-    command_throttle: 600ms  # Verhoogd naar 600ms om de 'time issues' definitief te tackelen
+    update_interval: 20s
+    command_throttle: 1000ms
+    max_cmd_retries: 5      # Probeert het bij een hapering stilzwijgend opnieuw
     setup_priority: -100
+
 
 
 # Global varibelen
