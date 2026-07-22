@@ -967,72 +967,51 @@ script:
 
 
 
-  # ==========================================
-  # HOOFDREGELING: COORDINATOR SCRIPT (Routeert de modi)
-  # ==========================================
-  - id: wtw_rh_regeling
-    mode: restart
-    then:
-      # 1. Opstart checks
-      - lambda: |-
-          if (!id(wtw_systeem_volledig_online)) return;
+# ==========================================
+# HOOFDREGELING: COORDINATOR SCRIPT (Routeert de modi)
+# ==========================================
+- id: wtw_rh_regeling
+  mode: restart
+  then:
+    # 1. Opstart checks
+    - lambda: |-
+        if (!id(wtw_systeem_volledig_online)) return;
 
-      # 2. Douche detectie logica
-      - lambda: |-
-          float actueel = (float)id(rh_actual_active).state;
-          float ducobox_rh_actueel = (float)id(ducobox_rh_actual).state;
-          float ducobox_rh_gefilterd = (float)id(ducobox_rh_filtered).state;
+    # 2. Modus selectie op basis van de sensors en vlaggen
+    - if:
+        condition:
+          # Als de schakelaar uit staat, stoppen we alle regelingen
+          lambda: return (id(switch_rh_regeling).state == false);
+        then:
+          - script.stop: wtw_modus_douche
+          - script.stop: wtw_modus_handmatig
+          - script.stop: wtw_modus_normaal
+          - lambda: |-
+              id(start_verificatie_tijd) = 0;
+              id(wtw_handmatig_actief).publish_state(false);
+          - script.stop: wtw_rh_regeling
 
-          static float vorige_actuele_rh = -1.0;
-          float hys = 0.0;
-          if (vorige_actuele_rh >= 0.0) {
-            if (actueel > vorige_actuele_rh) hys = 0.0;
-            if (actueel < vorige_actuele_rh) hys = -2.0;
-          }
-          vorige_actuele_rh = actueel;
+    - if:
+        condition:
+          # Modus 1: Douche heeft de allerhoogste prioriteit (gebruikt de binary_sensor status)
+          lambda: return id(wtw_douche_actief).state;
+        then:
+          - script.execute: wtw_modus_douche
+          - script.stop: wtw_modus_handmatig
+          - script.stop: wtw_modus_normaal
 
-          if (id(ducobox_rh_actual).has_state() && id(ducobox_rh_filtered).has_state() && 
-              (ducobox_rh_actueel - ducobox_rh_gefilterd) >= (3.0 - hys)) {
-            id(wtw_douche_actief).publish_state(true);
-          } else {
-            id(wtw_douche_actief).publish_state(false);
-          }
+        else:
+          - if:
+              condition:
+                # Modus 2: Handmatige bediening heeft prioriteit over normaal automatisch
+                lambda: return id(wtw_handmatig_actief).state;
+              then:
+                - script.execute: wtw_modus_handmatig
+                - script.stop: wtw_modus_douche
+                - script.stop: wtw_modus_normaal
+              else:
+                # Modus 3: Normaal automatisch bedrijf
+                - script.execute: wtw_modus_normaal
+                - script.stop: wtw_modus_douche
+                - script.stop: wtw_modus_handmatig
 
-      # 3. ROUTERING MET RUNNING-CHECKS (Gecorrigeerd voor handmatige modus & verificatietimer)
-      - if:
-          condition:
-            lambda: |-
-              return id(wtw_douche_actief).state;
-          then:
-            - script.execute: wtw_modus_douche
-          else:
-            - if:
-                condition:
-                  lambda: |-
-                    return id(wtw_handmatig_actief).state;
-                then:
-                  # CRUCIALE FIX: Start de handmatige modus ALLEEN als deze nog NIET draait!
-                  # Dit voorkomt dat de sensor-updates de 30-minutentimer resetten.
-                  - if:
-                      condition:
-                        lambda: |-
-                          return !id(wtw_modus_handmatig).is_running();
-                      then:
-                        - script.execute: wtw_modus_handmatig
-                else:
-                  - if:
-                      condition:
-                        lambda: |-
-                          return !id(wtw_modus_normaal).is_running();
-                      then:
-                        - script.execute: wtw_modus_normaal
-                  
-                  # EXTRA VEILIGHEIDS-CHECK VOOR DE VERIFICATIETIMER:
-                  # Als we in de normale modus zitten, maar het doel is (weer) gelijk aan het setpoint,
-                  # mag de 5-minuten countdown niet onnodig blijven openstaan in de UI.
-                  - lambda: |-
-                      int current_setpoint = (int)id(rh_setpoint).state;
-                      int berekend_doel = (int)id(rh_berekend_doel).state;
-                      if (berekend_doel == current_setpoint) {
-                        id(start_verificatie_tijd) = 0;
-                      }
