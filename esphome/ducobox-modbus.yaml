@@ -778,6 +778,7 @@ script:
   # ==========================================
   # HOOFDREGELING: COORDINATOR SCRIPT (Routeert de modi)
   # ==========================================
+
   - id: wtw_rh_regeling
     mode: restart
     then:
@@ -814,7 +815,12 @@ script:
                   # Modus 2: Handmatige bediening heeft prioriteit over normaal automatisch
                   lambda: return id(wtw_handmatig_actief).state;
                 then:
-                  - script.execute: wtw_modus_handmatig
+                  # --- FIX: Start het handmatige script ENKEL als het niet al draait ---
+                  - if:
+                      condition:
+                        lambda: return !id(wtw_modus_handmatig).is_running();
+                      then:
+                        - script.execute: wtw_modus_handmatig
                   - script.stop: wtw_modus_douche
                   - script.stop: wtw_modus_normaal
                 else:
@@ -822,8 +828,6 @@ script:
                   - script.execute: wtw_modus_normaal
                   - script.stop: wtw_modus_douche
                   - script.stop: wtw_modus_handmatig
-
-
 
   
   # ==========================================
