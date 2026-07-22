@@ -692,7 +692,7 @@ sensor:
     name: "Handmatig modus (resterende tijd)"
     id: handmatig_resterende_tijd
     unit_of_measurement: "min"
-    icon: "mdi:timer-outline"
+    icon: "mdi:timer-sand"
     accuracy_decimals: 1
     update_interval: 10s
     lambda: |-
@@ -720,7 +720,7 @@ sensor:
     name: "Cooldown modus (resterende tijd)"
     id: cooldown_resterende_tijd
     unit_of_measurement: "min"
-    icon: "mdi:timer-outline"
+    icon: "mdi:timer-sand"
     accuracy_decimals: 1
     update_interval: 10s
     lambda: |-
