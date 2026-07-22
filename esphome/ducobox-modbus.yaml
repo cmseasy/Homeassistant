@@ -22,7 +22,7 @@ esphome:
           // Reset ook direct de berekende doel-sensor naar de veilige basiswaarde
           id(rh_berekend_doel).publish_state(55.0);
           
-          ESP_LOGI("main", "WTW Regeling is gestart in AUTOMATISCH bedrijf.");
+          ESP_LOGI("main", "WTW RH Regeling is gestart in AUTOMATISCHE modus.");
       - globals.set:
           id: wtw_systeem_volledig_online
           value: 'true'
