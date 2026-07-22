@@ -93,29 +93,28 @@
 #       #     {{ states.sensor.frank_energie_prijzen_huidige_elektriciteitsprijs_all_in.attributes }}
 
 
-
 - trigger:
-  - trigger: state
-    entity_id: sensor.average_electricity_price
-  - trigger: homeassistant
-    event: start
+    - trigger: state
+      entity_id: sensor.average_electricity_price
+    - trigger: homeassistant
+      event: start
   condition:
     - condition: template
       value_template: >
         {{ has_value('sensor.average_electricity_price') and 
-          trigger.to_state.state != trigger.from_state.state }}
+          (trigger.platform == 'homeassistant' or 
+          (trigger.to_state is not none and trigger.from_state is not none and 
+          trigger.to_state.state != trigger.from_state.state)) }}
   sensor:
-    # - name: "Gekopieerde Elektriciteitsprijs"
-    #   unique_id: gekopieerde_elektriciteitsprijs_01
     - name: "Huidige elektriciteitsprijs (all in)"
       unique_id: huidige_elektriciteitsprijs_all_in
       state: >
         {{ states('sensor.average_electricity_price') }}
-      icon: "{{ state_attr('sensor.average_electricity_price', 'icon') }}"
+      icon: "{{ state_attr('sensor.average_electricity_price', 'icon') or 'mdi:currency-eur' }}"
       attributes:
-        unit_of_measurement: "{{ state_attr('sensor.average_electricity_price', 'unit_of_measurement') }}"
-        device_class: "{{ state_attr('sensor.average_electricity_price', 'device_class') }}"
-        state_class: "{{ state_attr('sensor.average_electricity_price', 'state_class') }}"
+        unit_of_measurement: "€/kWh"
+        device_class: "monetary"
+        state_class: "measurement"
         prices_today: "{{ state_attr('sensor.average_electricity_price', 'prices_today') }}"
         prices_tomorrow: "{{ state_attr('sensor.average_electricity_price', 'prices_tomorrow') }}"
         prices: "{{ state_attr('sensor.average_electricity_price', 'prices') }}"

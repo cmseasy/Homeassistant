@@ -4353,34 +4353,13 @@
   alias: Ramen en deuren open of dicht
   description: ''
   triggers:
-  - trigger: numeric_state
-    entity_id:
-    - sensor.buitentemperatuur_gemiddeld
-    for:
-      hours: 0
-      minutes: 10
-      seconds: 0
-    above: sensor.kamertemperatuur_gemiddeld
-    id: dicht
-    value_template: '{{ float(state.state) - 0.2 }}'
-  - trigger: numeric_state
-    entity_id:
-    - sensor.buitentemperatuur_gemiddeld
-    for:
-      hours: 0
-      minutes: 10
-      seconds: 0
-    below: sensor.kamertemperatuur_gemiddeld
-    id: open
-    value_template: '{{ float(state.state) + 0.2 }}'
+  - trigger: state
+    entity_id: sensor.buitentemperatuur_gemiddeld
+    id: check_temp
+  - trigger: state
+    entity_id: sensor.kamertemperatuur_gemiddeld
+    id: check_temp
   conditions:
-  - condition: zone.occupancy_is_detected
-    options:
-      for:
-        hours: 0
-        minutes: 5
-        seconds: 0
-      zone: zone.home
   - condition: numeric_state
     entity_id: sensor.kamertemperatuur_gemiddeld
     above: 22
@@ -4390,13 +4369,8 @@
   - condition: zone.in_zone
     target:
       entity_id:
-      - person.martin
-      - person.marjan
       - device_tracker.gsm_martin
       - device_tracker.gsm_marjan
-      device_id:
-      - 5a7bbda74739d9c043d10f9403b91288
-      - 3e92efe2539e0b4e55b7e679f3cf4cfd
     options:
       for:
         hours: 0
@@ -4404,12 +4378,17 @@
         seconds: 10
       zone: zone.home
       behavior: any
+  - condition: template
+    value_template: '{{ has_value(''sensor.system_monitor_last_boot'') and (now()
+      - states(''sensor.system_monitor_last_boot'')|as_datetime).total_seconds() >
+      60 }}'
   actions:
   - choose:
     - conditions:
-      - condition: trigger
-        id:
-        - open
+      - condition: template
+        value_template: '{{ has_value(''sensor.buitentemperatuur_gemiddeld'') and
+          has_value(''sensor.kamertemperatuur_gemiddeld'') and (states(''sensor.buitentemperatuur_gemiddeld'')|float(0)
+          + 0.2) < (states(''sensor.kamertemperatuur_gemiddeld'')|float(0)) }}'
       sequence:
       - action: notify.mobile_app_gsm_martin
         metadata: {}
@@ -4424,10 +4403,12 @@
           title: 'Ventilatieadvies:'
           message: Open de pui, ramen en deuren. Binnen is het warmer dan buiten,
             ventileren helpt de kamertemperatuur te verlagen.
+        enabled: false
     - conditions:
-      - condition: trigger
-        id:
-        - dicht
+      - condition: template
+        value_template: '{{ has_value(''sensor.buitentemperatuur_gemiddeld'') and
+          has_value(''sensor.kamertemperatuur_gemiddeld'') and (states(''sensor.buitentemperatuur_gemiddeld'')|float(0)
+          - 0.2) > (states(''sensor.kamertemperatuur_gemiddeld'')|float(0)) }}'
       sequence:
       - action: notify.mobile_app_gsm_martin
         metadata: {}
@@ -4442,6 +4423,7 @@
           title: 'Ventilatieadvies:'
           message: Sluit de pui, ramen en deuren. Buiten is het warmer dan binnen,
             ventileren verhoogt de kamertemperatuur.
+        enabled: false
   mode: single
 - id: '1782509874995'
   alias: 'WP koelen: dauwpuntregeling (outlet)'

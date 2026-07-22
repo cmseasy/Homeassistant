@@ -51,7 +51,9 @@ recorder:
     entity_globs:
       - sensor.time*
       - sensor.date*
-    # entities:
+    entities:
+      - sensor.huidige_elektriciteitsprijs_all_in
+      - sensor.average_electricity_price
     #   - sensor.date_and_time
     #   - sensor.date_time
     #   - sensor.date_time_iso
@@ -64,6 +66,7 @@ recorder:
       - automation
       - update
       - media_player
+
 
       
 
