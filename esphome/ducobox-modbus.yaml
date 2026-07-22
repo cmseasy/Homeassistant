@@ -526,6 +526,11 @@ sensor:
     icon: "mdi:water-percent"
     update_interval: 60s
     disabled_by_default: true
+    filters:
+      - median:
+          window_size: 5
+          send_every: 5
+          send_first_at: 1
     lambda: |-
       // 1. Controleer of 'rh_smart_x_ha' bestaat en een geldige waarde heeft
       // Als HA 'unavailable' of 'unknown' stuurt, is .has_state() automatisch false.
