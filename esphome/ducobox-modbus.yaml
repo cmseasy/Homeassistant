@@ -407,6 +407,7 @@ sensor:
     value_type: S_WORD
     unit_of_measurement: "%"
 
+
   
 # Node 2: Zoneklep wonen
   - platform: modbus_controller
