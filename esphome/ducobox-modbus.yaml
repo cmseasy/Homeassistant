@@ -540,6 +540,94 @@ binary_sensor:
     
 sensor:
 
+
+
+  # ==========================================
+  # INTERNE SENSOREN VOOR DE REGISTER SCANNER
+  # ==========================================
+  - platform: modbus_controller
+    modbus_controller_id: duco_box
+    register_type: read
+    value_type: U_WORD
+    address: 20
+    id: duco_reg_20
+    internal: true
+
+  - platform: modbus_controller
+    modbus_controller_id: duco_box
+    register_type: read
+    value_type: U_WORD
+    address: 21
+    id: duco_reg_21
+    internal: true
+
+  - platform: modbus_controller
+    modbus_controller_id: duco_box
+    register_type: read
+    value_type: U_WORD
+    address: 22
+    id: duco_reg_22
+    internal: true
+
+  - platform: modbus_controller
+    modbus_controller_id: duco_box
+    register_type: read
+    value_type: U_WORD
+    address: 23
+    id: duco_reg_23
+    internal: true
+
+  - platform: modbus_controller
+    modbus_controller_id: duco_box
+    register_type: read
+    value_type: U_WORD
+    address: 24
+    id: duco_reg_24
+    internal: true
+
+  - platform: modbus_controller
+    modbus_controller_id: duco_box
+    register_type: read
+    value_type: U_WORD
+    address: 25
+    id: duco_reg_25
+    internal: true
+
+  - platform: modbus_controller
+    modbus_controller_id: duco_box
+    register_type: read
+    value_type: U_WORD
+    address: 26
+    id: duco_reg_26
+    internal: true
+
+  - platform: modbus_controller
+    modbus_controller_id: duco_box
+    register_type: read
+    value_type: U_WORD
+    address: 27
+    id: duco_reg_27
+    internal: true
+
+  - platform: modbus_controller
+    modbus_controller_id: duco_box
+    register_type: read
+    value_type: U_WORD
+    address: 28
+    id: duco_reg_28
+    internal: true
+
+  - platform: modbus_controller
+    modbus_controller_id: duco_box
+    register_type: read
+    value_type: U_WORD
+    address: 29
+    id: duco_reg_29
+    internal: true
+
+
+
+  
   # # ==========================================
   # # DUCO ZONE MAXIMAAL DEBIET SETTINGS
   # # ==========================================
@@ -1122,4 +1210,31 @@ script:
 
 
 
+
+  - id: controleer_modbus_registers
+    mode: single
+    then:
+      - lambda: |-
+          // Maak een array van pointers naar de 10 gemaakte sensoren
+          esphome::modbus_controller::ModbusSensor* registers[10] = {
+            id(duco_reg_20), id(duco_reg_21), id(duco_reg_22), id(duco_reg_23), id(duco_reg_24),
+            id(duco_reg_25), id(duco_reg_26), id(duco_reg_27), id(duco_reg_28), id(duco_reg_29)
+          };
+
+          ESP_LOGI("modbus_scan", "--- START CONTROLE VAN 10 REGISTERS ---");
+
+          for (int i = 0; i < 10; i++) {
+            int actueel_adres = 20 + i;
+
+            // 1. Controleer op aanwezigheid (is er een geldige Modbus-poll geweest?)
+            if (!registers[i]->has_state() || std::isnan(registers[i]->state)) {
+              ESP_LOGW("modbus_scan", "Register %d: NIET aanwezig (geen respons of foutmelding).", actueel_adres);
+            } else {
+              // 2. Register is aanwezig, lees de waarde uit
+              int waarde = (int)registers[i]->state;
+              ESP_LOGI("modbus_scan", "Register %d: AANWEZIG met waarde: %d", actueel_adres, waarde);
+            }
+          }
+          
+          ESP_LOGI("modbus_scan", "--- EINDE CONTROLE ---");
 
