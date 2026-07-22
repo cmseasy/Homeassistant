@@ -11,7 +11,6 @@ esphome:
           id: online_template
           state: "gestart"
   on_shutdown:
-#    priority: 200
     then:
       - text_sensor.template.publish:
           id: online_template
@@ -19,40 +18,32 @@ esphome:
 
 esp32:
   board: esp32dev
-  cpu_frequency: 240MHZ
   framework:
     type: esp-idf
-    advanced:
-      minimum_chip_revision: "3.1"
-      sram1_as_iram: true
 
-# Enable logging
 logger:
-  level: info
+  level: INFO
   baud_rate: 0
 
-# Enable Home Assistant API
 api:
   port: 6053
   encryption:
     key: !secret adlar_modbus_encryption_key
-  
+  reboot_timeout: 0s  
 
-# Allow Over-The-Air updates
 ota:
-- platform: esphome
-  password: !secret adlar_modbus_ota_pass
+  - platform: esphome
+    password: !secret adlar_modbus_ota_pass
 
 wifi:
   ssid: !secret wifi_ssid
   password: !secret wifi_password
-  min_auth_mode: WPA2
   manual_ip:
     static_ip: 192.168.1.40
     gateway: 192.168.1.1
     dns1: 192.168.1.5 
     subnet: 255.255.255.0
-  use_address: 192.168.1.40   # Dit dwingt het ESPHome dashboard om ALTIJD naar dit IP te kijken bij OTA updates
+  use_address: 192.168.1.40
   fast_connect: true
   power_save_mode: NONE
  
@@ -60,24 +51,17 @@ wifi:
     ssid: !secret adlar_modbus_wifi_ap_ssid
     password: !secret adlar_modbus_wifi_ap_password
 
- 
 time:
   - platform: homeassistant
     id: homeassistant_time
 
 captive_portal:
 
-mdns:
-  disabled: false
-
 web_server:
   port: 80
   version: 3
-  local: True
-  include_internal: True
-  # auth:
-  #   username: !secret web_server_username
-  #   password: !secret web_server_password
+  local: true
+  include_internal: true
   sorting_groups:
     - id: sorting_group_configuration_setup
       name: "Configuration setup"
@@ -86,7 +70,7 @@ web_server:
       name: "Number settings"
       sorting_weight: 20
 
-# Adlar modbus
+# Adlar modbus UART
 uart:
   - id: uart_modbus
     tx_pin: GPIO17
@@ -95,21 +79,22 @@ uart:
     data_bits: 8
     stop_bits: 1
     parity: NONE
-#    rx_full_threshold: 1 # Helpt om de buffer direct te legen en timeouts 
+    rx_buffer_size: 512  # Vergroot de buffer zodat er geen Modbus-pakketjes omvallen
 
+# Geoptimaliseerde Modbus-hub met stabiele timings voor Adlar
 modbus:
   - uart_id: uart_modbus
     id: modbus_client
-#    send_wait_time: 1000ms # was 500 # default nu 2000ms
-#    turnaround_time: 200ms # default 100ms # default nu 600ms
+    send_wait_time: 250ms    # Tijd die ESP wacht tussen opeenvolgende lees/schrijf-commando's
+    turnaround_time: 150ms   # Minimale rusttijd op de bus na een pakket (Adlar hersteltijd)
 
-
+# Controller instellingen strakgetrokken
 modbus_controller:
   - id: modbus_adlar
     modbus_id: modbus_client
     address: 0x01
-    update_interval: 10s
-    command_throttle: 500ms # 300 geeft een paar time issues
+    update_interval: 15s     # Verhoogd van 10s naar 15s om de warmtepomp-processor meer ademruimte te geven
+    command_throttle: 600ms  # Verhoogd naar 600ms om de 'time issues' definitief te tackelen
     setup_priority: -100
 
 
