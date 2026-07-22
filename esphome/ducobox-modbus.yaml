@@ -121,7 +121,7 @@ modbus:
   - uart_id: modbus_uart
     id: modbus_client
     send_wait_time: 500ms
-    turnaround_time: 100ms
+    turnaround_time: 200ms
 
 # 3. De Modbus Controller koppelen aan het Duco Slave adres
 modbus_controller:
