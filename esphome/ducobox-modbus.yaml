@@ -183,32 +183,31 @@ switch:
 
 # 2. Setpoint RH
 number:
-  - platform: template
+  - platform: modbus_controller
+    modbus_controller_id: duco_box
     name: "WTW RH setpoint"
     id: rh_setpoint
     icon: "mdi:water-percent"
+    register_type: holding
+    address: 582
+    value_type: S_WORD
     min_value: 0
     max_value: 100
     step: 5
     mode: box
     unit_of_measurement: "%"
-    lambda: |-
-      return id(rh_setpoint_sensor).state;
-    set_action:
-      then:
-        - lambda: |-
-            // Direct eenmalig schrijven naar holding register 582 via een schrijfcommando
-            uint16_t data = (uint16_t)x;
-            esphome::modbus::ModbusCommand cmd;
-            cmd.type = esphome::modbus::ModbusCommand::WRITE_SINGLE_REGISTER;
-            cmd.register_address = 582;
-            cmd.register_count = 1;
-            cmd.payload.push_back(data >> 8);   // High byte
-            cmd.payload.push_back(data & 0xFF); // Low byte
-            
-            auto modbus_hub = id(modbus_client);
-            modbus_hub->send(cmd);
+    disabled_by_default: false
+    force_new_range: true 
+    
+    # FIX: Voorkomt de automatische 0x03 lees-polls die Exception 4 veroorzaken
+    skip_updates: 9999 
 
+    # Correcte ESPHome methode om waarden naar Modbus te schrijven via het component
+    write_lambda: |-
+      ESP_LOGW("main", "Schrijf setpoint %d%% naar Modbus via Function Code 0x06.", (int)x);
+      return x;
+
+    # Jouw complete automatische/handmatige regellogica behouden
     on_value:
       then:
         - lambda: |-
@@ -264,6 +263,8 @@ number:
     web_server:
       sorting_group_id: sorting_group_configuration_setup
       sorting_weight: 5
+
+
 
 
 # number:
