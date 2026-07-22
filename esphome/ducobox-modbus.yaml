@@ -504,6 +504,33 @@ binary_sensor:
 
     
 sensor:
+
+  - platform: modbus_controller
+    modbus_controller_id: duco_box
+    name: "WTW Maximaal Debiet"
+    id: wtw_max_debiet
+    register_type: holding
+    address: 161
+    value_type: U_WORD
+    unit_of_measurement: "m³/h"
+
+  # - platform: modbus_controller
+  #   modbus_controller_id: duco_box
+  #   name: "WTW Maximaal Debiet"
+  #   id: wtw_max_debiet
+  #   register_type: holding
+  #   address: 161
+  #   value_type: U_WORD
+  #   unit_of_measurement: "m³/h"
+
+  # - platform: modbus_controller
+  #   modbus_controller_id: duco_box
+  #   name: "WTW Maximaal Debiet"
+  #   id: wtw_max_debiet
+  #   register_type: holding
+  #   address: 161
+  #   value_type: U_WORD
+  #   unit_of_measurement: "m³/h"
     
 # Node 2: Zoneklep wonen
   - platform: modbus_controller
