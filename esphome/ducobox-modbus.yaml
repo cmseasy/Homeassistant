@@ -774,11 +774,9 @@ sensor:
 # 5. CORE SCRIPTS (Regeling, Timers en Modus-coördinatie)
 # ==============================================================================
 script:
-
   # ==========================================
   # HOOFDREGELING: COORDINATOR SCRIPT (Routeert de modi)
   # ==========================================
-
   - id: wtw_rh_regeling
     mode: restart
     then:
@@ -1000,7 +998,8 @@ script:
                   - lambda: |-
                       int doel = (int)id(rh_berekend_doel).state;
                       id(start_verificatie_tijd) = 0;
-                      ESP_LOGW("wtw_regeling", "Douche modus afgelopen: RH setpoint naar (%d%%) zonder 5 minutes verificatie.", doel);
+                      ESP_LOGW("wtw_regeling", "RH setpoint naar (%d%%) zonder 5 minutes verificatie.", doel);
+                      //ESP_LOGW("wtw_regeling", "Douche modus afgelopen: RH setpoint naar (%d%%) zonder 5 minutes verificatie.", doel);
                   - number.set:
                       id: rh_setpoint
                       value: !lambda |-
