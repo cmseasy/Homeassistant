@@ -27,6 +27,7 @@ esphome:
           id: wtw_systeem_volledig_online
           value: 'true'
 
+
 esp32:
   board: esp32dev
   framework:
