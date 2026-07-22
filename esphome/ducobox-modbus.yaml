@@ -766,7 +766,7 @@ sensor:
 # ==============================================================================
 script:
   # ==========================================
-  # MODUS 1: DOUCHE BEDRIJF
+  # MODUS 1: DOUCHE BEDRIJF (GEOPTIMALISEERD)
   # ==========================================
   - id: wtw_modus_douche
     mode: single
@@ -775,8 +775,12 @@ script:
           int doel = 55;
           id(rh_berekend_doel).publish_state(doel);
 
-          // Vaste statuslogboekregistratie zonder herhalingsblokkade
-          ESP_LOGW("wtw_regeling", "STATUS: Douche modus actief. Doel geforceerd naar 55%%.");
+          // Correcte static bool die ENKEL logt als de status écht verandert
+          static bool status_was_actief = false;
+          if (!status_was_actief) {
+            ESP_LOGW("wtw_regeling", "STATUS: Douche modus actief. Doel geforceerd naar 55%%.");
+            status_was_actief = true;
+          }
           
           // HARD RESET: Deactiveer en wis de cooldown direct bij douche-activiteit
           id(wtw_cooldown_actief) = false;
@@ -907,13 +911,13 @@ script:
             - if:
                 condition:
                   lambda: |-
-                    // Als de douche net uit is, neem direct het berekende doel over (ongeacht of dit 55% of 60% is)
+                    // FIX: Als de douche net uit is, neem direct het berekende doel over (ongeacht of dit 55% of 60% is)
                     return (id(wtw_douche_actief).state == false);
                 then:
                   - lambda: |-
                       int doel = (int)id(rh_berekend_doel).state;
                       id(start_verificatie_tijd) = 0;
-                      ESP_LOGW("wtw_regeling", "Douche afgelopen: Schrijf direct berekend doel (%d%%) zonder 5 minuten verificatie.", doel);
+                      ESP_LOGW("wtw_regeling", "Douche afgelopen: Schrijf direct berekend doel (%d%%) zonder 5 minutes verificatie.", doel);
                   - number.set:
                       id: rh_setpoint
                       value: !lambda |-
@@ -949,6 +953,7 @@ script:
           else:
             - lambda: |-
                 id(start_verificatie_tijd) = 0;
+
 
 
 
