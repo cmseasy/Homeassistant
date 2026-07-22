@@ -195,15 +195,6 @@ button:
       sorting_weight: 002
 
 
-  - platform: template
-    name: "Controleer Duco Registers"
-    id: knop_controleer_registers
-    icon: "mdi:text-search"
-    on_press:
-      - script.execute: controleer_modbus_registers
-    web_server:
-      sorting_group_id: sorting_group_configuration_setup
-      sorting_weight: 10
 
       
 
@@ -374,41 +365,41 @@ number:
       sorting_group_id: sorting_group_configuration_setup
       sorting_weight: 5
 
-  # ==============================================================================
- # ZONE_1 (Node 1) - WTW Auto Min
-  # ==============================================================================
-  - platform: modbus_controller
-    modbus_controller_id: duco_box
-    name: "WTW Auto Min"
-  #  id: zone_2_max_flow
-    icon: "mdi:gauge"
-    register_type: holding
-    address: 15 #260 # (Node 2 * 100) + 60. Mocht dit niet reageren, probeer dan adres 80
-    value_type: S_WORD
-    min_value: 30
-    max_value: 100
-    step: 5
-    unit_of_measurement: "%"
-    mode: box
-#    force_new_range: true
+#   # ==============================================================================
+#  # ZONE_1 (Node 1) - WTW Auto Min
+#   # ==============================================================================
+#   - platform: modbus_controller
+#     modbus_controller_id: duco_box
+#     name: "WTW Auto Min"
+#   #  id: zone_2_max_flow
+#     icon: "mdi:gauge"
+#     register_type: holding
+#     address: 15 #260 # (Node 2 * 100) + 60. Mocht dit niet reageren, probeer dan adres 80
+#     value_type: S_WORD
+#     min_value: 30
+#     max_value: 100
+#     step: 5
+#     unit_of_measurement: "%"
+#     mode: box
+# #    force_new_range: true
 
-  # ==============================================================================
-  # ZONE_1 (Node 1) - WTW Auto Max
-  # ==============================================================================
-  - platform: modbus_controller
-    modbus_controller_id: duco_box
-    name: "WTW Auto Max"
-#    id: zone_3_max_flow
-    icon: "mdi:gauge"
-    register_type: holding
-    address: 16 #360 # (Node 3 * 100) + 60. Mocht dit niet reageren, probeer dan adres 90
-    value_type: S_WORD
-    min_value: 30
-    max_value: 100
-    step: 5
-    unit_of_measurement: "%"
-    mode: box
-#    force_new_range: true
+#   # ==============================================================================
+#   # ZONE_1 (Node 1) - WTW Auto Max
+#   # ==============================================================================
+#   - platform: modbus_controller
+#     modbus_controller_id: duco_box
+#     name: "WTW Auto Max"
+# #    id: zone_3_max_flow
+#     icon: "mdi:gauge"
+#     register_type: holding
+#     address: 16 #360 # (Node 3 * 100) + 60. Mocht dit niet reageren, probeer dan adres 90
+#     value_type: S_WORD
+#     min_value: 30
+#     max_value: 100
+#     step: 5
+#     unit_of_measurement: "%"
+#     mode: box
+# #    force_new_range: true
 
 #   # ==============================================================================
 #  # ZONE_2 (Node 2) - WTW Auto Min
@@ -551,91 +542,6 @@ binary_sensor:
 
     
 sensor:
-
-
-
-  # ==========================================
-  # INTERNE SENSOREN VOOR DE REGISTER SCANNER
-  # ==========================================
-  - platform: modbus_controller
-    modbus_controller_id: duco_box
-    register_type: read
-    value_type: U_WORD
-    address: 200
-    id: duco_reg_20
-    internal: true
-
-  - platform: modbus_controller
-    modbus_controller_id: duco_box
-    register_type: read
-    value_type: U_WORD
-    address: 201
-    id: duco_reg_21
-    internal: true
-
-  - platform: modbus_controller
-    modbus_controller_id: duco_box
-    register_type: read
-    value_type: U_WORD
-    address: 202
-    id: duco_reg_22
-    internal: true
-
-  - platform: modbus_controller
-    modbus_controller_id: duco_box
-    register_type: read
-    value_type: U_WORD
-    address: 203
-    id: duco_reg_23
-    internal: true
-
-  - platform: modbus_controller
-    modbus_controller_id: duco_box
-    register_type: read
-    value_type: U_WORD
-    address: 204
-    id: duco_reg_24
-    internal: true
-
-  - platform: modbus_controller
-    modbus_controller_id: duco_box
-    register_type: read
-    value_type: U_WORD
-    address: 205
-    id: duco_reg_25
-    internal: true
-
-  - platform: modbus_controller
-    modbus_controller_id: duco_box
-    register_type: read
-    value_type: U_WORD
-    address: 206
-    id: duco_reg_26
-    internal: true
-
-  - platform: modbus_controller
-    modbus_controller_id: duco_box
-    register_type: read
-    value_type: U_WORD
-    address: 207
-    id: duco_reg_27
-    internal: true
-
-  - platform: modbus_controller
-    modbus_controller_id: duco_box
-    register_type: read
-    value_type: U_WORD
-    address: 208
-    id: duco_reg_28
-    internal: true
-
-  - platform: modbus_controller
-    modbus_controller_id: duco_box
-    register_type: read
-    value_type: U_WORD
-    address: 209
-    id: duco_reg_29
-    internal: true
 
 
 
@@ -1222,33 +1128,3 @@ script:
 
 
 
-
-  # ==========================================
-  # HANDMATIGE REGISTER CONTROLE (10 REGISTERS)
-  # ==========================================
-  - id: controleer_modbus_registers
-    mode: single
-    then:
-      - lambda: |-
-          // Array van pointers naar de 10 gemaakte interne sensoren
-          std::vector<sensor::Sensor*> regs = {
-            id(duco_reg_20), id(duco_reg_21), id(duco_reg_22), id(duco_reg_23), id(duco_reg_24),
-            id(duco_reg_25), id(duco_reg_26), id(duco_reg_27), id(duco_reg_28), id(duco_reg_29)
-          };
-
-          ESP_LOGW("modbus_scan", "=== START COÖRDINATIE SCAN (REGISTERS 20-29) ===");
-
-          for (size_t i = 0; i < regs.size(); i++) {
-            int actueel_adres = 20 + i;
-
-            // 1. Controleer of de sensor überhaupt een geldige status heeft ontvangen
-            if (!regs[i]->has_state() || std::isnan(regs[i]->state)) {
-              ESP_LOGE("modbus_scan", "Register %d: [FOUT/AFWEZIG] Geen reactie of Exception 4 van Duco.", actueel_adres);
-            } else {
-              // 2. Register is succesvol uitgelezen, toon de waarde
-              int waarde = (int)regs[i]->state;
-              ESP_LOGI("modbus_scan", "Register %d: [OK] Waarde ontvangen: %d", actueel_adres, waarde);
-            }
-          }
-          
-          ESP_LOGW("modbus_scan", "=== SCAN AFGEROND ===");
