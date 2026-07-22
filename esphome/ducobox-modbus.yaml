@@ -119,8 +119,8 @@ uart:
 modbus:
   - uart_id: modbus_uart
     id: modbus_client
-#    send_wait_time: 500ms
-#    turnaround_time: 300ms # default 100ms
+    send_wait_time: 500ms
+    turnaround_time: 100ms
 
 # 3. De Modbus Controller koppelen aan het Duco Slave adres
 modbus_controller:
@@ -913,43 +913,55 @@ script:
               int doel = (int)id(rh_berekend_doel).state;
               return (doel != current_setpoint);
           then:
-            - lambda: |-
-                // Start de timer alleen als deze nog niet liep (voorkomt resetten tijdstempel)
-                if (id(start_verificatie_tijd) == 0) {
-                  id(start_verificatie_tijd) = millis();
-                  ESP_LOGI("wtw_regeling", "Woonkamer RH eist nieuw setpoint (%d%%, huidige stand: %d%%). Start 5 minuten verificatie...", (int)id(rh_berekend_doel).state, (int)id(rh_setpoint).state);
-                }
-            
-            - delay: 300s
-            
-            # Na 5 minuten controleren we de status opnieuw VOORDAT we de timer wissen
             - if:
                 condition:
                   lambda: |-
-                    int current_setpoint = (int)id(rh_setpoint).state;
-                    int doel = (int)id(rh_berekend_doel).state;
-                    return (doel != current_setpoint);
+                    // Als de douche net uit is en we willen terug naar de basiswaarde van 55%
+                    return (id(wtw_douche_actief).state == false && (int)id(rh_berekend_doel).state == 55);
                 then:
                   - lambda: |-
-                      // Reset de timer-registratie direct vóór het schrijven
                       id(start_verificatie_tijd) = 0;
-                      ESP_LOGW("wtw_regeling", "Verificatie succesvol na 5 minuten. Schrijf nu %d%% naar Modbus.", (int)id(rh_berekend_doel).state);
-                  
-                  # Schrijf de waarde daadwerkelijk naar de Modbus register-slider
+                      ESP_LOGW("wtw_regeling", "Douche afgelopen: Direct naar 55%% zonder 5 minuten verificatie.");
                   - number.set:
                       id: rh_setpoint
-                      value: !lambda |-
-                        return id(rh_berekend_doel).state;
+                      value: 55
                 else:
+                  # --- Normale verloop met 5 minuten verificatie ---
                   - lambda: |-
-                      // Als de situatie in de 5 minuten al is opgelost, wis de timer geruisloos
-                      id(start_verificatie_tijd) = 0;
+                      // Start de timer alleen als deze nog niet liep (voorkomt resetten tijdstempel)
+                      if (id(start_verificatie_tijd) == 0) {
+                        id(start_verificatie_tijd) = millis();
+                        ESP_LOGI("wtw_regeling", "Woonkamer RH eist nieuw setpoint (%d%%, huidige stand: %d%%). Start 5 minuten verificatie...", (int)id(rh_berekend_doel).state, (int)id(rh_setpoint).state);
+                      }
+                  
+                  - delay: 300s
+                  
+                  # Na 5 minutes controleren we de status opnieuw VOORDAT we de timer wissen
+                  - if:
+                      condition:
+                        lambda: |-
+                          int current_setpoint = (int)id(rh_setpoint).state;
+                          int doel = (int)id(rh_berekend_doel).state;
+                          return (doel != current_setpoint);
+                      then:
+                        - lambda: |-
+                            // Reset de timer-registratie direct vóór het schrijven
+                            id(start_verificatie_tijd) = 0;
+                            ESP_LOGW("wtw_regeling", "Verificatie succesvol na 5 minuten. Schrijf nu %d%% naar Modbus.", (int)id(rh_berekend_doel).state);
+                        
+                        # Schrijf de waarde daadwerkelijk naar de Modbus register-slider
+                        - number.set:
+                            id: rh_setpoint
+                            value: !lambda |-
+                              return id(rh_berekend_doel).state;
+                      else:
+                        - lambda: |-
+                            // Als de situatie in de 5 minuten al is opgelost, wis de timer geruisloos
+                            id(start_verificatie_tijd) = 0;
           else:
             - lambda: |-
                 // Doel is al gelijk aan setpoint, zorg dat de timer op 0 staat
                 id(start_verificatie_tijd) = 0;
-
-
 
 
   # ==========================================
