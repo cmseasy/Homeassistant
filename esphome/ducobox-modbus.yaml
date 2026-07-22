@@ -871,31 +871,45 @@ script:
   # ==========================================
   # MODUS 2: HANDMATIGE OVERRULE MODUS
   # ==========================================
-  
+  # ==========================================
+  # MODUS 2: HANDMATIGE OVERRULE MODUS (Gecorrigeerd)
+  # ==========================================
   - id: wtw_modus_handmatig
-    mode: single
+    mode: single # Voorkomt herstarts en timer-resets
     then:
       - lambda: |-
-          // We lezen de handmatige invoer en spiegelen deze direct aan het doel.
           int handmatig_doel = (int)id(rh_setpoint).state;
           id(rh_berekend_doel).publish_state(handmatig_doel);
-
-          // Sla de starttijd op in de bestaande global voor onze weergavesensor
           id(last_manual_setpoint_change) = millis();
-          
-          // CRUCIALE RESET: Zet de 5-minuten verificatietimer direct op 0
-          id(start_verificatie_tijd) = 0;
-
-          // We resetten de normale modus zodat de 5-minutentimer stopt
-          id(wtw_modus_normaal).stop();
-          ESP_LOGI("wtw_regeling", "Handmatige modus actief voor 30 minuten op %d%%.", handmatig_doel);
-
+          // Logt slechts één keer
+          ESP_LOGI("wtw_regeling", "Handmatige modus actief: %d%%.", handmatig_doel);
       - delay: 30min
-      - lambda: |-
-          ESP_LOGI("wtw_regeling", "Handmatige modus tijd verstreken. Terug naar automatisch...");
-          id(wtw_handmatig_actief).publish_state(false);
-          id(last_manual_setpoint_change) = 0; // Reset de timer global
       - script.execute: wtw_rh_regeling
+
+  # - id: wtw_modus_handmatig
+  #   mode: single
+  #   then:
+  #     - lambda: |-
+  #         // We lezen de handmatige invoer en spiegelen deze direct aan het doel.
+  #         int handmatig_doel = (int)id(rh_setpoint).state;
+  #         id(rh_berekend_doel).publish_state(handmatig_doel);
+
+  #         // Sla de starttijd op in de bestaande global voor onze weergavesensor
+  #         id(last_manual_setpoint_change) = millis();
+          
+  #         // CRUCIALE RESET: Zet de 5-minuten verificatietimer direct op 0
+  #         id(start_verificatie_tijd) = 0;
+
+  #         // We resetten de normale modus zodat de 5-minutentimer stopt
+  #         id(wtw_modus_normaal).stop();
+  #         ESP_LOGI("wtw_regeling", "Handmatige modus actief voor 30 minuten op %d%%.", handmatig_doel);
+
+  #     - delay: 30min
+  #     - lambda: |-
+  #         ESP_LOGI("wtw_regeling", "Handmatige modus tijd verstreken. Terug naar automatisch...");
+  #         id(wtw_handmatig_actief).publish_state(false);
+  #         id(last_manual_setpoint_change) = 0; // Reset de timer global
+  #     - script.execute: wtw_rh_regeling
 
   # ==========================================
   # MODUS 3: NORMAAL AUTOMATISCH BEDRIJF
