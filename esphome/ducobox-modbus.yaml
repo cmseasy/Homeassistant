@@ -561,7 +561,7 @@ sensor:
     modbus_controller_id: duco_box
     register_type: read
     value_type: U_WORD
-    address: 20
+    address: 200
     id: duco_reg_20
     internal: true
 
@@ -569,7 +569,7 @@ sensor:
     modbus_controller_id: duco_box
     register_type: read
     value_type: U_WORD
-    address: 21
+    address: 201
     id: duco_reg_21
     internal: true
 
@@ -577,7 +577,7 @@ sensor:
     modbus_controller_id: duco_box
     register_type: read
     value_type: U_WORD
-    address: 22
+    address: 202
     id: duco_reg_22
     internal: true
 
@@ -585,7 +585,7 @@ sensor:
     modbus_controller_id: duco_box
     register_type: read
     value_type: U_WORD
-    address: 23
+    address: 203
     id: duco_reg_23
     internal: true
 
@@ -593,7 +593,7 @@ sensor:
     modbus_controller_id: duco_box
     register_type: read
     value_type: U_WORD
-    address: 24
+    address: 204
     id: duco_reg_24
     internal: true
 
@@ -601,7 +601,7 @@ sensor:
     modbus_controller_id: duco_box
     register_type: read
     value_type: U_WORD
-    address: 25
+    address: 205
     id: duco_reg_25
     internal: true
 
@@ -609,7 +609,7 @@ sensor:
     modbus_controller_id: duco_box
     register_type: read
     value_type: U_WORD
-    address: 26
+    address: 206
     id: duco_reg_26
     internal: true
 
@@ -617,7 +617,7 @@ sensor:
     modbus_controller_id: duco_box
     register_type: read
     value_type: U_WORD
-    address: 27
+    address: 207
     id: duco_reg_27
     internal: true
 
@@ -625,7 +625,7 @@ sensor:
     modbus_controller_id: duco_box
     register_type: read
     value_type: U_WORD
-    address: 28
+    address: 208
     id: duco_reg_28
     internal: true
 
@@ -633,7 +633,7 @@ sensor:
     modbus_controller_id: duco_box
     register_type: read
     value_type: U_WORD
-    address: 29
+    address: 209
     id: duco_reg_29
     internal: true
 
