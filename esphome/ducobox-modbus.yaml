@@ -785,7 +785,7 @@ script:
           // Correcte static bool die ENKEL logt als de status écht verandert
           static bool status_was_actief = false;
           if (!status_was_actief) {
-            ESP_LOGW("wtw_regeling", "STATUS: Douche modus actief. Doel geforceerd naar 55%%.");
+            ESP_LOGW("wtw_regeling", "Douche modus wordt gestart. RH setpoint wordt op 55%% gezet.");
             status_was_actief = true;
           }
           
@@ -806,11 +806,11 @@ script:
           condition:
             lambda: return ((int)id(rh_setpoint).state != 55);
           then:
-            - lambda: ESP_LOGW("wtw_regeling", "Modbus Douche actief. Schrijf 55%%.");
             - number.set:
                 id: rh_setpoint
                 value: 55
-
+            - lambda: ESP_LOGW("wtw_regeling", "Douche modus actief. RH setpoint op 55%% gezet.");
+                
   # ==========================================
   # MODUS 2: HANDMATIGE OVERRULE MODUS
   # ==========================================
@@ -924,7 +924,7 @@ script:
                   - lambda: |-
                       int doel = (int)id(rh_berekend_doel).state;
                       id(start_verificatie_tijd) = 0;
-                      ESP_LOGW("wtw_regeling", "Douche afgelopen: Schrijf direct berekend doel (%d%%) zonder 5 minutes verificatie.", doel);
+                      ESP_LOGW("wtw_regeling", "Douche modus afgelopen: RH setpoint naar (%d%%) zonder 5 minutes verificatie.", doel);
                   - number.set:
                       id: rh_setpoint
                       value: !lambda |-
