@@ -916,15 +916,17 @@ script:
             - if:
                 condition:
                   lambda: |-
-                    // Als de douche net uit is en we willen terug naar de basiswaarde van 55%
-                    return (id(wtw_douche_actief).state == false && (int)id(rh_berekend_doel).state == 55);
+                    // FIX: Als de douche net uit is, neem direct het berekende doel over (ongeacht of dit 55% of 60% is)
+                    return (id(wtw_douche_actief).state == false);
                 then:
                   - lambda: |-
+                      int doel = (int)id(rh_berekend_doel).state;
                       id(start_verificatie_tijd) = 0;
-                      ESP_LOGW("wtw_regeling", "Douche afgelopen: Direct naar 55%% zonder 5 minuten verificatie.");
+                      ESP_LOGW("wtw_regeling", "Douche afgelopen: Schrijf direct berekend doel (%d%%) zonder 5 minuten verificatie.", doel);
                   - number.set:
                       id: rh_setpoint
-                      value: 55
+                      value: !lambda |-
+                        return id(rh_berekend_doel).state;
                 else:
                   # --- Normale verloop met 5 minuten verificatie ---
                   - lambda: |-
@@ -936,7 +938,7 @@ script:
                   
                   - delay: 300s
                   
-                  # Na 5 minutes controleren we de status opnieuw VOORDAT we de timer wissen
+                  # Na 5 minuten controleren we de status opnieuw VOORDAT we de timer wissen
                   - if:
                       condition:
                         lambda: |-
@@ -962,6 +964,7 @@ script:
             - lambda: |-
                 // Doel is al gelijk aan setpoint, zorg dat de timer op 0 staat
                 id(start_verificatie_tijd) = 0;
+
 
 
   # ==========================================
