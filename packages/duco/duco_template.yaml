@@ -201,17 +201,17 @@ template:
       # value_template: >
       #   {{ value_json['EnergyInfo']['FrostProtHeaterLevel'] }}
 
-    - name: "Ducobox VentCool Comfort temp"
-      unique_id: ducobox_tempinsidecomfort
-      device_class: temperature
-      unit_of_measurement: "°C"
-      availability: >
-        {{ states('sensor.ducobox_boxinfoget') not in ['unavailable', 'unknown'] }}
-  #      {{ state_attr('sensor.ducobox_boxinfoget', 'VentCoolInfo') ['TempInsideComfort'] | is_defined }}
-      state: >
-        {{ state_attr('sensor.ducobox_boxinfoget', 'VentCoolInfo') ['TempInsideComfort'] / 10 }}
-      # value_template: >
-      #   {{ value_json['VentCoolInfo']['TempInsideComfort'] / 10 }}
+  #   - name: "Ducobox VentCool Comfort temp"
+  #     unique_id: ducobox_tempinsidecomfort
+  #     device_class: temperature
+  #     unit_of_measurement: "°C"
+  #     availability: >
+  #       {{ states('sensor.ducobox_boxinfoget') not in ['unavailable', 'unknown'] }}
+  # #      {{ state_attr('sensor.ducobox_boxinfoget', 'VentCoolInfo') ['TempInsideComfort'] | is_defined }}
+  #     state: >
+  #       {{ state_attr('sensor.ducobox_boxinfoget', 'VentCoolInfo') ['TempInsideComfort'] / 10 }}
+  #     # value_template: >
+  #     #   {{ value_json['VentCoolInfo']['TempInsideComfort'] / 10 }}
 
     - name: "Ducobox NightBoost Comfort temp"
       unique_id: ducobox_tempcomfort
@@ -461,8 +461,8 @@ template:
       state_class: measurement
       unit_of_measurement: 'g/m³'
       state: >
-        {% set h, t = states('sensor.buienradar_humidity') | float,
-          states('sensor.buienradar_temperature') %}
+        {% set h, t = states('sensor.buitenluchtvochtigheid_gemiddeld') | float,
+          states('sensor.buitentemperatuur_gemiddeld') %}
         {% if not h or t == 'unknown' -%}
           'unknown'
         {%- else %}
@@ -488,3 +488,20 @@ template:
       state: >
         {{ (((((states('sensor.smart_thermostat_x_luchtvochtigheid') | float ) + 2.5 + 0 ) / 10 ) | round( 1 , "half", 0 ) * 10) , 55) | max | int }}
   # uitleg + 2,5 = afronding naar 'ceil'en de plus daarna is de offset 
+
+
+  - sensor:
+    - name: "Dauwpunt Ducobox"
+      unique_id: dauwpunt_ducobox
+      device_class: temperature
+      unit_of_measurement: "°C"
+      availability: >
+        {{  states('sensor.ducobox_relatieve_vochtigheid') | is_number | float > 0 and
+            states('sensor.ducobox_temperatuur') | is_number | float > 0
+        }}  
+      state: >
+          {% set RH = states('sensor.ducobox_relatieve_vochtigheid') |float %}
+          {% set temp = states('sensor.ducobox_temperatuur') |int %}
+          {% set dewpoint = 243.04*(log(RH/100)+(17.625*temp/(243.04+temp)))
+            /(17.625-log(RH/100)-(17.625*temp/(243.04+temp))) %}
+          {{ dewpoint | float(20) | round(2) }}

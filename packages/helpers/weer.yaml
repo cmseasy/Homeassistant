@@ -1,0 +1,50 @@
+sensor:
+  - platform: min_max
+    name: Buitentemperatuur gemiddeld
+    unique_id: buitentemperatuur_gemiddeld
+    type: mean
+    round_digits: 1
+    entity_ids:
+      - sensor.thuis_temperatuur
+      - sensor.adlar_ambient_temp_t1
+      - sensor.ducobox_temperatuur_toevoer_van_buiten
+      - sensor.buienradar_temperature
+
+  - platform: min_max
+    name: Buitenluchtvochtigheid gemiddeld
+    unique_id: buitenluchtvochtigheid_gemiddeld
+    type: mean
+    round_digits: 0
+    entity_ids:
+      - sensor.thuis_luchtvochtigheid
+      - sensor.buienradar_humidity
+
+  - platform: min_max
+    name: Buitenluchtdruk gemiddeld
+    unique_id: buitenluchtdruk_gemiddeld
+    type: mean
+    round_digits: 1
+    entity_ids:
+      - sensor.thuis_luchtdruk
+      - sensor.buienradar_pressure
+
+
+
+
+  - platform: min_max
+    name: lichtintensiteit gemiddeld
+    unique_id: lichtintensiteit_gemiddeld
+    type: mean
+    round_digits: 1
+    entity_ids:
+      - sensor.thuis_globale_stralingsintensiteit
+      - sensor.buienradar_irradiance
+
+  - platform: min_max
+    name: Kamertemperatuur gemiddeld
+    unique_id: kamertemperatuur_gemiddeld
+    type: mean
+    round_digits: 1
+    entity_ids:
+      - sensor.ducobox_temperatuur_woonkamer
+      - sensor.woonkamer_temperature

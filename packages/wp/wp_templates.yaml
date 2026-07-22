@@ -22,24 +22,21 @@ template:
         -states('sensor.adlar_water_inlet_temp_t6') | float(0) | round(1)
         }}"
 
+  - sensor:
+      - unique_id: inlettemperatuur_gradient
+        name: WP inlettemperatuur gradient
+        unit_of_measurement: '°C/h'
+        state: >
+         {{ state_attr('binary_sensor.inlettemperatuur_daalt', "gradient") | float(0) * 3600 | round(3)
+          }}
 
-  # - sensor:
-  #   - unique_id: pomp_run_time
-  #     name: "Pomp run time"
-  #     icon: "mdi:clock-end"
-  #     state: >-
-  #       {% if is_state('binary_sensor.adlar_compressor_active', 'on') %}
-  #         {{ (as_timestamp(now()) - as_timestamp(states.binary_sensor.adlar_compressor_active.last_changed))/60 }}
-  #       {% else %}
-  #         {{ this.state }}
-  #       {% endif %}
-
-
-
-
-
-
-
+  - sensor:
+      - unique_id: buffer_aanvoer_gradient
+        name: WP buffer aanvoer gradient
+        unit_of_measurement: '°C/h'
+        state: >
+         {{ state_attr('binary_sensor.buffer_aanvoer_daalt', "gradient") | float(0) * 3600 | round(3)
+          }}
 
 
 #
@@ -198,97 +195,43 @@ template:
           {{ temp }}
 
 
-  # - sensor:
-  #     - name: "Warmtepomp Actuele COP"
-  #       unit_of_measurement: "COP"
-  #       state: >
-  #         {% set opbrengst_watt = states('sensor.warmtepomp_actuele_warmteproductie') | float(0) %}
-  #         {% set verbruik_watt = states('sensor.warmtepomp_actueel_stroomverbruik') | float(0) %}
-  #         {% if verbruik_watt > 0 %}
-  #           {{ (opbrengst_watt / verbruik_watt) | round(2) }}
-  #         {% else %}
-  #           0
-  #         {% endif %}
 
 
-#
-# Warmtepomp huidig warmtevermogen
-#
-  # - sensor:
-  #   - unique_id: wp_warmte_vermogen_p
-  #     name: "WP warmte vermogen P"
-  #     icon: mdi:heat-pump-outline
-  #     unit_of_measurement: "kW"
-  #     state_class: measurement
-  #     device_class: power
-  #     availability: >
-  #       {{  states('sensor.adlar_water_flow') not in ['unavailable', 'unknown'] and
-  #           states('sensor.adlar_warmtepomp_wp_outlet_temp') not in ['unavailable', 'unknown'] and
-  #           states('sensor.adlar_warmtepomp_wp_inlet_temp') not in ['unavailable', 'unknown']
-  #       }}
-  #     state: >
-  #       {% set minimum_flow = 10 %}
-  #       {% set flow = states('sensor.adlar_water_flow') | float() / 1000 / 60 %}
-  #       {% set Tout = states('sensor.adlar_warmtepomp_wp_outlet_temp') | float() %}
-  #       {% set Tin = states('sensor.adlar_warmtepomp_wp_inlet_temp') | float() %}
-  #       {% set SoortMassaWater = 0.998 %}
-  #       {% set SoortWarmteWater = 4186 %}
-  #       {% set dT = Tout - Tin %}
-  #       {% set q = flow * SoortMassaWater * SoortWarmteWater * dT %}
-  #       {# if flow > minimum_flow #}
-  #       {% if states('binary_sensor.adlar_compressor_active') == 'off' %}
-  #         {{ 0 }}
-  #       {% else %}
-  #         {{ q | round(3) | abs }}
-  #       {% endif %}
-
-#
-# Warmtepomp huidig COP
-#
-  # - sensor:
-  #   - unique_id: wp_warmte_vermogen_cop
-  #     name: "WP warmte vermogen COP"
-  #     icon: mdi:heat-pump-outline
-  #     unit_of_measurement: ""
-  #     state_class: measurement
-  #     availability: >
-  #       {{  states('sensor.wp_warmte_vermogen_p') not in ['unavailable', 'unknown'] and
-  #           states('sensor.warmtepomp_meter_electric_consumption_w') not in ['unavailable', 'unknown'] 
-  #       }}
-  #     state: "{{ ((states('sensor.wp_warmte_vermogen_p') | float(0) * 1000
-  #       / states('sensor.warmtepomp_meter_electric_consumption_w') | float(0) ) , 108 ) | min | round(2)
-  #       }}"
-
-#
-# Warmtepomp SCOP
-#
-  # - sensor:
-  #   - unique_id: wp_warmte_vermogen_scop
-  #     name: "WP warmte vermogen SCOP"
-  #     icon: mdi:heat-pump-outline
-  #     unit_of_measurement: ""
-  #     state_class: measurement
-  #     availability: >
-  #       {{  states('sensor.wp_warmte_vermogen_p_som') not in ['unavailable', 'unknown'] and
-  #           states('sensor.warmtepomp_verbruik') not in ['unavailable', 'unknown']
-  #       }}
-  #     state: "{{ (states('sensor.wp_warmte_vermogen_p_som') | float() 
-  #       / states('sensor.warmtepomp_verbruik') | float() ) | round(2)
-  #       }}"
+  - trigger:
+      # Trigger: De compressor stopt en is 5 seconden uit
+      - trigger: state
+        entity_id: binary_sensor.adlar_compressor_active
+        from: "on"
+        to: "off"
+        for:
+          seconds: 0.1
+    sensor:
+      - name: "WP delta T bij stop"
+        unique_id: wp_delta_t_bij_stop
+        icon: mdi:thermometer-check
+        unit_of_measurement: "°C" # Dit mag nu wél officieel gebruikt worden!
+        state_class: measurement
+        
+        state: >
+          {% set outlet = states('sensor.adlar_water_outlet_temp_t7') | float(0) %}
+          {% set inlet = states('sensor.adlar_water_inlet_temp_t6') | float(0) %}
+          {{ (outlet - inlet) | int(0) }}
 
 
-  # - binary_sensor:
-  #   - name: WP maintenance
-  #     unique_id: adlar_warmtepomp_maintenance
-  #     availability: >
-  #       {{  states('sensor.adlar_warmtepomp_wp_compressor_frequency') not in ['unavailable', 'unknown'] and
-  #           states('sensor.adlar_warmtepomp_wp_eev_open') not in ['unavailable', 'unknown']
-  #       }}
-  #     state: >
-  #       {% set wp_compr_freq = states('sensor.adlar_warmtepomp_wp_compressor_frequency') | float %}
-  #       {% set wp_eev_open = states('sensor.adlar_warmtepomp_wp_eev_open') | float %}
-  #       {% if wp_compr_freq > 0 and wp_eev_open == 300 %}
-  #         true
-  #       {% else %}
-  #         false
-  #       {% endif %}
+  - sensor:
+      - name: "WP AAN delta T temp set"
+        unique_id: wp_aan_delta_t_temp_set
+        icon: mdi:thermometer-check
+        unit_of_measurement: "°C" # Dit mag nu wél officieel gebruikt worden!
+        state_class: measurement
+        state: >
+          {% set delta_t_stop = states('sensor.wp_delta_t_bij_stop') | float(0) %}
+          {% set p26 = states('sensor.adlar_p26_hysterese_watertemperatuur_start_warmtepomp') | float(0) %}
+          {% set dauwpunt = states ('sensor.dauwpunt_woonkamer') | float | round(0,'ceil') %}
+          {% set temp_set = states('number.adlar_temp_set_cooling') | float(0) %}
+          {% set outlet = states ('sensor.adlar_water_outlet_temp_t7') | float(0) %}
+          {% set delta_t =  outlet - (temp_set + p26 + (delta_t_stop | abs)) %}
+          {{ delta_t }}
+ 
+
+

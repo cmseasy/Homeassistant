@@ -10,24 +10,24 @@ sensor:
     start: "{{ today_at('00:00') }}"
     end: "{{ now() }}" 
 
-# Frank slim terugleveren
-  - platform: history_stats
-    name: "Frank slim terugleveren vandaag"
-    unique_id: frank_slim_terugleveren_vandaag
-    entity_id: binary_sensor.frank_slim_terugleveren
-    state: "on" 
-    type: time
-    start: "{{ today_at('00:00') }}"
-    end: '{{ now() }}'
+# # Frank slim terugleveren
+#   - platform: history_stats
+#     name: "Frank slim terugleveren vandaag"
+#     unique_id: frank_slim_terugleveren_vandaag
+#     entity_id: binary_sensor.frank_slim_terugleveren
+#     state: "on" 
+#     type: time
+#     start: "{{ today_at('00:00') }}"
+#     end: '{{ now() }}'
 
-  - platform: history_stats
-    name: "Frank slim terugleveren history"
-    unique_id: frank_slim_terugleveren_history
-    entity_id: binary_sensor.frank_slim_terugleveren
-    state: "on" 
-    type: time
-    start: "{{ 0 }}"
-    end: '{{ now() }}'
+#   - platform: history_stats
+#     name: "Frank slim terugleveren history"
+#     unique_id: frank_slim_terugleveren_history
+#     entity_id: binary_sensor.frank_slim_terugleveren
+#     state: "on" 
+#     type: time
+#     start: "{{ 0 }}"
+#     end: '{{ now() }}'
 
 ###   Zonnepanelen   ###
 

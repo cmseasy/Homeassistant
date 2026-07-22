@@ -14,14 +14,14 @@ input_select:
     name: WP Selecteer de bedrijfsmodus
     icon: mdi:heat-pump-outline
     options:
-#      - "Uit" 
+      - "Uit" 
 #      - "Aan"
-      - "Adlar handbediend"
-      - "Adlar LT8/JAN"
-      - "Adlar warmtecurves"
+#      - "Adlar handbediend"
+#      - "Adlar LT8/JAN"
+#      - "Adlar warmtecurves"
       - "Auto verwarmen"
       - "Auto koelen"
-      - "Auto Homey PID"
+#      - "Auto Homey PID"
   wp_selecteer_nacht_eco:
     name: Energiemodus 's nacht op Eco
     icon: mdi:clock
@@ -37,6 +37,15 @@ input_number:
     name: wp berekende optimale temp set
     min: 24.0
     max: 40.0
+    step: 1.0
+#    initial: 28
+    icon: mdi:heat-pump-outline
+    unit_of_measurement: "°C"
+    mode: box
+  wp_berekende_optimale_temp_set_koelen:
+    name: wp berekende optimale temp set koelen
+    min: 15.0
+    max: 25.0
     step: 1.0
 #    initial: 28
     icon: mdi:heat-pump-outline
@@ -69,8 +78,19 @@ input_number:
     icon: mdi:timer-lock-outline
     unit_of_measurement: "min"
     mode: box
+#
+# Nummerieke invoer
+#
 
-
+#   wp_delta_t_bij_stop:
+#     name: wp delta T bij stop
+#     min: -5.0
+#     max: 5.0
+#     step: 1.0
+# #    initial: 28
+#     icon: mdi:thermometer-check
+#     unit_of_measurement: "°C"
+#     mode: box
 #
 # Timers
 #
@@ -86,11 +106,15 @@ timer:
     icon: mdi:timer-lock-outline
     restore: true
 
-
 #
 # Binary sensors
 #
 binary_sensor:
+  # scheduler_koelen_aan:
+  # name: "Scheduler koelen aan"
+  # icon: mdi:snowflake
+
+
   - platform: trend
     sensors:
       kamertemperatuur_stijgt:
@@ -102,6 +126,7 @@ binary_sensor:
         min_samples: 4 #6
         min_gradient: 0.00003  #####
         # = 0,1gr/1800s 0.0001 units/sec = 0.36 gr/h
+
       kamertemperatuur_daalt:
         friendly_name: 'Kamertemperatuur daalt'
 #        entity_id: var.wp_ruimtetemperatuur_gemeten
@@ -115,6 +140,15 @@ binary_sensor:
         friendly_name: 'Inlettemperatuur daalt'
 #        entity_id: var.wp_inlet_temperatuur
         entity_id: sensor.adlar_water_inlet_temp_t6
+        sample_duration: 0
+        max_samples: 10
+        min_samples: 2 #6
+        min_gradient: -0.00003  #####
+
+      buffer_aanvoer_daalt:
+        friendly_name: 'Buffervat aanvoer daalt'
+#        entity_id: var.wp_inlet_temperatuur
+        entity_id: sensor.wp_buffervat_temperatuur_aanvoer
         sample_duration: 0
         max_samples: 10
         min_samples: 2 #6
@@ -170,7 +204,6 @@ binary_sensor:
     unique_id: eco_mode_nacht
     after: "23:00:00"  #####
     before: "08:00:00"  #####
-
 
 
 

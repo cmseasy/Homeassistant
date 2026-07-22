@@ -6,7 +6,6 @@
 #
 - sensor:
     - name: "Huidig vermogen W"
-#      unique_id: huidig_energie_verbruik
       unique_id: huidig_vermogen_w
       device_class: power
       state_class: measurement
@@ -28,12 +27,15 @@
           + states('sensor.smartmeter_stroomverbruik') | int(0)
           - states('sensor.smartmeter_stroomproductie') | int(0)) 
           }}
-
         {% else %}
-          {{ states('sensor.huidig_vermogen_w') }}
+          {{ this.state | default(0, true) }}
         {% endif %}
+
+#        # {% else %}
+#        #   {{ states('sensor.huidig_vermogen_w') }}
+#        # {% endif %}
 #
-# Energieverbeuik [kWh]
+# Energieverbruik [kWh]
 # berekend op basis van P1mon gegevens 
 #
 - sensor:
@@ -52,22 +54,10 @@
         {% set hoog = states('sensor.smartmeter_energieverbruik_hoog_tarief') | float(0) %}
         {% set laag1 = states('sensor.smartmeter_energieproductie_laag_tarief') | float(0) %}
         {% set hoog1 = states('sensor.smartmeter_energieproductie_hoog_tarief') | float(0) %}
-        {% set energie = laag + hoog + laag1 + hoog1%}
+        {% set energie = laag + hoog %}
         {{ energie }}
 
 
-
-
-        
-
-
-
-
-# - trigger:
-#     platform: time
-#     at: "15:05:00"
-# #  # - trigger: homeassistant
-# #  #   event: start
 - sensor:
     - name: Frank prices
       unique_id: frank_prices
@@ -88,162 +78,135 @@
           {% endfor %}
           {{ ns.items | sort(attribute='start_time') }}
 
-
-# Frank slim terugleveren
-- binary_sensor:
-    unique_id: frank_slim_terugleveren
-    name: "Frank slim terugleveren"
-    state: >
-      {{ iif (states('sensor.envoy_122025007960_power_production')|float(1) == 0 )
-      and (states('sensor.buienradar_irradiance') | float(0) > 20 )
-      }}
-
 # - sensor:
-#     - name: "Frank slim terugleveren tijdsduur"
+#     - name: "Huidige elektriciteitsprijs (all in)"
+#       unique_id: huidige_elektriciteitsprijs_all_in
+#       unit_of_measurement: €/kWh
+#       device_class: monetary
+#       icon: mdi:currency-eur
+#       availability: >
+#         {{ has_value('sensor.frank_energie_prijzen_huidige_elektriciteitsprijs_all_in') }}
 #       state: >
-#         {% if is_state('binary_sensor.frank_slim_terugleveren', 'on') %}
-#           {{ (now() - states.binary_sensor.frank_slim_terugleveren.last_changed).total_seconds() }}
-#         {% else %}
-#           0
-#         {% endif %}
+#         {{ states('sensor.frank_energie_prijzen_huidige_elektriciteitsprijs_all_in') }} 
+#       # attributes:
+#       #   all_attributes: >
+#       #     {{ states.sensor.frank_energie_prijzen_huidige_elektriciteitsprijs_all_in.attributes }}
 
-# - trigger:
-#     - platform: state
-#       entity_id: binary_sensor.frank_slim_terugleveren
-#       to: "on"
-#       from: "off"
-#       for:
-#         hours: 0
-#         minutes: 0
-#         seconds: 1
-#       id: "Aan" 
-#     - platform: state
-#       entity_id: binary_sensor.frank_slim_terugleveren
-#       to: "off"
-#       from: "on"
-#       for:
-#         hours: 0
-#         minutes: 0
-#         seconds: 1
-#       id: "Uit" 
-
-#   sensor:
-#     - name: "Frank slim terugleveren bedrag"
-#       state: >
-#         {% if is_state('binary_sensor.frank_slim_terugleveren', 'on') %}
-#           {% set tijd = (now() - states.binary_sensor.frank_slim_terugleveren.last_changed).total_seconds() %}
-#           {% set uurprijs = states('sensor.frank_prices') | float %}
-#           {% set bedrag = states('sensor.frank_slim_terugleveren_bedrag') | float %}
-      
-#           {% else %}
-#           0
-#         {% endif %}
-
-#           {% if trigger.id == "Aan" %}
-#             Iemand is binnengekomen.
-#           {% elif trigger.id == "Uit" %}
-#             De deur is weer op slot.
-#           {% else %}
-#             Onbekend
-#           {% endif %}
-
-# - trigger:
-#     platform: time
-#     at: "15:05:00"
-# #  # - trigger: homeassistant
-# #  #   event: start
-# - sensor:
-#       - name: Frank slim terugleveren bedrag
-#         unique_id: frank_slim_terugleveren_bedrag
-#         state: >
-#           {% set bedrag = states('sensor.frank_slim_terugleveren_bedrag') | float %}
-#           {% set uurprijs = states('sensor.frank_prices') | float %}
-#           {% set tijd = 0 %}  
 
 
 - trigger:
-    - trigger: state
-      entity_id:
-        - sensor.frank_energie_prijzen_huidige_elektriciteitsprijs_all_in
-      from: null
-      to: null
-    - trigger: state
-      entity_id:
-        - binary_sensor.frank_slim_terugleveren
-      from:
-        - "off"
-      to:
-        - "on"
-      id: Slim terugleveren aan
-    - trigger: state
-      entity_id:
-        - binary_sensor.frank_slim_terugleveren
-      from:
-        - "on"
-      to:
-        - "off"
-      id: Slim terugleveren uit
-    # - trigger: time_pattern
-    #   seconds: "10"
-    - trigger: state
-      entity_id:
-        - sensor.energie_verbruik_kwh
-      # from:
-      #   - "null" 
-      # to:
-      #   - "null" 
+  - trigger: state
+    entity_id: sensor.average_electricity_price
+  - trigger: homeassistant
+    event: start
+  condition:
+    - condition: template
+      value_template: >
+        {{ has_value('sensor.average_electricity_price') and 
+          trigger.to_state.state != trigger.from_state.state }}
   sensor:
-      - name: Frank slim terugleveren bedrag
-        unique_id: frank_slim_terugleveren_bedrag
-        device_class: monetary
-        state_class: total
-        unit_of_measurement: €
-        availability: >
-          {{ states('binary_sensor.frank_slim_terugleveren') not in ['unavailable', 'unknown'] }} and
-            states('sensor.energie_verbruik_kwh') not in ['unavailable', 'unknown'] }} and
-            states('sensor.frank_energie_prijzen_huidige_elektriciteitsprijs_all_in') not in ['unavailable', 'unknown'] }}
-        state: >
-          {% if is_state('binary_sensor.frank_slim_terugleveren', 'on') %}
-            {#% set tijd = (now() - states.binary_sensor.frank_slim_terugleveren.last_changed).total_seconds() %#}
-            {% set bedrag = state_attr('sensor.frank_slim_terugleveren_bedrag', "bedrag_som") | float(0) %}
-              {{ bedrag | round(2) }}
-            {% endif %}
-        attributes:
-          huidige_prijs: >- 
-            {% set prijs = states('sensor.frank_energie_prijzen_huidige_elektriciteitsprijs_all_in') | float(0) %}
-            {{ prijs }}
-          energie_laatst: >- 
-            {% set kwh = state_attr('sensor.frank_slim_terugleveren_bedrag', "energie_nu") | float(0) %}
-            {{ kwh }}
-          energie_nu: >- 
-            {% set kwh = states('sensor.energie_verbruik_kwh') | float(0) %}
-            {{ kwh }}
-          energie: >- 
-            {% set kwh_nu = state_attr('sensor.frank_slim_terugleveren_bedrag', "energie_nu") | float(0) %}
-            {% set kwh_laatst = state_attr('sensor.frank_slim_terugleveren_bedrag', "energie_laatst") | float(0) %}
-            {{ kwh_nu - kwh_laatst }}
-
-          bedrag_som: >- 
-            {% set bedrag_delta = state_attr('sensor.frank_slim_terugleveren_bedrag', "bedrag_delta") | float(0) %}
-            {% set bedrag_nu = state_attr('sensor.frank_slim_terugleveren_bedrag', "bedrag_som") | float(0) %}
-              {{ (bedrag_nu + bedrag_delta) | round(5) }}
-          bedrag_delta: >- 
-            {% set kwh = state_attr('sensor.frank_slim_terugleveren_bedrag', "energie") | float(0) %}
-            {% set prijs = states('sensor.frank_energie_prijzen_huidige_elektriciteitsprijs_all_in') | float(0) %}
-              {{ kwh * prijs }}
+    # - name: "Gekopieerde Elektriciteitsprijs"
+    #   unique_id: gekopieerde_elektriciteitsprijs_01
+    - name: "Huidige elektriciteitsprijs (all in)"
+      unique_id: huidige_elektriciteitsprijs_all_in
+      state: >
+        {{ states('sensor.average_electricity_price') }}
+      icon: "{{ state_attr('sensor.average_electricity_price', 'icon') }}"
+      attributes:
+        unit_of_measurement: "{{ state_attr('sensor.average_electricity_price', 'unit_of_measurement') }}"
+        device_class: "{{ state_attr('sensor.average_electricity_price', 'device_class') }}"
+        state_class: "{{ state_attr('sensor.average_electricity_price', 'state_class') }}"
+        prices_today: "{{ state_attr('sensor.average_electricity_price', 'prices_today') }}"
+        prices_tomorrow: "{{ state_attr('sensor.average_electricity_price', 'prices_tomorrow') }}"
+        prices: "{{ state_attr('sensor.average_electricity_price', 'prices') }}"
 
 
 
-    # conditions: []
-# actions:
-#   - choose:
-#       - conditions:
-#           - condition: state
-#             entity_id: binary_sensor.frank_slim_terugleveren
-#             state:
-#               - "on"
-#         sequence:
-#           - action: number.set_value
-#             data: {}
+# Frank slim terugleveren
+# - binary_sensor:
+#     unique_id: frank_slim_terugleveren
+#     name: "Frank slim terugleveren"
+#     state: >
+#       {{ iif (states('sensor.envoy_122025007960_power_production')|float(1) == 0 )
+#       and (states('sensor.buitenluchtvochtigheid_gemiddeld') | float(0) > 20 )
+#       }}
 
+# - trigger:
+#     - trigger: state
+#       entity_id:
+#         - sensor.frank_energie_prijzen_huidige_elektriciteitsprijs_all_in
+#       from: null
+#       to: null
+#     - trigger: state
+#       entity_id:
+#         - binary_sensor.frank_slim_terugleveren
+#       from:
+#         - "off"
+#       to:
+#         - "on"
+#       id: Slim terugleveren aan
+#     - trigger: state
+#       entity_id:
+#         - binary_sensor.frank_slim_terugleveren
+#       from:
+#         - "on"
+#       to:
+#         - "off"
+#       id: Slim terugleveren uit
+# #    - trigger: time_pattern
+# #      seconds: "10"
+# #      minutes: "/1"
+#     - trigger: state
+#       entity_id:
+#         - sensor.energie_verbruik_kwh
+# #      from: null
+# #      to: nullverbruik kw
+#   sensor:
+#       - name: Frank slim terugleveren bedrag
+#         unique_id: frank_slim_terugleveren_bedrag
+#         device_class: monetary
+#         state_class: total
+#         unit_of_measurement: €
+#         availability: >
+#           {{ states('binary_sensor.frank_slim_terugleveren') not in ['unavailable', 'unknown']
+#           and states('sensor.energie_verbruik_kwh') not in ['unavailable', 'unknown']
+#           and states('sensor.frank_energie_prijzen_huidige_elektriciteitsprijs_all_in') not in ['unavailable', 'unknown'] }}
+#         state: >
+#           {% set bedrag_delta = state_attr('sensor.frank_slim_terugleveren_bedrag', "bedrag_delta") | float(0) %}
+#           {% set bedrag_nu = state_attr('sensor.frank_slim_terugleveren_bedrag', "bedrag_som") | float(0) %}
+#             {{ (bedrag_nu + bedrag_delta) | round(2) }}
+#         attributes:
+#           huidige_prijs: >- 
+#             {% set prijs = states('sensor.frank_energie_prijzen_huidige_elektriciteitsprijs_all_in') | float(0) %}
+#             {{ prijs }}
+#           energie_laatst: >- 
+#             {% set kwh = state_attr('sensor.frank_slim_terugleveren_bedrag', "energie_nu") | float(0) %}
+#               {{ kwh }}
+#           energie_nu: >- 
+#             {% set kwh = states('sensor.energie_verbruik_kwh') | float(0) %}
+#               {{ kwh }}
+#           energie_delta: >- 
+#             {% set kwh_nu = state_attr('sensor.frank_slim_terugleveren_bedrag', "energie_nu") | float(0) %}
+#             {% set kwh_laatst = state_attr('sensor.frank_slim_terugleveren_bedrag', "energie_laatst") | float(0) %}
+#             {% if kwh_nu > 0 and kwh_laatst > 0 and kwh_nu > kwh_laatst and kwh_nu - kwh_laatst < 1 %}
+#               {{ kwh_nu - kwh_laatst }}
+#             {% endif %}
 
+#           bedrag_delta: >- 
+#             {% set kwh = state_attr('sensor.frank_slim_terugleveren_bedrag', "energie_delta") | float(0) %}
+#             {% set prijs = states('sensor.frank_energie_prijzen_huidige_elektriciteitsprijs_all_in') | float(0) %}
+#             {#% if is_state('binary_sensor.frank_slim_terugleveren', 'on' ) %#}
+#             {% if is_state('binary_sensor.envoy_122025007960_dynamic_power_export_limiting', 'on' ) %}
+#               {{ kwh * prijs }}
+#             {% endif %}
+
+#           bedrag_som: >- 
+#             {% set bedrag_delta = state_attr('sensor.frank_slim_terugleveren_bedrag', "bedrag_delta") | float(0) %}
+#             {% set bedrag_nu = state_attr('sensor.frank_slim_terugleveren_bedrag', "bedrag_som") | float(0) %}
+#               {{ (bedrag_nu + bedrag_delta) | round(5) }}
+
+#           # {#% if is_state('binary_sensor.frank_slim_terugleveren', 'off' ) %#}
+#           #   {#% set tijd = (now() - states.binary_sensor.frank_slim_terugleveren.last_changed).total_seconds() %#}
+#           #   {#% set bedrag = state_attr('sensor.frank_slim_terugleveren_bedrag', "bedrag_som") | float(0) %#}
+#           #   #  {{ bedrag | round(2) }}
+#           #   {#% endif %#}

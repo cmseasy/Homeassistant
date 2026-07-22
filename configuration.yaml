@@ -39,12 +39,14 @@ tts:
   platform: google_translate
 
 #
-# Mariadb: database zonder history: tot purge datum
+# SQLite: database zonder history: tot purge datum
 #
 recorder:
-  db_url: !secret mariadb_url
-  purge_keep_days: 31
+#  db_url: !secret mariadb_url
+  purge_keep_days: 7
   commit_interval: 5
+  auto_purge: true
+  auto_repack: true
   exclude:
     entity_globs:
       - sensor.time*
@@ -61,25 +63,36 @@ recorder:
     domains:
       - automation
       - update
+      - media_player
+
+      
 
 #
 # InfluxDB: database met history: lange termijn data
 #
 influxdb:
+  default_measurement: state
   include:
     entity_globs:
       - sensor.smartmeter_*
-      - sensor.envoy_lifetime_*
-      - sensor.envoy_122025007960_lifetime_*
-      - sensor.adlar_warmtepomp_*
+#      - sensor.envoy_lifetime_*
+      - sensor.envoy_122025007960_*
+#      - sensor.adlar_warmtepomp_*
       - sensor.adlar*
       - sensor.zonnepanelen_*
       - sensor.wp_*
       - sensor.vermogen_per_wp_*
       - sensor.watermeter_*
+      - sensor.airq_*_air_temperature
+      - sensor.airq_*_humidity
+      - sensor.airq_*_carbon_dioxide_co2_level
     entities:
       - sensor.volle_zonuren
-      - sensor.frank_slim_terugleveren_history
+  exclude:
+    entity_globs:
+      - adlar_warmtepomp_wp_*  # local tuya
+
+
 
 #
 # Files include
@@ -127,8 +140,8 @@ logbook:
       - Uptime
       - OpenTherm
 
-shell_command:
-  run_remote_db_backup: !secret mariadb_backup
+#shell_command:
+#  run_remote_db_backup: !secret mariadb_backup
 
 
 # device_tracker:
@@ -139,28 +152,49 @@ shell_command:
 
 frontend:
   extra_module_url:
-    - /hacsfiles/sidebar-organizer/sidebar-organizer.js?hacstag=932534411341
+    - /hacsfiles/lovelace-card-mod/card-mod.js?hacstag=190927524421
+    - /hacsfiles/sidebar-organizer/sidebar-organizer.js?hacstag=932534411420
+#    - /hacsfiles/sidebar-organizer/sidebar-organizer.js?hacstag=932534411400
+#    - /hacsfiles/sidebar-organizer/sidebar-organizer.js?hacstag=932534411341
 
 
-# utility_meter:
-#   energy_hourly_slim:
-#     name: Frank slim terugleveren hourly
-#     source: sensor.energie_verbruik_kwh
-#     cycle: hourly
-#     tariffs:
-#       - normal
-#       - slim
-#   energy_daily_slim:
-#     name: Frank slim terugleveren daily
-#     source: sensor.energie_verbruik_kwh
-#     cycle: daily
-#     tariffs:
-#       - normal
-#       - slim
-#   energy_montly_slim:
-#     name: Frank slim terugleveren monthly
-#     source: sensor.energie_verbruik_kwh
-#     cycle: monthly
-#     tariffs:
-#       - normal
-#       - slim
+
+# climate:
+#   - platform: generic_thermostat 
+#     name: WP thermostaat
+#     heater: switch.adlar_main_switch
+#     target_sensor: sensor.woonkamer_temperature
+#     target_temp_step: 0.5
+#     precision: 0.1
+#     min_temp: 15
+#     max_temp: 23  932534411400
+#     ac_mode: false
+#     initial_hvac_mode: "off" 
+climate:
+  - platform: dual_smart_thermostat
+    name: WP thermostaat
+    heater: switch.hvac_verwarmen # <-required
+    cooler: switch.hvac_koelen # <-required
+#    heat_pump_cooling: switch.hvac_koelen
+    heat_cool_mode: false # <-- or not set
+    target_sensor: sensor.smart_thermostat_x_temperatuur
+#    heat_cool_mode: true # <-required
+#    initial_hvac_mode: "heat"
+    min_temp: 10
+    max_temp: 25
+    # target_temp_low: 19.5
+    # target_temp_high: 19.5
+    keep_alive:
+      minutes: 1
+
+# sensor:
+#   - platform: min_max
+#     name: Buitentemperatuur gemiddeld
+#     unique_id: buitentemperatuur_gemiddeld
+#     type: mean
+#     entity_ids:
+#         - sensor.thuis_temperatuur
+#         - sensor.adlar_ambient_temp_t1
+#         - sensor.ducobox_temperatuur_toevoer_van_buiten
+
+# #      - sensor.buienradar_temperature

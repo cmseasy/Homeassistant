@@ -2,7 +2,6 @@
 # Templates
 #
 template:
-
   - sensor:
     - unique_id: smart_thermostat_x_set_temperatuur
       name: "Smart Thermostat X Set Temperatuur"
@@ -58,12 +57,12 @@ template:
       device_class: temperature
       unit_of_measurement: "°C"
       availability: >
-        {{  states('sensor.buienradar_humidity') | is_number | float > 0 and
-            states('sensor.buienradar_temperature') | is_number | float > 0
+        {{  states('sensor.buitenluchtvochtigheid_gemiddeld') | is_number | float > 0 and
+            states('sensor.buitentemperatuur_gemiddeld') | is_number | float > 0
         }}
       state: >
-          {% set temp = states('sensor.buienradar_temperature') |float %}
-          {% set RH = states('sensor.buienradar_humidity') |int %}
+          {% set temp = states('sensor.buitentemperatuur_gemiddeld') |float %}
+          {% set RH = states('sensor.buitenluchtvochtigheid_gemiddeld') |int %}
           {% set dewpoint = 243.04*(log(RH/100)+(17.625*temp/(243.04+temp)))
             /(17.625-log(RH/100)-(17.625*temp/(243.04+temp))) %}
           {{ dewpoint | float | round(2) }}

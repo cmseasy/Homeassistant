@@ -18,6 +18,32 @@ rest:
       - NightBoostInfo
       - VentCoolInfo
 
+  # Ducobox configuration
+  - resource: http://192.168.1.73/boxconfigget
+    scan_interval: 60
+    timeout: 8
+    verify_ssl: false 
+    sensor:
+    - name: "DucoBox boxconfigget"
+      unique_id: ducobox_boxconfigget
+      icon: mdi:fan
+      value_template: " OK "
+      json_attributes:
+  #    - Time
+  #    - Settings
+  #    - Energy
+      - VentCtrl
+  #    - VentCool
+  #    - NightBoost
+  #    - Modbus
+  #    - Ethernet
+
+
+
+
+
+
+
   # Ducobox node 1
   - resource: http://192.168.1.73/nodeinfoget?node=1
     scan_interval: 10

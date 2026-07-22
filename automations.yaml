@@ -91,12 +91,13 @@
     enabled: false
   - condition: state
     entity_id: sensor.uptime
-    attribute: device_class
-    state: timestamp
+    state:
+    - uptime
     for:
       hours: 0
       minutes: 0
       seconds: 30
+    attribute: device_class
   actions:
   - data:
       title: Afval
@@ -167,81 +168,6 @@
   - action: rest_command.duco_box_mode_man2
     data: {}
   mode: restart
-- id: '1695645493368'
-  alias: Lampen achtertuin
-  description: ''
-  triggers:
-  - event: sunset
-    offset: +00:25:00
-    id: Aan
-    trigger: sun
-  - entity_id:
-    - switch.switch_2
-    to: 'on'
-    id: Aan
-    from:
-    trigger: state
-  - event: sunrise
-    offset: -00:00:10
-    id: Uit
-    trigger: sun
-  - entity_id:
-    - switch.switch_2
-    to: 'off'
-    id: Uit
-    from:
-    trigger: state
-  - minutes: '15'
-    id: Uit
-    hours: '23'
-    seconds: '0'
-    trigger: time_pattern
-  - hours: '00'
-    minutes: '15'
-    seconds: '00'
-    id: Uit
-    enabled: true
-    trigger: time_pattern
-  - hours: '01'
-    minutes: '15'
-    seconds: '00'
-    id: Uit
-    enabled: true
-    trigger: time_pattern
-  conditions:
-  - condition: sun
-    before: sunrise
-    after: sunset
-  actions:
-  - if:
-    - condition: trigger
-      id:
-      - Aan
-    - condition: sun
-      before: sunrise
-      after: sunset
-    - condition: state
-      entity_id: group.somebody_home
-      state: home
-      enabled: true
-    then:
-    - data: {}
-      target:
-        entity_id: switch.switch_2
-      action: switch.turn_on
-    else:
-    - if:
-      - condition: trigger
-        id:
-        - Uit
-      then:
-      - target:
-          entity_id: switch.switch_2
-        data: {}
-        action: switch.turn_off
-      enabled: true
-  mode: single
-  max_exceeded: silent
 - id: '1697107980631'
   alias: Watchman report daily
   description: ''
@@ -443,9 +369,9 @@
   actions:
   - data: {}
     target:
-      entity_id:
-      - media_player.diw7022_4d1b20
-      - media_player.rx_v481d_f9a984
+      device_id:
+      - 479411360a9b5dc39682f75a9449bfa2
+      - f1b9ff44d3c8efb801931f890bfa873f
     action: media_player.turn_off
   mode: single
 - id: '1702249052370'
@@ -473,13 +399,13 @@
       seconds: 0
   - entity_id:
     - sensor.ducobox_filter_resttijd
-    from: '91'
-    to: '90'
+    to:
+    - '90'
     id: filter schoonmaken
     trigger: state
     for:
-      hours: 1
-      minutes: 0
+      hours: 0
+      minutes: 5
       seconds: 0
   conditions: []
   actions:
@@ -504,24 +430,26 @@
   alias: Zet versterker aan
   description: ''
   triggers:
-  - entity_id:
-    - media_player.diw7022_4d1b20
-    from: 'off'
-    to: 'on'
+  - device_id: 479411360a9b5dc39682f75a9449bfa2
+    domain: media_player
+    entity_id: 64ecb528d499e306484647e994211ebf
+    type: turned_on
+    trigger: device
     for:
       hours: 0
       minutes: 0
       seconds: 1
-    trigger: state
   conditions:
-  - condition: state
-    entity_id: media_player.rx_v481d_f9a984
-    state: 'off'
+  - condition: device
+    device_id: f1b9ff44d3c8efb801931f890bfa873f
+    domain: media_player
+    entity_id: 50a168a54496ddaf40df5e133d7f3f7e
+    type: is_off
   actions:
   - metadata: {}
     data: {}
     target:
-      entity_id: media_player.rx_v481d_f9a984
+      device_id: f1b9ff44d3c8efb801931f890bfa873f
     action: media_player.turn_on
   mode: single
 - id: '1705067135946'
@@ -556,31 +484,34 @@
   alias: Zet versterker uit
   description: ''
   triggers:
-  - entity_id:
-    - media_player.diw7022_4d1b20
-    to: 'off'
+  - device_id: 479411360a9b5dc39682f75a9449bfa2
+    domain: media_player
+    entity_id: 64ecb528d499e306484647e994211ebf
+    type: turned_off
+    trigger: device
     for:
       hours: 0
       minutes: 0
       seconds: 1
-    from: 'on'
-    trigger: state
   conditions:
-  - condition: state
-    entity_id: media_player.rx_v481d_f9a984
-    state: playing
+  - condition: device
+    device_id: f1b9ff44d3c8efb801931f890bfa873f
+    domain: media_player
+    entity_id: 50a168a54496ddaf40df5e133d7f3f7e
+    type: is_on
+    enabled: false
   - condition: not
     conditions:
     - condition: state
-      entity_id: media_player.rx_v481d_f9a984
-      attribute: source
-      state: Net Radio
+      entity_id: media_player.room_rx_v481d_f9a984
+      state:
+      - Net Radio
       enabled: true
-    enabled: true
+      attribute: source
+    enabled: false
   actions:
   - target:
-      entity_id:
-      - media_player.rx_v481d_f9a984
+      device_id: f1b9ff44d3c8efb801931f890bfa873f
     data: {}
     action: media_player.turn_off
   mode: single
@@ -682,78 +613,6 @@
 
         '
     action: notify.mobile_app_gsm_martin
-  mode: single
-- id: '1719346872778'
-  alias: WP kouderegeling dauwpunt bereikt
-  description: ''
-  triggers:
-  - entity_id:
-    - sensor.adlar_water_inlet_temp_t6
-    from:
-    to:
-    for:
-      hours: 0
-      minutes: 0
-      seconds: 1
-    trigger: state
-    enabled: false
-  - entity_id:
-    - sensor.adlar_water_outlet_temp_t7
-    from:
-    to:
-    for:
-      hours: 0
-      minutes: 0
-      seconds: 1
-    trigger: state
-  - entity_id:
-    - sensor.dauwpunt_woonkamer
-    from:
-    to:
-    for:
-      hours: 0
-      minutes: 0
-      seconds: 1
-    trigger: state
-  conditions:
-  - condition: state
-    entity_id: timer.wachttijd_koelcurve_veranderen
-    state: idle
-  - condition: numeric_state
-    entity_id: sensor.adlar_water_outlet_temp_t7
-    below: sensor.dauwpunt_woonkamer
-  - condition: state
-    entity_id: input_select.wp_selecteer_bedrijfsmodus
-    state:
-    - Auto koelen
-  - condition: state
-    entity_id: switch.adlar_main_switch
-    state: []
-  - condition: state
-    entity_id: select.adlar_mode
-    state:
-    - Cooling
-  - condition: state
-    entity_id: select.adlar_cooling_setting_curve
-    state:
-    - 'Off'
-  actions:
-  - delay:
-      hours: 0
-      minutes: 2
-      seconds: 0
-      milliseconds: 0
-    enabled: false
-  - target:
-      entity_id: number.adlar_temp_set_cooling
-    data:
-      value: '{{states (''number.adlar_temp_set_cooling'') | int + 2 }}'
-    action: number.set_value
-  - metadata: {}
-    data: {}
-    target:
-      entity_id: timer.wachttijd_koelcurve_veranderen
-    action: timer.start
   mode: single
 - id: '1725026612365'
   alias: Overspanning alarm
@@ -1772,6 +1631,7 @@
           if temp_delta > 0.6 %}\n  {% set state = 'true' %}\n{% else %}\n  {% set
           state = 'false' %}\n{% endif %}\n{{ state }}"
         enabled: true
+        note: De thermostaat moet minimaal 2 stappen aangepast worden.
       sequence:
       - action: number.set_value
         metadata: {}
@@ -2057,23 +1917,25 @@
         entity_id: input_select.wp_selecteer_bedrijfsmodus
         state: Auto verwarmen
       sequence:
-      - action: switch.turn_on
-        metadata: {}
-        target:
-          entity_id: switch.adlar_main_switch
-        data: {}
-      - action: select.select_option
-        metadata: {}
-        target:
-          entity_id: select.adlar_mode
-        data:
-          option: Heating
-      - action: select.select_option
-        metadata: {}
-        data:
-          option: 'Off'
-        target:
-          entity_id: select.adlar_heating_setting_curve
+      - type: turn_on
+        device_id: e1dbf31cc87c6888da7cf7d05276feb9
+        entity_id: 04ec48fb07f7cd9e95add3e27999f017
+        domain: switch
+      - device_id: e1dbf31cc87c6888da7cf7d05276feb9
+        domain: select
+        entity_id: 821192c64750a10caf2cf9bdc4c8df47
+        type: select_option
+        option: Inlet
+      - device_id: e1dbf31cc87c6888da7cf7d05276feb9
+        domain: select
+        entity_id: 662c06362df643eb3d53bf7dbd5ee4a0
+        type: select_option
+        option: Heating
+      - device_id: e1dbf31cc87c6888da7cf7d05276feb9
+        domain: select
+        entity_id: f7e1ef74b1cd45837ecaa4394aa668e9
+        type: select_option
+        option: 'Off'
     - conditions:
       - condition: state
         entity_id: input_select.wp_selecteer_bedrijfsmodus
@@ -2095,17 +1957,25 @@
         entity_id: input_select.wp_selecteer_bedrijfsmodus
         state: Auto koelen
       sequence:
-      - action: switch.turn_on
-        metadata: {}
-        target:
-          entity_id: switch.adlar_main_switch
-        data: {}
-      - action: select.select_option
-        metadata: {}
-        target:
-          entity_id: select.adlar_mode
-        data:
-          option: Cooling
+      - type: turn_on
+        device_id: e1dbf31cc87c6888da7cf7d05276feb9
+        entity_id: 04ec48fb07f7cd9e95add3e27999f017
+        domain: switch
+      - device_id: e1dbf31cc87c6888da7cf7d05276feb9
+        domain: select
+        entity_id: 821192c64750a10caf2cf9bdc4c8df47
+        type: select_option
+        option: Outlet
+      - device_id: e1dbf31cc87c6888da7cf7d05276feb9
+        domain: select
+        entity_id: 662c06362df643eb3d53bf7dbd5ee4a0
+        type: select_option
+        option: Cooling
+      - device_id: e1dbf31cc87c6888da7cf7d05276feb9
+        domain: select
+        entity_id: 2b4a0dc66ba88bb87a395f0931a32808
+        type: select_option
+        option: 'Off'
     - conditions:
       - condition: state
         entity_id: input_select.wp_selecteer_bedrijfsmodus
@@ -2172,10 +2042,6 @@
   description: WP op inlet
   triggers:
   - entity_id:
-    - automation.wp_kouderegeling_nw
-    attribute: last_triggered
-    trigger: state
-  - entity_id:
     - sensor.dauwpunt_woonkamer
     for:
       hours: 0
@@ -2195,16 +2061,26 @@
       seconds: 1
     from:
     to:
-  - entity_id:
-    - timer.wachttijd_koelcurve_veranderen
-    from: active
-    to: idle
+  - trigger: state
+    entity_id:
+    - input_select.wp_selecteer_bedrijfsmodus
+    to:
+    - Auto koelen
     for:
       hours: 0
       minutes: 0
-      seconds: 10
-    trigger: state
-    enabled: false
+      seconds: 5
+  - trigger: state
+    entity_id:
+    - timer.wachttijd_temp_set_veranderen
+    from:
+    - active
+    to:
+    - idle
+    for:
+      hours: 0
+      minutes: 0
+      seconds: 30
   conditions:
   - condition: state
     entity_id: switch.adlar_main_switch
@@ -2228,35 +2104,84 @@
     entity_id: input_select.wp_selecteer_bedrijfsmodus
     state:
     - Auto koelen
+  - condition: template
+    value_template: '{{ is_state_attr(''switch.schedule_d94a8d'', ''current_slot'',
+      none) }}'
+  - condition: state
+    entity_id: timer.wachttijd_temp_set_veranderen
+    state:
+    - idle
   actions:
   - if:
     - condition: numeric_state
       entity_id: sensor.adlar_water_outlet_temp_t7
-      value_template: '{{ float(state.state) -1 }}'
-      above: sensor.dauwpunt_woonkamer
+      value_template: '{{ float(state.state, 0) + 0 }}'
+      enabled: true
+      below: sensor.dauwpunt_woonkamer
     then:
-    - alias: Temp set bij start kouderegeling (WP op inlet)
+    - alias: Temp set bij start kouderegeling
       target:
         entity_id: number.adlar_temp_set_cooling
       data:
-        value: '{{states (''sensor.dauwpunt_woonkamer'') | int(0) + 2 }}'
-      action: number.set_value
-      enabled: true
-    else:
-    - target:
-        entity_id:
-        - number.adlar_temp_set_cooling
-      data:
-        value: '{{((states (''number.adlar_temp_set_cooling'') | int(0) + 1), 20)
+        value: '{{((states (''number.adlar_temp_set_cooling'') | int(0) + 1), 25)
           | min }}'
       action: number.set_value
       enabled: true
-    - action: timer.start
+    - action: logbook.log
       metadata: {}
       data:
-        duration: 0:05:00
+        name: Adlar automation
+        entity_id: number.adlar_temp_set_cooling
+        message: WP kouderegeling dauwpunt - Huidige set temperatuur {{ states('number.adlar_temp_set_cooling')
+          }} + 1
+    - action: timer.start
+      metadata: {}
       target:
-        entity_id: timer.wachttijd_koelcurve_veranderen
+        entity_id: timer.wachttijd_temp_set_veranderen
+      data:
+        duration:
+          hours: 0
+          minutes: 5
+          seconds: 0
+    else:
+    - if:
+      - condition: numeric_state
+        entity_id: sensor.adlar_water_outlet_temp_t7
+        value_template: '{{ float(state.state)  }}'
+        enabled: true
+        above: sensor.dauwpunt_woonkamer
+      - condition: template
+        value_template: '
+
+          {{ states(''number.adlar_temp_set_cooling'') | round != (states(''sensor.dauwpunt_woonkamer'')
+          | round + 2) }}
+
+
+
+          '
+      then:
+      - alias: Temp set bij start kouderegeling
+        target:
+          entity_id: number.adlar_temp_set_cooling
+        data:
+          value: '{{((states (''sensor.dauwpunt_woonkamer'') | round + 3), 15) | max
+            }}'
+        action: number.set_value
+        enabled: true
+      - action: logbook.log
+        metadata: {}
+        data:
+          name: Adlar automation
+          entity_id: number.adlar_temp_set_cooling
+          message: 'WP kouderegeling dauwpunt - Huidige set temperatuur is dauwpunt
+            + 2: {{ states(''number.adlar_temp_set_cooling'') }}'
+      - action: timer.start
+        metadata: {}
+        data:
+          duration: 0:05:00
+        target:
+          entity_id: timer.wachttijd_temp_set_veranderen
+        enabled: true
       enabled: true
   mode: single
 - id: '1759136772431'
@@ -3197,7 +3122,7 @@
     after: '23:55:00'
     before: 08:00:00
   - condition: numeric_state
-    entity_id: sensor.buienradar_temperature
+    entity_id: sensor.buitentemperatuur_gemiddeld
     above: 3
   - condition: numeric_state
     entity_id: number.adlar_temp_set_heating
@@ -3626,40 +3551,1435 @@
           entity_id: button.bosch_dishwasher_start
         data: {}
   mode: single
-- id: '1778598700959'
-  alias: Frank slim terugleveren
+- id: '1779401968251'
+  alias: Enphase DPEL
   description: ''
   triggers:
   - trigger: state
     entity_id:
-    - sensor.frank_energie_prijzen_huidige_elektriciteitsprijs_all_in
-    from:
-    to:
-  - trigger: state
-    entity_id:
-    - binary_sensor.frank_slim_terugleveren
-    from:
-    - 'off'
+    - binary_sensor.envoy_122025007960_dynamic_power_export_limiting
     to:
     - 'on'
-    id: Slim terugleveren aan
+  conditions: []
+  actions:
+  - action: notify.mobile_app_gsm_martin
+    metadata: {}
+    data:
+      title: Let op!
+      message: 'Enphase DPEL: Frank sllim terugleveren'
+  mode: single
+- id: '1779471356295'
+  alias: Yamaha AV netradio
+  description: ''
+  triggers:
   - trigger: state
     entity_id:
-    - binary_sensor.frank_slim_terugleveren
+    - media_player.room_rx_v481d_f9a984
     from:
-    - 'on'
+    - 'off'
+  conditions:
+  - condition: device
+    device_id: 479411360a9b5dc39682f75a9449bfa2
+    domain: media_player
+    entity_id: 64ecb528d499e306484647e994211ebf
+    type: is_off
+  actions:
+  - action: media_player.select_source
+    metadata: {}
+    target:
+      entity_id: media_player.room_rx_v481d_f9a984
+    data:
+      source: Net Radio
+  - action: media_player.select_sound_mode
+    metadata: {}
+    target:
+      entity_id: media_player.room_rx_v481d_f9a984
+    data:
+      sound_mode: 2ch_stereo
+  - action: media_player.volume_set
+    metadata: {}
+    target:
+      entity_id: media_player.room_rx_v481d_f9a984
+    data:
+      volume_level: 0.35
+  mode: single
+- id: '1779906632597'
+  alias: Bypass modus open bepalen
+  description: ''
+  triggers:
+  - trigger: time_pattern
+    minutes: /15
+  conditions:
+  - condition: state
+    entity_id: input_select.wp_selecteer_bedrijfsmodus
+    state:
+    - Auto koelen
+    - unavailable
+    - Uit
+  actions:
+  - if:
+    - condition: numeric_state
+      entity_id: sensor.ducobox_temperatuur_woonkamer
+      above: 23
+    - condition: numeric_state
+      entity_id: sensor.ducobox_temperatuur_toevoer_van_buiten
+      below: sensor.ducobox_temperatuur_woonkamer
+    - condition: not
+      conditions:
+      - condition: state
+        entity_id: input_select.ducobox_bypass_modus
+        state:
+        - Open
+    then:
+    - action: input_select.select_option
+      metadata: {}
+      target:
+        entity_id: input_select.ducobox_bypass_modus
+      data:
+        option: Open
+    else:
+    - if:
+      - condition: or
+        conditions:
+        - condition: numeric_state
+          entity_id: sensor.ducobox_temperatuur_woonkamer
+          below: 22.7
+        - condition: numeric_state
+          entity_id: sensor.ducobox_temperatuur_toevoer_van_buiten
+          above: sensor.ducobox_temperatuur_woonkamer
+          enabled: false
+      - condition: state
+        entity_id: input_select.ducobox_bypass_modus
+        state:
+        - Open
+      then:
+      - action: input_select.select_option
+        metadata: {}
+        target:
+          entity_id: input_select.ducobox_bypass_modus
+        data:
+          option: Auto
+        enabled: true
+  mode: single
+- id: '1780157556680'
+  alias: Thermostaat modus naar Adlar bedrijfsmodus
+  description: ''
+  triggers:
+  - trigger: state
+    entity_id:
+    - climate.wp_thermostaat
+    attribute: hvac_action
     to:
     - 'off'
-    id: Slim terugleveren uit
+    - cooling
+    - heating
+    for:
+      hours: 0
+      minutes: 0
+      seconds: 10
   conditions: []
   actions:
   - choose:
     - conditions:
       - condition: state
-        entity_id: binary_sensor.frank_slim_terugleveren
+        entity_id: climate.wp_thermostaat
+        state:
+        - 'off'
+        for:
+          hours: 0
+          minutes: 0
+          seconds: 0
+        attribute: hvac_action
+      sequence:
+      - action: input_select.select_option
+        metadata: {}
+        target:
+          entity_id: input_select.wp_selecteer_bedrijfsmodus
+        data:
+          option: Uit
+    - conditions:
+      - condition: state
+        entity_id: climate.wp_thermostaat
+        state:
+        - heating
+        for:
+          hours: 0
+          minutes: 0
+          seconds: 0
+        attribute: hvac_action
+      sequence:
+      - action: input_select.select_option
+        metadata: {}
+        target:
+          entity_id: input_select.wp_selecteer_bedrijfsmodus
+        data:
+          option: Auto verwarmen
+    - conditions:
+      - condition: state
+        entity_id: climate.wp_thermostaat
+        state:
+        - cooling
+        for:
+          hours: 0
+          minutes: 0
+          seconds: 0
+        attribute: hvac_action
+      sequence:
+      - action: input_select.select_option
+        metadata: {}
+        target:
+          entity_id: input_select.wp_selecteer_bedrijfsmodus
+        data:
+          option: Auto koelen
+  mode: single
+- id: '1780162024261'
+  alias: Thermostaatklok aan/uit
+  description: ''
+  triggers:
+  - trigger: state
+    entity_id:
+    - input_select.wp_selecteer_bedrijfsmodus
+  conditions: []
+  actions:
+  - if:
+    - condition: state
+      entity_id: input_select.wp_selecteer_bedrijfsmodus
+      state:
+      - Auto verwarmen
+    then:
+    - action: scheduler.enable_all
+      metadata: {}
+      data: {}
+      enabled: false
+    - action: homeassistant.unhide_entity
+      data:
+        entity_id:
+        - switch.schedule_d0765c
+      enabled: true
+    else:
+    - action: scheduler.disable_all
+      metadata: {}
+      data: {}
+      enabled: false
+    - action: homeassistant.hide_entity
+      data:
+        entity_id:
+        - switch.schedule_d0765c
+  mode: single
+- id: '1780170185961'
+  alias: WP thermostaat temp set cooling
+  description: ''
+  triggers:
+  - trigger: state
+    entity_id:
+    - number.adlar_temp_set_cooling
+  conditions:
+  - condition: device
+    type: is_on
+    device_id: e1dbf31cc87c6888da7cf7d05276feb9
+    entity_id: 04ec48fb07f7cd9e95add3e27999f017
+    domain: switch
+  - condition: device
+    device_id: e1dbf31cc87c6888da7cf7d05276feb9
+    domain: select
+    entity_id: 662c06362df643eb3d53bf7dbd5ee4a0
+    type: selected_option
+    option: Cooling
+  actions:
+  - action: climate.set_temperature
+    metadata: {}
+    target:
+      entity_id: climate.wp_thermostaat
+    data:
+      temperature: '{{states(''number.adlar_temp_set_cooling'') | float }}'
+    enabled: true
+  mode: single
+- id: '1781076221209'
+  alias: 'Melding: Systeemlogboek Integratiefout'
+  description: Stuurt een melding zodra er een integratiefout in de logs verschijnt.
+  triggers:
+  - event_type: system_log_event
+    event_data:
+      level: ERROR
+    trigger: event
+  conditions:
+  - condition: template
+    value_template: '{{ ''failed to set up'' in trigger.event.data.message or ''error''
+      in trigger.event.data.message }}'
+  actions:
+  - data:
+      title: "\U0001F6A8 Home Assistant Integratiefout"
+      message: 'Er is een fout gedetecteerd: {{ trigger.event.data.message }}'
+    action: notify.notify
+    enabled: false
+  - action: notify.mobile_app_gsm_martin
+    metadata: {}
+    data:
+      message: 'Er is een fout gedetecteerd: {{ trigger.event.data.message }}'
+      title: "\U0001F6A8 Home Assistant Integratiefout"
+  - delay: 00:05:00
+  mode: single
+- id: '1781876871168'
+  alias: 'Wp AK: debouncing bij start waterpomp'
+  description: ''
+  triggers:
+  - trigger: state
+    entity_id:
+    - binary_sensor.adlar_waterpomp_in_bedrijf
+    to:
+    - 'on'
+    for:
+      hours: 0
+      minutes: 0
+      seconds: 2
+  conditions:
+  - condition: state
+    entity_id: binary_sensor.192_168_1_130
+    state:
+    - 'on'
+  - condition: state
+    entity_id: switch.adlar_main_switch
+    state:
+    - 'on'
+  - condition: state
+    entity_id: input_select.wp_selecteer_bedrijfsmodus
+    state:
+    - Auto koelen
+    enabled: true
+  - condition: state
+    entity_id: select.adlar_mode
+    state:
+    - Cooling
+  actions:
+  - action: number.set_value
+    metadata: {}
+    data:
+      value: '{% set current_temp_set = states(''number.adlar_temp_set_cooling'')
+        | float %}
+
+        {{ [current_temp_set - 1, 16] | max }}
+
+        '
+    enabled: true
+    target:
+      entity_id: number.adlar_temp_set_cooling
+  - action: logbook.log
+    metadata: {}
+    data:
+      name: Adlar automation
+      entity_id: number.adlar_temp_set_cooling
+      message: 'Wp AK: debouncing bij start waterpomp - Huidige set temperatuur -1:
+        {{ states(''number.adlar_temp_set_cooling'') }}'
+  - wait_for_trigger:
+    - trigger: state
+      entity_id:
+      - binary_sensor.adlar_compressor_active
+      to:
+      - 'on'
+      for:
+        hours: 0
+        minutes: 0
+        seconds: 30
+    timeout:
+      hours: 0
+      minutes: 3
+      seconds: 0
+      milliseconds: 0
+  - action: number.set_value
+    metadata: {}
+    data:
+      value: '{% set current_temp_set = states(''number.adlar_temp_set_cooling'')
+        | float %}
+
+        {{ [current_temp_set + 1, 17] | max }}
+
+        '
+    enabled: true
+    target:
+      entity_id: number.adlar_temp_set_cooling
+  - action: logbook.log
+    metadata: {}
+    data:
+      name: Adlar automation
+      entity_id: number.adlar_temp_set_cooling
+      message: 'Wp AK: debouncing bij start waterpomp - Huidige set temperatuur +1:
+        {{ states(''number.adlar_temp_set_cooling'') }}'
+  - action: timer.start
+    metadata: {}
+    target:
+      entity_id: timer.wachttijd_temp_set_veranderen
+    data:
+      duration:
+        hours: 0
+        minutes: 5
+        seconds: 0
+    enabled: false
+  mode: single
+- id: '1782035789410'
+  alias: 'WP koelen: optimale temp set'
+  description: ''
+  triggers:
+  - trigger: state
+    entity_id:
+    - binary_sensor.adlar_compressor_active
+    to:
+    - 'off'
+    from:
+    - 'on'
+    for:
+      hours: 0
+      minutes: 0
+      seconds: 0
+    enabled: true
+  conditions:
+  - condition: state
+    entity_id: binary_sensor.192_168_1_130
+    state:
+    - 'on'
+  - condition: state
+    entity_id: switch.adlar_main_switch
+    state:
+    - 'on'
+  - condition: state
+    entity_id: input_select.wp_selecteer_bedrijfsmodus
+    state:
+    - Auto koelen
+    enabled: true
+  actions:
+  - action: input_number.set_value
+    metadata: {}
+    data:
+      value: '{% set current_temp = (states(''input_number.wp_berekende_optimale_temp_set_koelen'')
+        | int, 15) | max  %}
+
+        {{ current_temp + 0 }}
+
+        '
+    target:
+      entity_id: input_number.wp_berekende_optimale_temp_set_koelen
+  - action: logbook.log
+    metadata: {}
+    data:
+      entity_id: input_number.wp_berekende_optimale_temp_set
+      name: Adlar automation
+      message: 'WP kouderegeling optimale temp set: {{ states(''input_number.wp_berekende_optimale_temp_set_koelen'')
+        }} '
+  mode: single
+- id: '1782038407657'
+  alias: 'WP koelen: dauwpuntregeling (inlet)'
+  description: WP op inlet
+  triggers:
+  - entity_id:
+    - sensor.dauwpunt_woonkamer
+    for:
+      hours: 0
+      minutes: 0
+      seconds: 1
+    enabled: true
+    from:
+    to:
+    trigger: state
+  - trigger: state
+    entity_id:
+    - sensor.adlar_water_inlet_temp_t6
+    - sensor.adlar_water_outlet_temp_t7
+    for:
+      hours: 0
+      minutes: 0
+      seconds: 1
+    from:
+    to:
+  - trigger: state
+    entity_id:
+    - input_select.wp_selecteer_bedrijfsmodus
+    to:
+    - Auto koelen
+    for:
+      hours: 0
+      minutes: 0
+      seconds: 5
+  - trigger: state
+    entity_id:
+    - timer.wachttijd_temp_set_veranderen
+    from:
+    - active
+    to:
+    - idle
+    for:
+      hours: 0
+      minutes: 0
+      seconds: 5
+  - trigger: state
+    entity_id:
+    - binary_sensor.adlar_compressor_active
+    from:
+    - 'on'
+    to:
+    - 'off'
+    for:
+      hours: 0
+      minutes: 0
+      seconds: 10
+    id: Compressor stopt
+  conditions:
+  - condition: state
+    entity_id: switch.adlar_main_switch
+    state:
+    - 'on'
+  - condition: state
+    entity_id: select.adlar_mode
+    state:
+    - Cooling
+  - condition: state
+    entity_id: select.adlar_cooling_setting_curve
+    state:
+    - 'Off'
+  - condition: state
+    entity_id: timer.wachttijd_koelcurve_veranderen
+    state: idle
+  - condition: numeric_state
+    entity_id: sensor.dauwpunt_woonkamer
+    below: 20
+  - condition: state
+    entity_id: input_select.wp_selecteer_bedrijfsmodus
+    state:
+    - Auto koelen
+  - condition: template
+    value_template: '{{ is_state_attr(''switch.schedule_d94a8d'', ''current_slot'',
+      none) }}'
+  - condition: state
+    entity_id: select.adlar_p116_regeling_in_of_outlet
+    state:
+    - Inlet
+  actions:
+  - choose:
+    - conditions:
+      - condition: numeric_state
+        entity_id: sensor.adlar_water_outlet_temp_t7
+        value_template: '{{ float(state.state)  }}'
+        enabled: true
+        above: sensor.dauwpunt_woonkamer
+      - condition: state
+        entity_id: binary_sensor.adlar_compressor_active
+        state:
+        - 'off'
+      - condition: template
+        value_template: '
+
+          {{ states(''number.adlar_temp_set_cooling'') | int(0) != (states(''sensor.dauwpunt_woonkamer'')
+          | int(0) + 3) }}
+
+
+
+          '
+      - condition: numeric_state
+        entity_id: sensor.kamertemperatuur_gemiddeld
+        above: 23
+      - condition: state
+        entity_id: timer.wachttijd_temp_set_veranderen
+        state:
+        - idle
+      sequence:
+      - alias: Temp set bij start kouderegeling
+        target:
+          entity_id: number.adlar_temp_set_cooling
+        data:
+          value: '{{((states (''sensor.dauwpunt_woonkamer'') | round + 3), 17) | max
+            }}'
+        action: number.set_value
+        enabled: false
+      - action: logbook.log
+        metadata: {}
+        data:
+          name: Adlar automation
+          entity_id: number.adlar_temp_set_cooling
+          message: 'WP kouderegeling dauwpunt optie 1 - Huidige set temperatuur is
+            dauwpunt + 2: {{ states(''number.adlar_temp_set_cooling'') }}'
+        enabled: false
+      - action: timer.start
+        metadata: {}
+        data:
+          duration:
+            hours: 0
+            minutes: 1
+            seconds: 0
+        target:
+          entity_id: timer.wachttijd_temp_set_veranderen
+        enabled: false
+      - alias: Temp set bij start kouderegeling
+        target:
+          entity_id: number.adlar_temp_set_cooling
+        data:
+          value: '{% set current_temp_set = states(''number.adlar_temp_set_cooling'')
+            | int(0) %}
+
+            {% set current_dauwpunt = states (''sensor.dauwpunt_woonkamer'') | int(0)
+            %}
+
+            {{ [current_temp_set - 2, current_dauwpunt + 2] | max }}'
+        action: number.set_value
+        enabled: true
+      - action: logbook.log
+        data:
+          name: Adlar automation
+          message: 'Wp douwpunt regeling: debouncing bij start waterpomp - Huidige
+            set temperatuur -1: {{ states(''number.adlar_temp_set_cooling'') }}'
+          entity_id: number.adlar_temp_set_cooling
+      - wait_for_trigger:
+        - trigger: state
+          entity_id:
+          - binary_sensor.adlar_compressor_active
+          to:
+          - 'on'
+          for:
+            hours: 0
+            minutes: 2
+            seconds: 0
+        timeout:
+          hours: 0
+          minutes: 3
+          seconds: 0
+          milliseconds: 0
+        enabled: true
+      - if:
+        - condition: state
+          entity_id: binary_sensor.adlar_compressor_active
+          state: []
+        then:
+        - alias: Temp set bij start kouderegeling
+          target:
+            entity_id: number.adlar_temp_set_cooling
+          data:
+            value: '{% set current_temp_set = states(''number.adlar_temp_set_cooling'')
+              | int(0) %}
+
+              {{ [current_temp_set + 2, 16] | max }}'
+          action: number.set_value
+          enabled: true
+      - action: timer.start
+        metadata: {}
+        data:
+          duration:
+            hours: 0
+            minutes: 5
+            seconds: 0
+        target:
+          entity_id: timer.wachttijd_temp_set_veranderen
+        enabled: true
+    - conditions:
+      - condition: numeric_state
+        entity_id: sensor.adlar_water_outlet_temp_t7
+        value_template: '{{ float(state.state, 0) - 0 }}'
+        enabled: true
+        below: sensor.dauwpunt_woonkamer
+      - condition: state
+        entity_id: binary_sensor.adlar_compressor_active
+        state:
+        - 'on'
+      - condition: state
+        entity_id: timer.wachttijd_temp_set_veranderen
+        state:
+        - idle
+      sequence:
+      - alias: Temp set bij start kouderegeling
+        target:
+          entity_id: number.adlar_temp_set_cooling
+        data:
+          value: '{% set current_temp_set = states(''number.adlar_temp_set_cooling'')
+            | int(0) %}
+
+            {{ [current_temp_set + 1, 16] | max }}'
+        action: number.set_value
+        enabled: true
+      - action: logbook.log
+        metadata: {}
+        data:
+          name: Adlar automation
+          entity_id: number.adlar_temp_set_cooling
+          message: WP kouderegeling dauwpunt optie 2 - Huidige set temperatuur {{
+            states('number.adlar_temp_set_cooling') }} + 1
+      - action: timer.start
+        metadata: {}
+        target:
+          entity_id: timer.wachttijd_temp_set_veranderen
+        data:
+          duration:
+            hours: 0
+            minutes: 10
+            seconds: 0
+    - conditions:
+      - condition: numeric_state
+        entity_id: sensor.adlar_water_outlet_temp_t7
+        value_template: '{{ float(state.state, 0) - 2 }}'
+        enabled: true
+        above: sensor.dauwpunt_woonkamer
+      - condition: state
+        entity_id: binary_sensor.adlar_compressor_active
+        state:
+        - 'on'
+        for:
+          hours: 0
+          minutes: 5
+          seconds: 0
+      - condition: state
+        entity_id: timer.wachttijd_temp_set_veranderen
+        state:
+        - idle
+      sequence:
+      - alias: Temp set bij start kouderegeling
+        target:
+          entity_id: number.adlar_temp_set_cooling
+        data:
+          value: '{{((states (''number.adlar_temp_set_cooling'') | int(0) - 1), 17)
+            | max }}'
+        action: number.set_value
+        enabled: true
+      - action: logbook.log
+        metadata: {}
+        data:
+          name: Adlar automation
+          entity_id: number.adlar_temp_set_cooling
+          message: WP kouderegeling dauwpunt optie 3 - Huidige set temperatuur {{
+            states('number.adlar_temp_set_cooling') }} - 1
+      - action: timer.start
+        metadata: {}
+        target:
+          entity_id: timer.wachttijd_temp_set_veranderen
+        data:
+          duration:
+            hours: 0
+            minutes: 10
+            seconds: 0
+    - conditions:
+      - condition: numeric_state
+        entity_id: sensor.adlar_water_outlet_temp_t7
+        value_template: '{{ float(state.state)  }}'
+        enabled: true
+        above: sensor.dauwpunt_woonkamer
+      - condition: state
+        entity_id: binary_sensor.adlar_compressor_active
+        state:
+        - 'off'
+        for:
+          hours: 0
+          minutes: 0
+          seconds: 10
+      - condition: template
+        value_template: '
+
+          {{ states(''number.adlar_temp_set_cooling'') | int(0) != (states(''sensor.dauwpunt_woonkamer'')
+          | int(0) + 2) }}
+
+
+
+          '
+      - condition: trigger
+        id:
+        - Compressor stopt
+        enabled: false
+      sequence:
+      - alias: Temp set bij start kouderegeling
+        target:
+          entity_id: number.adlar_temp_set_cooling
+        data:
+          value: '{{((states (''sensor.dauwpunt_woonkamer'') | int(0) + 2), 17) |
+            max }}'
+        action: number.set_value
+        enabled: true
+      - action: logbook.log
+        metadata: {}
+        data:
+          name: Adlar automation
+          entity_id: number.adlar_temp_set_cooling
+          message: WP kouderegeling dauwpunt optie 4 - Temp set in voorbereiding start
+            koelen
+        enabled: true
+      - action: timer.start
+        metadata: {}
+        data:
+          duration: 0:05:00
+        target:
+          entity_id: timer.wachttijd_temp_set_veranderen
+        enabled: false
+    - conditions:
+      - condition: numeric_state
+        entity_id: sensor.adlar_water_outlet_temp_t7
+        value_template: '{{ float(state.state)  }}'
+        enabled: true
+        above: sensor.dauwpunt_woonkamer
+      - condition: state
+        entity_id: binary_sensor.adlar_compressor_active
+        state:
+        - 'on'
+        for:
+          hours: 0
+          minutes: 1
+          seconds: 0
+      - condition: template
+        value_template: '
+
+          {{ states(''number.adlar_temp_set_cooling'') | round != (states(''sensor.dauwpunt_woonkamer'')
+          | round + 3) }}
+
+
+
+          '
+      sequence:
+      - alias: Temp set bij start kouderegeling
+        target:
+          entity_id: number.adlar_temp_set_cooling
+        data:
+          value: '{{((states (''sensor.dauwpunt_woonkamer'') | round + 3), 17) | max
+            }}'
+        action: number.set_value
+        enabled: false
+      - action: logbook.log
+        metadata: {}
+        data:
+          name: Adlar automation
+          entity_id: number.adlar_temp_set_cooling
+          message: 'WP kouderegeling dauwpunt optie 3 - Huidige set temperatuur is
+            dauwpunt + 2: {{ states(''number.adlar_temp_set_cooling'') }}'
+        enabled: false
+      - action: timer.start
+        metadata: {}
+        data:
+          duration: 0:05:00
+        target:
+          entity_id: timer.wachttijd_temp_set_veranderen
+        enabled: false
+  mode: single
+- id: '1782201054711'
+  alias: Ramen en deuren open of dicht
+  description: ''
+  triggers:
+  - trigger: numeric_state
+    entity_id:
+    - sensor.buitentemperatuur_gemiddeld
+    for:
+      hours: 0
+      minutes: 10
+      seconds: 0
+    above: sensor.kamertemperatuur_gemiddeld
+    id: dicht
+    value_template: '{{ float(state.state) - 0.2 }}'
+  - trigger: numeric_state
+    entity_id:
+    - sensor.buitentemperatuur_gemiddeld
+    for:
+      hours: 0
+      minutes: 10
+      seconds: 0
+    below: sensor.kamertemperatuur_gemiddeld
+    id: open
+    value_template: '{{ float(state.state) + 0.2 }}'
+  conditions:
+  - condition: zone.occupancy_is_detected
+    options:
+      for:
+        hours: 0
+        minutes: 5
+        seconds: 0
+      zone: zone.home
+  - condition: numeric_state
+    entity_id: sensor.kamertemperatuur_gemiddeld
+    above: 22
+  - condition: time
+    after: 08:00:00
+    before: '23:55:00'
+  - condition: zone.in_zone
+    target:
+      entity_id:
+      - person.martin
+      - person.marjan
+      - device_tracker.gsm_martin
+      - device_tracker.gsm_marjan
+      device_id:
+      - 5a7bbda74739d9c043d10f9403b91288
+      - 3e92efe2539e0b4e55b7e679f3cf4cfd
+    options:
+      for:
+        hours: 0
+        minutes: 0
+        seconds: 10
+      zone: zone.home
+      behavior: any
+  actions:
+  - choose:
+    - conditions:
+      - condition: trigger
+        id:
+        - open
+      sequence:
+      - action: notify.mobile_app_gsm_martin
+        metadata: {}
+        data:
+          title: 'Ventilatieadvies:'
+          message: Open de pui, ramen en deuren. Binnen is het warmer dan buiten,
+            ventileren helpt de kamertemperatuur te verlagen.
+        enabled: true
+      - action: notify.mobile_app_gsm_marjan
+        metadata: {}
+        data:
+          title: 'Ventilatieadvies:'
+          message: Open de pui, ramen en deuren. Binnen is het warmer dan buiten,
+            ventileren helpt de kamertemperatuur te verlagen.
+    - conditions:
+      - condition: trigger
+        id:
+        - dicht
+      sequence:
+      - action: notify.mobile_app_gsm_martin
+        metadata: {}
+        data:
+          title: 'Ventilatieadvies:'
+          message: Sluit de pui, ramen en deuren. Buiten is het warmer dan binnen,
+            ventileren verhoogt de kamertemperatuur.
+        enabled: true
+      - action: notify.mobile_app_gsm_marjan
+        metadata: {}
+        data:
+          title: 'Ventilatieadvies:'
+          message: Sluit de pui, ramen en deuren. Buiten is het warmer dan binnen,
+            ventileren verhoogt de kamertemperatuur.
+  mode: single
+- id: '1782509874995'
+  alias: 'WP koelen: dauwpuntregeling (outlet)'
+  description: ''
+  triggers:
+  - trigger: time_pattern
+    minutes: /1
+    id: periodiek
+  - trigger: state
+    entity_id:
+    - input_select.wp_selecteer_bedrijfsmodus
+    to:
+    - Auto koelen
+    for:
+      hours: 0
+      minutes: 0
+      seconds: 5
+  - trigger: state
+    entity_id:
+    - binary_sensor.adlar_compressor_active
+    from:
+    - 'off'
+    to:
+    - 'on'
+    id: Compressor gestart 10 sec geleden
+    enabled: true
+    for:
+      hours: 0
+      minutes: 0
+      seconds: 10
+  - trigger: state
+    entity_id:
+    - binary_sensor.adlar_compressor_active
+    from:
+    - 'off'
+    to:
+    - 'on'
+    id: Compressor gestart 1 min geleden
+    enabled: true
+    for:
+      hours: 0
+      minutes: 1
+      seconds: 0
+  - trigger: state
+    entity_id:
+    - binary_sensor.adlar_compressor_active
+    from:
+    - 'on'
+    to:
+    - 'off'
+    id: Compressor gestopt
+    enabled: true
+    for:
+      hours: 0
+      minutes: 0
+      seconds: 5
+  - trigger: numeric_state
+    entity_id:
+    - sensor.adlar_water_outlet_temp_t7
+    for:
+      hours: 0
+      minutes: 5
+      seconds: 0
+    below: sensor.dauwpunt_woonkamer
+    id: Outlet temp < dauwpunt
+  - entity_id:
+    - sensor.dauwpunt_woonkamer
+    for:
+      hours: 0
+      minutes: 0
+      seconds: 1
+    enabled: false
+    from:
+    to:
+    trigger: state
+  - trigger: state
+    entity_id:
+    - sensor.adlar_water_outlet_temp_t7
+    for:
+      hours: 0
+      minutes: 1
+      seconds: 0
+    from:
+    to:
+    enabled: false
+  conditions:
+  - condition: state
+    entity_id: switch.adlar_main_switch
+    state:
+    - 'on'
+  - condition: state
+    entity_id: select.adlar_mode
+    state:
+    - Cooling
+  - condition: state
+    entity_id: select.adlar_cooling_setting_curve
+    state:
+    - 'Off'
+  - condition: state
+    entity_id: timer.wachttijd_koelcurve_veranderen
+    state: idle
+  - condition: state
+    entity_id: input_select.wp_selecteer_bedrijfsmodus
+    state:
+    - Auto koelen
+  - condition: template
+    value_template: '{{ is_state_attr(''switch.schedule_d94a8d'', ''current_slot'',
+      none) }}'
+    enabled: true
+  - condition: state
+    entity_id: select.adlar_p116_regeling_in_of_outlet
+    state:
+    - Outlet
+  actions:
+  - choose:
+    - conditions:
+      - condition: numeric_state
+        entity_id: sensor.kamertemperatuur_gemiddeld
+        above: 23
+      - condition: numeric_state
+        entity_id: sensor.dauwpunt_woonkamer
+        below: 20
+        enabled: true
+      - condition: trigger
+        id:
+        - periodiek
+      - condition: state
+        entity_id: switch.schedule_d94a8d
         state:
         - 'on'
       sequence:
-      - action: number.set_value
-        data: {}
+      - repeat:
+          while:
+          - condition: state
+            entity_id: binary_sensor.adlar_compressor_active
+            state:
+            - 'off'
+            for:
+              hours: 0
+              minutes: 45
+              seconds: 0
+          - condition: numeric_state
+            entity_id: sensor.adlar_water_outlet_temp_t7
+            value_template: '{{ float(state.state) }}'
+            above: sensor.dauwpunt_woonkamer
+          - condition: timer.is_idle
+            target:
+              entity_id: timer.wachttijd_temp_set_veranderen
+            options:
+              for: 00:00:00
+          sequence:
+          - action: number.set_value
+            target:
+              entity_id: number.adlar_temp_set_cooling
+            data:
+              value: "{% set dauwpunt = states('sensor.dauwpunt_woonkamer') | float(0)
+                | round(0, 'ceil') %}\n{% set delta_t_aan = states('sensor.wp_aan_delta_t_temp_set')
+                | float(0) | round(0, 'ceil') %}\n{% set doel_temp = (dauwpunt - (delta_t_aan
+                | abs) - 1) | int %} \n{% set temp_set = states('number.adlar_temp_set_cooling')
+                | int(0) %}\n{% if temp_set < doel_temp %}\n  {{ temp_set + 1 }}\n{%
+                else %}\n  {{ temp_set - 1 }}\n{% endif %}"
+          - action: logbook.log
+            data:
+              name: Adlar automation
+              message: "{% set dauwpunt = states ('sensor.dauwpunt_woonkamer') | float(0)
+                | round(0,'ceil') %}\n{% set temp_set = states('number.adlar_temp_set_cooling')
+                | int(0) %} \nWp koelen (outlet) 1a Temp set -1 van {{ temp_set }}
+                naar {{ temp_set -1 }}\n"
+              entity_id: number.adlar_temp_set_cooling
+            enabled: true
+          - delay:
+              hours: 0
+              minutes: 3
+              seconds: 0
+              milliseconds: 0
+        enabled: true
+      - variables:
+          dauwpunt: '{{ states(''sensor.dauwpunt_woonkamer'') | float(0) | round(0,
+            ''ceil'') }}'
+          temp_set: '{{ states(''number.adlar_temp_set_cooling'') | int(0) }}'
+          temp_buiten: '{{ states(''sensor.buitentemperatuur_gemiddeld'') | float(0)
+            }}'
+          max_temp_set: '{% if temp_buiten < 23 %} 18 {% elif 23 <= temp_buiten <
+            25 %} 17 {% elif 25 <= temp_buiten < 27 %} 16 {% elif 27 <= temp_buiten
+            < 29 %} 15 {% elif 29 <= temp_buiten < 31 %} 14  {% elif 31 <= temp_buiten
+            < 33 %} 13 {% else %} 10 {% endif %}'
+          new_temp_set: '{{ [dauwpunt, max_temp_set | int] | max }}'
+      - if:
+        - condition: template
+          value_template: '{{ temp_set != new_temp_set | int }}'
+        then:
+        - action: number.set_value
+          target:
+            entity_id: number.adlar_temp_set_cooling
+          data:
+            value: '{{ new_temp_set }}'
+        - action: logbook.log
+          data:
+            name: Adlar automation
+            message: "{% set dauwpunt = states ('sensor.dauwpunt_woonkamer') | float(0)
+              | round(0,'ceil') %}\n{% set temp_set = states('number.adlar_temp_set_cooling')
+              | int(0) %}\nWp koelen (outlet) 1b dauwpunt temp set: van {{ temp_set
+              }} naar {{ dauwpunt + 0 }} \n"
+            entity_id: number.adlar_temp_set_cooling
+          enabled: true
+        - action: timer.start
+          metadata: {}
+          data:
+            duration:
+              hours: 0
+              minutes: 2
+              seconds: 0
+          target:
+            entity_id: timer.wachttijd_temp_set_veranderen
+          enabled: true
+      - alias: Temp set bij start kouderegeling
+        target:
+          entity_id: number.adlar_temp_set_cooling
+        data:
+          value: "{% set dauwpunt = states('sensor.dauwpunt_woonkamer') | float(0)
+            | round(0, 'ceil') %}\n{% set temp_set = states('number.adlar_temp_set_cooling')
+            | int(0) %} \n{% set temp_buiten = states('sensor.buitentemperatuur_gemiddeld')
+            | float(0)  %}\n\n{% if temp_buiten < 23 %}\n  {% set max_temp_set = 20
+            %}\n{% elif  23 <= temp_buiten < 25  %}\n  {% set max_temp_set = 19 %}\n{%
+            elif  25 <= temp_buiten < 27  %}\n  {% set max_temp_set = 18 %}\n{% elif
+            \ 27 <= temp_buiten < 29  %}\n  {% set max_temp_set = 17 %}\n{% elif 29
+            <= temp_buiten < 31  %}\n  {% set max_temp_set = 16 %}\n{% elif 31 <=
+            temp_buiten < 33  %}\n  {% set max_temp_set = 15 %}\n{% else %}\n   {%
+            set max_temp_set = 10 %}\n{% endif %}\n\n{% if temp_set != [dauwpunt,
+            max_temp_set] | max  %}\n{{ [dauwpunt, max_temp_set] | max }}\n{% else
+            %}\n  {{ temp_set }}\n{% endif %}"
+        action: number.set_value
+        enabled: false
+    - conditions:
+      - condition: trigger
+        id:
+        - Compressor gestart 1 min geleden
+      sequence:
+      - variables:
+          dauwpunt: '{{ states(''sensor.dauwpunt_woonkamer'') | float(0) | round(0,
+            ''ceil'') }}'
+          temp_set: '{{ states(''number.adlar_temp_set_cooling'') | int(0) }}'
+          temp_buiten: '{{ states(''sensor.buitentemperatuur_gemiddeld'') | float(0)
+            }}'
+          max_temp_set: '{% if temp_buiten < 23 %} 20 {% elif 23 <= temp_buiten <
+            25 %} 19 {% elif 25 <= temp_buiten < 27 %} 18 {% elif 27 <= temp_buiten
+            < 29 %} 17 {% elif 29 <= temp_buiten < 31 %} 16  {% elif 31 <= temp_buiten
+            < 33 %} 15 {% else %} 10 {% endif %}'
+          new_temp_set: '{{ [dauwpunt, max_temp_set | int] | max }}'
+      - if:
+        - condition: template
+          value_template: '{{ temp_set != new_temp_set | int }}'
+        then:
+        - action: number.set_value
+          target:
+            entity_id: number.adlar_temp_set_cooling
+          data:
+            value: '{{ new_temp_set }}'
+        - action: logbook.log
+          data:
+            name: Adlar automation
+            message: "{% set dauwpunt = states ('sensor.dauwpunt_woonkamer') | float(0)
+              | round(0,'ceil') %} {% set temp_set = states('number.adlar_temp_set_cooling')
+              | int(0) %} Wp koelen (outlet) 2 temp set: van {{ temp_set }} naar {{
+              dauwpunt + 0 }} \n"
+            entity_id: number.adlar_temp_set_cooling
+          enabled: true
+        - action: timer.start
+          metadata: {}
+          data:
+            duration:
+              hours: 0
+              minutes: 10
+              seconds: 0
+          target:
+            entity_id: timer.wachttijd_temp_set_veranderen
+          enabled: true
+      - alias: Temp set bij start kouderegeling
+        target:
+          entity_id: number.adlar_temp_set_cooling
+        data:
+          value: "{% set dauwpunt = states('sensor.dauwpunt_woonkamer') | float(0)
+            | round(0, 'ceil') %}\n{% set temp_set = states('number.adlar_temp_set_cooling')
+            | int(0) %} \n{% if temp_set != dauwpunt %}\n{{ [dauwpunt + 0, 15] | max
+            }}\n{% else %}\n  {{ temp_set }}\n{% endif %}\n\n\n"
+        action: number.set_value
+        enabled: false
+    - conditions:
+      - condition: trigger
+        id:
+        - Outlet temp < dauwpunt
+      - condition: state
+        entity_id: binary_sensor.adlar_compressor_active
+        state:
+        - 'on'
+      - condition: state
+        entity_id: timer.wachttijd_temp_set_veranderen
+        state:
+        - idle
+      - condition: numeric_state
+        entity_id: sensor.wp_delta_t
+        below: -2
+      - condition: numeric_state
+        entity_id: sensor.adlar_compressor_running_frequency
+        above: 30
+        enabled: true
+        below: 35
+      - condition: numeric_state
+        entity_id: sensor.adlar_water_outlet_temp_t7
+        below: sensor.dauwpunt_woonkamer
+        enabled: false
+      sequence:
+      - alias: Temp set bij start kouderegeling
+        target:
+          entity_id: number.adlar_temp_set_cooling
+        data:
+          value: '{% set temp_set = states(''number.adlar_temp_set_cooling'') | int(0)
+            %}
+
+            {{ [temp_set + 1, 15] | max }}'
+        action: number.set_value
+        enabled: true
+      - action: logbook.log
+        metadata: {}
+        data:
+          name: Adlar automation
+          entity_id: number.adlar_temp_set_cooling
+          message: '{% set delta_t_stop = states(''sensor.wp_delta_t_bij_stop'') |
+            int(0) %}
+
+            {% set p26 = states(''sensor.adlar_p26_hysterese_watertemperatuur_start_warmtepomp'')
+            | int(0) %}
+
+            {% set dauwpunt = states (''sensor.dauwpunt_woonkamer'') | float(0) |
+            round(0,''ceil'') %}
+
+            {% set temp_set = states(''number.adlar_temp_set_cooling'') | int(0) %}
+
+            {% set outlet = states (''sensor.adlar_water_outlet_temp_t7'') | int(0)
+            %}
+
+            Wp koelen (outlet) 3 temp set: van {{ temp_set }} naar {{ temp_set + 1
+            }} '
+        enabled: true
+      - action: timer.start
+        metadata: {}
+        target:
+          entity_id: timer.wachttijd_temp_set_veranderen
+        data:
+          duration:
+            hours: 0
+            minutes: 10
+            seconds: 0
+        enabled: true
+    - conditions:
+      - condition: state
+        entity_id: switch.adlar_main_switch
+        state:
+        - 'off'
+      - condition: numeric_state
+        entity_id: sensor.adlar_water_outlet_temp_t7
+        value_template: '{{ float(state.state, 0) - 2 }}'
+        enabled: true
+        above: sensor.dauwpunt_woonkamer
+      - condition: state
+        entity_id: binary_sensor.adlar_compressor_active
+        state:
+        - 'on'
+        for:
+          hours: 0
+          minutes: 5
+          seconds: 0
+      - condition: state
+        entity_id: timer.wachttijd_temp_set_veranderen
+        state:
+        - idle
+      sequence:
+      - alias: Temp set bij start kouderegeling
+        target:
+          entity_id: number.adlar_temp_set_cooling
+        data:
+          value: '{{((states (''number.adlar_temp_set_cooling'') | int(0) - 1), 17)
+            | max }}'
+        action: number.set_value
+        enabled: false
+      - action: logbook.log
+        metadata: {}
+        data:
+          name: Adlar automation
+          entity_id: number.adlar_temp_set_cooling
+          message: 'WP kouderegeling dauwpunt (outlet) - optie 4, temp set: {{ states(''number.adlar_temp_set_cooling'')
+            }} - 1'
+        enabled: false
+      - action: timer.start
+        metadata: {}
+        target:
+          entity_id: timer.wachttijd_temp_set_veranderen
+        data:
+          duration:
+            hours: 0
+            minutes: 10
+            seconds: 0
+        enabled: false
+    - conditions:
+      - condition: template
+        value_template: '{% set dauwpunt = states(''sensor.dauwpunt_woonkamer'') |
+          float(0) | round(0, ''ceil'') %}
+
+          {% set delta_t_aan = states(''sensor.wp_aan_delta_t_temp_set'') | float(0)
+          | round(0, ''ceil'') %}
+
+          {% set doel_temp = (dauwpunt - (delta_t_aan | abs) - 1) | int %}
+
+          {{ states(''number.adlar_temp_set_cooling'') | int(0) != doel_temp }}'
+        enabled: false
+      - condition: trigger
+        id:
+        - Compressor gestopt
+      sequence:
+      - alias: Temp set bij start kouderegeling
+        target:
+          entity_id: number.adlar_temp_set_cooling
+        data:
+          value: "{% set delta_t_stop = states('sensor.wp_delta_t_bij_stop') | int(0)
+            %}\n{% set p26 = states('sensor.adlar_p26_hysterese_watertemperatuur_start_warmtepomp')
+            | int(0) %}\n{% set dauwpunt = states ('sensor.dauwpunt_woonkamer') |
+            float(0) | round(0,'ceil') %}\n{% set temp_set = states('number.adlar_temp_set_cooling')
+            | int(0) %}\n{% set outlet = states ('sensor.adlar_water_outlet_temp_t7')
+            | int(0) %}\n{% set delta_t_aan = states ('sensor.wp_aan_delta_t_temp_set')
+            | float(0) | round(0,'ceil') %}\n{# Als het verschil kleiner is dan 0,
+            laat dan de delta zien, anders 0 #}\n{% if dauwpunt - (delta_t_aan | abs)
+            - 1 != temp_set  %}\n  {{ dauwpunt - (delta_t_aan | abs) - 1 }}\n{#% else
+            %#}\n{% endif %}\n"
+        action: number.set_value
+        enabled: false
+      - action: logbook.log
+        data:
+          name: Adlar automation
+          message: "{% set dauwpunt = states ('sensor.dauwpunt_woonkamer') | float(0)
+            | round(0,'ceil') %}\n{% set temp_set = states('number.adlar_temp_set_cooling')
+            | int(0) %}\n{% set outlet = states ('sensor.adlar_water_outlet_temp_t7')
+            | int(0) %}\n{% set delta_t_aan = states ('sensor.wp_aan_delta_t_temp_set')
+            | float(0) | round(0,'ceil') %}\nWp koelen (outlet) 5  Compressor gestopt,
+            Temp set {{ temp_set }} \n\n"
+          entity_id: number.adlar_temp_set_cooling
+        enabled: true
   mode: single
+- id: '1782771553664'
+  alias: Advies ramen en deuren open
+  description: ''
+  triggers:
+  - trigger: state
+    entity_id:
+    - binary_sensor.ramen_open_advies
+    from:
+    - 'off'
+    to:
+    - 'on'
+    id: Open
+  - trigger: state
+    entity_id:
+    - binary_sensor.ramen_open_advies
+    from:
+    - 'on'
+    to:
+    - 'off'
+    id: Dicht
+  conditions:
+  - condition: zone.occupancy_is_detected
+    options:
+      for:
+        hours: 0
+        minutes: 5
+        seconds: 0
+      zone: zone.home
+  - condition: numeric_state
+    entity_id: sensor.kamertemperatuur_gemiddeld
+    above: 22
+    enabled: false
+  - condition: time
+    after: 08:00:00
+    before: '23:55:00'
+  actions:
+  - choose:
+    - conditions:
+      - condition: trigger
+        id:
+        - Open
+      sequence:
+      - action: notify.mobile_app_gsm_martin
+        metadata: {}
+        data:
+          title: 'Ventilatieadvies:'
+          message: Open de pui, ramen en deuren. Binnen is het warmer dan buiten,
+            ventileren helpt de kamertemperatuur te verlagen.
+          data:
+            tag: ramen-advies
+            chronometer: false
+        enabled: true
+      - action: notify.mobile_app_gsm_marjan
+        metadata: {}
+        data:
+          title: 'Ventilatieadvies:'
+          message: Open de pui, ramen en deuren. Binnen is het warmer dan buiten,
+            ventileren helpt de kamertemperatuur te verlagen.
+        enabled: false
+    - conditions:
+      - condition: trigger
+        id:
+        - Dicht
+      sequence:
+      - action: notify.mobile_app_gsm_martin
+        metadata: {}
+        data:
+          title: 'Ventilatieadvies:'
+          message: Sluit de pui, ramen en deuren. Buiten is het warmer dan binnen,
+            ventileren verhoogt de kamertemperatuur.
+          data:
+            tag: ramen-advies
+            chronometer: false
+        enabled: true
+      - action: notify.mobile_app_gsm_marjan
+        metadata: {}
+        data:
+          title: 'Ventilatieadvies:'
+          message: Sluit de pui, ramen en deuren. Buiten is het warmer dan binnen,
+            ventileren verhoogt de kamertemperatuur.
+        enabled: false
+  mode: single
+- id: '1784648977101'
+  alias: ESPHome Log Waarschuwing
+  triggers:
+  - event_type: esphome.log_message
+    trigger: event
+  actions:
+  - data:
+      title: Error van {{ trigger.event.data.device }}
+      message: '{% set msg = trigger.event.data.message %} {% set msg = msg | replace(''[0;33m'',
+        '''') | replace(''[0;31m'', '''') | replace(''[0m'', '''') %} {{ trigger.event.data.tag
+        }}: {{ msg }}'
+    action: notify.persistent_notification
