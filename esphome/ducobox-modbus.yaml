@@ -774,50 +774,6 @@ sensor:
 # 5. CORE SCRIPTS (Regeling, Timers en Modus-coördinatie)
 # ==============================================================================
 script:
-  # ==========================================
-  # MODUS 1: DOUCHE BEDRIJF (GEOPTIMALISEERD)
-  # ==========================================
-  - id: wtw_modus_douche
-    mode: single
-    then:
-      - lambda: |-
-          int doel = 55;
-          id(rh_berekend_doel).publish_state(doel);
-
-          // Correcte static bool die ENKEL logt als de status écht verandert
-          static bool status_was_actief = false;
-          if (!status_was_actief) {
-            ESP_LOGW("wtw_regeling", "Douche modus wordt gestart. RH setpoint wordt op 55%% gezet.");
-            status_was_actief = true;
-          }
-          
-          // HARD RESET: Deactiveer en wis de cooldown direct bij douche-activiteit
-          id(wtw_cooldown_actief) = false;
-          id(start_cooldown_tijd) = 0;
-          
-          // CRUCIALE RESET: Zet de 5-minuten verificatietimer direct op 0
-          id(start_verificatie_tijd) = 0;
-
-          // Stop de andere modi om timers en delays te resetten
-          id(wtw_modus_normaal).stop();
-          id(wtw_modus_handmatig).stop();
-          id(wtw_handmatig_actief).publish_state(false);
-
-      # Fysieke Modbus verzending
-      - if:
-          condition:
-            lambda: return ((int)id(rh_setpoint).state != 55);
-          then:
-            - number.set:
-                id: rh_setpoint
-                value: 55
-            - lambda: ESP_LOGW("wtw_regeling", "Douche modus actief. RH setpoint op 55%% gezet.");
-                
-  # ==========================================
-  # MODUS 2: HANDMATIGE OVERRULE MODUS
-  # ==========================================
-
-
 
   # ==========================================
   # HOOFDREGELING: COORDINATOR SCRIPT (Routeert de modi)
@@ -867,6 +823,54 @@ script:
                   - script.stop: wtw_modus_douche
                   - script.stop: wtw_modus_handmatig
 
+
+
+  
+  # ==========================================
+  # MODUS 1: DOUCHE BEDRIJF (GEOPTIMALISEERD)
+  # ==========================================
+  - id: wtw_modus_douche
+    mode: single
+    then:
+      - lambda: |-
+          int doel = 55;
+          id(rh_berekend_doel).publish_state(doel);
+
+          // Correcte static bool die ENKEL logt als de status écht verandert
+          static bool status_was_actief = false;
+          if (!status_was_actief) {
+            ESP_LOGW("wtw_regeling", "Douche modus wordt gestart. RH setpoint wordt op 55%% gezet.");
+            status_was_actief = true;
+          }
+          
+          // HARD RESET: Deactiveer en wis de cooldown direct bij douche-activiteit
+          id(wtw_cooldown_actief) = false;
+          id(start_cooldown_tijd) = 0;
+          
+          // CRUCIALE RESET: Zet de 5-minuten verificatietimer direct op 0
+          id(start_verificatie_tijd) = 0;
+
+          // Stop de andere modi om timers en delays te resetten
+          id(wtw_modus_normaal).stop();
+          id(wtw_modus_handmatig).stop();
+          id(wtw_handmatig_actief).publish_state(false);
+
+      # Fysieke Modbus verzending
+      - if:
+          condition:
+            lambda: return ((int)id(rh_setpoint).state != 55);
+          then:
+            - number.set:
+                id: rh_setpoint
+                value: 55
+            - lambda: ESP_LOGW("wtw_regeling", "Douche modus actief. RH setpoint op 55%% gezet.");
+
+
+
+              
+  # ==========================================
+  # MODUS 2: HANDMATIGE OVERRULE MODUS
+  # ==========================================
   
   - id: wtw_modus_handmatig
     mode: restart
