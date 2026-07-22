@@ -775,11 +775,8 @@ script:
           int doel = 55;
           id(rh_berekend_doel).publish_state(doel);
 
-          static bool log_gedaan = false;
-          if (!log_gedaan) {
-            ESP_LOGW("wtw_regeling", "STATUS: Douche modus actief. Doel geforceerd naar 55%%.");
-            log_gedaan = true;
-          }
+          // Vaste statuslogboekregistratie zonder herhalingsblokkade
+          ESP_LOGW("wtw_regeling", "STATUS: Douche modus actief. Doel geforceerd naar 55%%.");
           
           // HARD RESET: Deactiveer en wis de cooldown direct bij douche-activiteit
           id(wtw_cooldown_actief) = false;
@@ -793,7 +790,6 @@ script:
           id(wtw_modus_handmatig).stop();
           id(wtw_handmatig_actief).publish_state(false);
 
-
       # Fysieke Modbus verzending
       - if:
           condition:
@@ -804,8 +800,7 @@ script:
                 id: rh_setpoint
                 value: 55
 
-
-    # ==========================================
+  # ==========================================
   # MODUS 2: HANDMATIGE OVERRULE MODUS
   # ==========================================
   - id: wtw_modus_handmatig
@@ -826,14 +821,12 @@ script:
           id(wtw_modus_normaal).stop();
           ESP_LOGI("wtw_regeling", "Handmatige modus actief voor 30 minuten op %d%%.", handmatig_doel);
 
-
       - delay: 30min
       - lambda: |-
           ESP_LOGI("wtw_regeling", "Handmatige modus tijd verstreken. Terug naar automatisch...");
           id(wtw_handmatig_actief).publish_state(false);
           id(last_manual_setpoint_change) = 0; // Reset de timer global
       - script.execute: wtw_rh_regeling
-
 
   # ==========================================
   # MODUS 3: NORMAAL AUTOMATISCH BEDRIJF
@@ -851,7 +844,6 @@ script:
             - lambda: |-
                 id(start_verificatie_tijd) = 0; // Reset als de modus niet mag draaien
             - script.stop: wtw_modus_normaal
-
 
       # Stap 2: Berekening (Exacte Hysteresis: Stijgen 0, Dalen -2)
       - lambda: |-
@@ -904,7 +896,6 @@ script:
             return; 
           }
 
-
       # --- STAP 3 & 4: TIMERVERIFICATIE EN VERZENDING VIA NATIVE YAML ---
       - if:
           condition:
@@ -916,7 +907,7 @@ script:
             - if:
                 condition:
                   lambda: |-
-                    // FIX: Als de douche net uit is, neem direct het berekende doel over (ongeacht of dit 55% of 60% is)
+                    // Als de douche net uit is, neem direct het berekende doel over (ongeacht of dit 55% of 60% is)
                     return (id(wtw_douche_actief).state == false);
                 then:
                   - lambda: |-
@@ -930,7 +921,6 @@ script:
                 else:
                   # --- Normale verloop met 5 minuten verificatie ---
                   - lambda: |-
-                      // Start de timer alleen als deze nog niet liep (voorkomt resetten tijdstempel)
                       if (id(start_verificatie_tijd) == 0) {
                         id(start_verificatie_tijd) = millis();
                         ESP_LOGI("wtw_regeling", "Woonkamer RH eist nieuw setpoint (%d%%, huidige stand: %d%%). Start 5 minuten verificatie...", (int)id(rh_berekend_doel).state, (int)id(rh_setpoint).state);
@@ -947,23 +937,19 @@ script:
                           return (doel != current_setpoint);
                       then:
                         - lambda: |-
-                            // Reset de timer-registratie direct vóór het schrijven
                             id(start_verificatie_tijd) = 0;
                             ESP_LOGW("wtw_regeling", "Verificatie succesvol na 5 minuten. Schrijf nu %d%% naar Modbus.", (int)id(rh_berekend_doel).state);
-                        
-                        # Schrijf de waarde daadwerkelijk naar de Modbus register-slider
                         - number.set:
                             id: rh_setpoint
                             value: !lambda |-
                               return id(rh_berekend_doel).state;
                       else:
                         - lambda: |-
-                            // Als de situatie in de 5 minuten al is opgelost, wis de timer geruisloos
                             id(start_verificatie_tijd) = 0;
           else:
             - lambda: |-
-                // Doel is al gelijk aan setpoint, zorg dat de timer op 0 staat
                 id(start_verificatie_tijd) = 0;
+
 
 
 
