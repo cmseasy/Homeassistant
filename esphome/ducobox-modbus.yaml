@@ -373,7 +373,7 @@ number:
     register_type: holding
     address: 15 #260 # (Node 2 * 100) + 60. Mocht dit niet reageren, probeer dan adres 80
     value_type: S_WORD
-    min_value: 5
+    min_value: 30
     max_value: 100
     step: 5
     unit_of_measurement: "%"
@@ -391,48 +391,48 @@ number:
     register_type: holding
     address: 16 #360 # (Node 3 * 100) + 60. Mocht dit niet reageren, probeer dan adres 90
     value_type: S_WORD
-    min_value: 5
+    min_value: 30
     max_value: 100
     step: 5
     unit_of_measurement: "%"
     mode: box
 #    force_new_range: true
 
-  # ==============================================================================
- # ZONE_2 (Node 2) - WTW Auto Min
-  # ==============================================================================
-  - platform: modbus_controller
-    modbus_controller_id: duco_box
-    name: "WTW Zone 2 Auto Min"
-  #  id: zone_2_max_flow
-    icon: "mdi:gauge"
-    register_type: holding
-    address: 26 #260 # (Node 2 * 100) + 60. Mocht dit niet reageren, probeer dan adres 80
-    value_type: S_WORD
-    min_value: 5
-    max_value: 100
-    step: 5
-    unit_of_measurement: "%"
-    mode: box
-#    force_new_range: true
+#   # ==============================================================================
+#  # ZONE_2 (Node 2) - WTW Auto Min
+#   # ==============================================================================
+#   - platform: modbus_controller
+#     modbus_controller_id: duco_box
+#     name: "WTW Zone 2 Auto Min"
+#   #  id: zone_2_max_flow
+#     icon: "mdi:gauge"
+#     register_type: holding
+#     address: 26 #260 # (Node 2 * 100) + 60. Mocht dit niet reageren, probeer dan adres 80
+#     value_type: S_WORD
+#     min_value: 5
+#     max_value: 100
+#     step: 5
+#     unit_of_measurement: "%"
+#     mode: box
+# #    force_new_range: true
 
-  # ==============================================================================
-  # ZONE_3 (Node 3) - WTW Auto Max
-  # ==============================================================================
-  - platform: modbus_controller
-    modbus_controller_id: duco_box
-    name: "WTW Zone 3 Auto Max"
-#    id: zone_3_max_flow
-    icon: "mdi:gauge"
-    register_type: holding
-    address: 36 #360 # (Node 3 * 100) + 60. Mocht dit niet reageren, probeer dan adres 90
-    value_type: S_WORD
-    min_value: 5
-    max_value: 100
-    step: 5
-    unit_of_measurement: "%"
-    mode: box
-#    force_new_range: true
+#   # ==============================================================================
+#   # ZONE_3 (Node 3) - WTW Auto Max
+#   # ==============================================================================
+#   - platform: modbus_controller
+#     modbus_controller_id: duco_box
+#     name: "WTW Zone 3 Auto Max"
+# #    id: zone_3_max_flow
+#     icon: "mdi:gauge"
+#     register_type: holding
+#     address: 36 #360 # (Node 3 * 100) + 60. Mocht dit niet reageren, probeer dan adres 90
+#     value_type: S_WORD
+#     min_value: 5
+#     max_value: 100
+#     step: 5
+#     unit_of_measurement: "%"
+#     mode: box
+# #    force_new_range: true
 
     
 #   - platform: modbus_controller
@@ -540,32 +540,32 @@ binary_sensor:
     
 sensor:
 
-  # ==========================================
-  # DUCO ZONE MAXIMAAL DEBIET SETTINGS
-  # ==========================================
-  # Node 1: Automin
-  - platform: modbus_controller
-    modbus_controller_id: duco_box
-    name: "Duco Auto min"
-    register_type: read
-    address: 15
-    value_type: U_WORD
-    unit_of_measurement: "%"
-    state_class: "measurement"
-    icon: "mdi:gauge-max"
-    disabled_by_default: false
+  # # ==========================================
+  # # DUCO ZONE MAXIMAAL DEBIET SETTINGS
+  # # ==========================================
+  # # Node 1: Automin
+  # - platform: modbus_controller
+  #   modbus_controller_id: duco_box
+  #   name: "Duco Auto min"
+  #   register_type: read
+  #   address: 15
+  #   value_type: U_WORD
+  #   unit_of_measurement: "%"
+  #   state_class: "measurement"
+  #   icon: "mdi:gauge-max"
+  #   disabled_by_default: false
 
-  # Node 1: Automax   
-  - platform: modbus_controller
-    modbus_controller_id: duco_box
-    name: "Duco Auto max"
-    register_type: read
-    address: 16
-    value_type: U_WORD
-    unit_of_measurement: "%"
-    state_class: "measurement"
-    icon: "mdi:gauge-max"
-    disabled_by_default: false
+  # # Node 1: Automax   
+  # - platform: modbus_controller
+  #   modbus_controller_id: duco_box
+  #   name: "Duco Auto max"
+  #   register_type: read
+  #   address: 16
+  #   value_type: U_WORD
+  #   unit_of_measurement: "%"
+  #   state_class: "measurement"
+  #   icon: "mdi:gauge-max"
+  #   disabled_by_default: false
 
 
   # - platform: modbus_controller
