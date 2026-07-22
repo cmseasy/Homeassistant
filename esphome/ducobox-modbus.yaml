@@ -362,41 +362,41 @@ number:
       sorting_group_id: sorting_group_configuration_setup
       sorting_weight: 5
 
-  # # ==============================================================================
-  # # COORD_ZONE_2 (Node 2) - Maximale debiet aanpassing (m³/h)
-  # # ==============================================================================
-  # - platform: modbus_controller
-  #   modbus_controller_id: duco_box
-  #   name: "WTW Zone 2 Max Flow"
-  #   id: zone_2_max_flow
-  #   icon: "mdi:gauge"
-  #   register_type: holding
-  #   address: 260 #260 # (Node 2 * 100) + 60. Mocht dit niet reageren, probeer dan adres 80
-  #   value_type: S_WORD
-  #   min_value: 10
-  #   max_value: 300
-  #   step: 5
-  #   unit_of_measurement: "m³/h"
-  #   mode: box
-  #   force_new_range: true
+  # ==============================================================================
+  # COORD_ZONE_2 (Node 2) - Maximale debiet aanpassing (m³/h)
+  # ==============================================================================
+  - platform: modbus_controller
+    modbus_controller_id: duco_box
+    name: "WTW Zone 2 Max Flow"
+    id: zone_2_max_flow
+    icon: "mdi:gauge"
+    register_type: holding
+    address: 25 #260 # (Node 2 * 100) + 60. Mocht dit niet reageren, probeer dan adres 80
+    value_type: S_WORD
+    min_value: 10
+    max_value: 300
+    step: 5
+    unit_of_measurement: "m³/h"
+    mode: box
+    force_new_range: true
 
-  # # ==============================================================================
-  # # COORD_ZONE_3 (Node 3) - Maximale debiet aanpassing (m³/h)
-  # # ==============================================================================
-  # - platform: modbus_controller
-  #   modbus_controller_id: duco_box
-  #   name: "WTW Zone 3 Max Flow"
-  #   id: zone_3_max_flow
-  #   icon: "mdi:gauge"
-  #   register_type: holding
-  #   address: 360 #360 # (Node 3 * 100) + 60. Mocht dit niet reageren, probeer dan adres 90
-  #   value_type: S_WORD
-  #   min_value: 10
-  #   max_value: 300
-  #   step: 5
-  #   unit_of_measurement: "m³/h"
-  #   mode: box
-  #   force_new_range: true
+  # ==============================================================================
+  # COORD_ZONE_3 (Node 3) - Maximale debiet aanpassing (m³/h)
+  # ==============================================================================
+  - platform: modbus_controller
+    modbus_controller_id: duco_box
+    name: "WTW Zone 3 Max Flow"
+    id: zone_3_max_flow
+    icon: "mdi:gauge"
+    register_type: holding
+    address: 35 #360 # (Node 3 * 100) + 60. Mocht dit niet reageren, probeer dan adres 90
+    value_type: S_WORD
+    min_value: 10
+    max_value: 300
+    step: 5
+    unit_of_measurement: "m³/h"
+    mode: box
+    force_new_range: true
 
 
     
