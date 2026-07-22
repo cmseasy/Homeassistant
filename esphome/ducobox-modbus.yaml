@@ -505,14 +505,33 @@ binary_sensor:
     
 sensor:
 
+  # ==========================================
+  # DUCO ZONE MAXIMAAL DEBIET SETTINGS
+  # ==========================================
+  # Node 2: Max flow zone wonen
   - platform: modbus_controller
     modbus_controller_id: duco_box
-    name: "WTW Maximaal Debiet"
-    id: wtw_max_debiet
-    register_type: holding
-    address: 161
+    name: "Duco max flow wonen"
+    register_type: read
+    address: 25
     value_type: U_WORD
-    unit_of_measurement: "m³/h"
+    unit_of_measurement: "%"
+    state_class: "measurement"
+    icon: "mdi:gauge-max"
+    disabled_by_default: false
+
+  # Node 3: Max flow zone slapen    
+  - platform: modbus_controller
+    modbus_controller_id: duco_box
+    name: "Duco max flow slapen"
+    register_type: read
+    address: 35
+    value_type: U_WORD
+    unit_of_measurement: "%"
+    state_class: "measurement"
+    icon: "mdi:gauge-max"
+    disabled_by_default: false
+
 
   # - platform: modbus_controller
   #   modbus_controller_id: duco_box
