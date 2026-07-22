@@ -195,6 +195,18 @@ button:
       sorting_weight: 002
 
 
+  - platform: template
+    name: "Controleer Duco Registers"
+    id: knop_controleer_registers
+    icon: "mdi:text-search"
+    on_press:
+      - script.execute: controleer_modbus_registers
+    web_server:
+      sorting_group_id: sorting_group_configuration_setup
+      sorting_weight: 10
+
+      
+
 switch:
   - platform: template
     name: "RH setpoint regeling (aan-uit)"
@@ -1211,30 +1223,32 @@ script:
 
 
 
+  # ==========================================
+  # HANDMATIGE REGISTER CONTROLE (10 REGISTERS)
+  # ==========================================
   - id: controleer_modbus_registers
     mode: single
     then:
       - lambda: |-
-          // Maak een array van pointers naar de 10 gemaakte sensoren
-          esphome::modbus_controller::ModbusSensor* registers[10] = {
+          // Array van pointers naar de 10 gemaakte interne sensoren
+          std::vector<sensor::Sensor*> regs = {
             id(duco_reg_20), id(duco_reg_21), id(duco_reg_22), id(duco_reg_23), id(duco_reg_24),
             id(duco_reg_25), id(duco_reg_26), id(duco_reg_27), id(duco_reg_28), id(duco_reg_29)
           };
 
-          ESP_LOGI("modbus_scan", "--- START CONTROLE VAN 10 REGISTERS ---");
+          ESP_LOGW("modbus_scan", "=== START COÖRDINATIE SCAN (REGISTERS 20-29) ===");
 
-          for (int i = 0; i < 10; i++) {
+          for (size_t i = 0; i < regs.size(); i++) {
             int actueel_adres = 20 + i;
 
-            // 1. Controleer op aanwezigheid (is er een geldige Modbus-poll geweest?)
-            if (!registers[i]->has_state() || std::isnan(registers[i]->state)) {
-              ESP_LOGW("modbus_scan", "Register %d: NIET aanwezig (geen respons of foutmelding).", actueel_adres);
+            // 1. Controleer of de sensor überhaupt een geldige status heeft ontvangen
+            if (!regs[i]->has_state() || std::isnan(regs[i]->state)) {
+              ESP_LOGE("modbus_scan", "Register %d: [FOUT/AFWEZIG] Geen reactie of Exception 4 van Duco.", actueel_adres);
             } else {
-              // 2. Register is aanwezig, lees de waarde uit
-              int waarde = (int)registers[i]->state;
-              ESP_LOGI("modbus_scan", "Register %d: AANWEZIG met waarde: %d", actueel_adres, waarde);
+              // 2. Register is succesvol uitgelezen, toon de waarde
+              int waarde = (int)regs[i]->state;
+              ESP_LOGI("modbus_scan", "Register %d: [OK] Waarde ontvangen: %d", actueel_adres, waarde);
             }
           }
           
-          ESP_LOGI("modbus_scan", "--- EINDE CONTROLE ---");
-
+          ESP_LOGW("modbus_scan", "=== SCAN AFGEROND ===");
