@@ -857,7 +857,7 @@ script:
           id(wtw_modus_handmatig).stop();
           id(wtw_handmatig_actief).publish_state(false);
 
-      # Fysieke Modbus verzending
+      # Fysieke Modbus verzending en loggen van einde
       - if:
           condition:
             lambda: return ((int)id(rh_setpoint).state != 55);
@@ -866,7 +866,10 @@ script:
                 id: rh_setpoint
                 value: 55
             - lambda: ESP_LOGW("wtw_regeling", "Douche modus actief. RH setpoint op 55%% gezet.");
-
+          else:
+            # --- NIEUW: Logmelding zodra de douchemodus stopt en de normale modus het overneemt ---
+            - lambda: |-
+                ESP_LOGW("wtw_regeling", "Douche modus beëindigd. Regeling wordt overgedragen aan Automatische modus.");
 
 
               
