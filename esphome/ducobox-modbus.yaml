@@ -465,7 +465,7 @@ sensor:
             then:
               - script.execute: wtw_rh_regeling
 
-  # Dynamische weergave van het berekende setpoint doel
+# Dynamische weergave van het berekende setpoint doel
   - platform: template
     name: "RH Berekend Doel"
     id: rh_berekend_doel
@@ -479,7 +479,9 @@ sensor:
       if (id(rh_berekend_doel).has_state()) {
         return id(rh_berekend_doel).state;
       }
-      return 55.0; // Fallback startwaarde
+      // VERBETERING: Start met NAN tijdens boot in plaats van een foute 55% fallback
+      return {}; 
+
 
   # ==============================================================================
   # WEERGAVE SENSOR: RESTERENDE TIJD HANDMATIGE MODUS (In minuten via global)
