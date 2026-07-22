@@ -4983,3 +4983,47 @@
         '''') | replace(''[0;31m'', '''') | replace(''[0m'', '''') %} {{ trigger.event.data.tag
         }}: {{ msg }}'
     action: notify.persistent_notification
+- id: '1784734144077'
+  alias: Test aanwezigheid
+  description: ''
+  triggers:
+  - trigger: time_pattern
+    hours: /1
+  conditions:
+  - condition: zone.occupancy_is_detected
+    options:
+      for: 00:00:00
+      zone: zone.home
+  - condition: zone.in_zone
+    target:
+      entity_id: device_tracker.gsm_marjan
+    options:
+      for: 00:00:00
+      zone: zone.home
+  - condition: zone.in_zone
+    target:
+      entity_id: person.marjan
+    options:
+      for: 00:00:00
+      zone: zone.home
+  - condition: zone.in_zone
+    target:
+      entity_id: device_tracker.gsm_martin
+    options:
+      for: 00:00:00
+      zone: zone.home
+  - condition: zone.in_zone
+    target:
+      entity_id: person.martin
+    options:
+      for: 00:00:00
+      zone: zone.home
+  - condition: zone.occupancy_is_not_detected
+    options:
+      for:
+        hours: 0
+        minutes: 0
+        seconds: 0
+      zone: zone.home
+  actions: []
+  mode: single
