@@ -334,7 +334,7 @@ number:
 
             // 3. Negeer automatische updates van onze eigen reguliere scripts
             if (binnenkomende_waarde == berekend_doel) {
-              ESP_LOGI("main", "Automatische update gedetecteerd naar %d%%. Geen handmatige modus.", binnenkomende_waarde);
+              ESP_LOGI("main", "Automatische HR setpoint update naar %d%%.", binnenkomende_waarde);
               return;
             }
 
