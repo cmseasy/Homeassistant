@@ -873,7 +873,7 @@ script:
   # ==========================================
   
   - id: wtw_modus_handmatig
-    mode: restart
+    mode: single
     then:
       - lambda: |-
           // We lezen de handmatige invoer en spiegelen deze direct aan het doel.
