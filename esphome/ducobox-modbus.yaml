@@ -336,10 +336,17 @@ number:
               return;
             }
 
+            // --- CRUCIALE BLOKKADE: Fantoom handmatige modus voorkomen ---
+            // Als de douche actief is, of Modus 3 regelt net de afloop in, negeer Modbus register-kruisingen
+            if (id(wtw_douche_actief).state) {
+              ESP_LOGD("main", "Modbus wijziging genegeerd: Douche-afwikkeling is actief.");
+              return;
+            }
+
             // 4. Als de handmatige modus al actief is, negeer dan de Modbus-echo's
             if (id(wtw_handmatig_actief).state) {
               return;
-                }
+            }
 
             // 5. De gebruiker verandert ZELF de waarde via de UI -> Naar handmatig forceren!
             id(wtw_rh_regeling).stop();
