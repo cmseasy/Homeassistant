@@ -97,10 +97,10 @@ modbus_controller:
   - id: modbus_adlar
     modbus_id: modbus_client
     address: 0x01
-    update_interval: 20s
+    update_interval: 30s
     command_throttle: 1000ms
-    max_cmd_retries: 5      # Probeert het bij een hapering stilzwijgend opnieuw
     setup_priority: -100
+
 
 
 
@@ -612,6 +612,7 @@ select:
     name: "Cooling Setting Curve"
     address: 0x0313
     value_type: U_WORD
+    force_new_range: true    # REPARATIE: Dwingt ESPHome om dit register los aan te vragen
     optionsmap: 
       "Off": 0
       "H1": 1
@@ -637,6 +638,7 @@ select:
     name: "Heating Setting Curve"
     address: 0x0314
     value_type: U_WORD
+    force_new_range: true    # REPARATIE: Dwingt ESPHome om dit register los aan te vragen
     optionsmap: 
       "Off": 0
       "H1": 1
@@ -662,6 +664,7 @@ select:
     name: "Underfloor Heating Setting Curve"
     address: 0x0316
     value_type: U_WORD
+    force_new_range: true    # REPARATIE: Dwingt ESPHome om dit register los aan te vragen
     optionsmap: 
       "Off": 0
       "H1": 1
