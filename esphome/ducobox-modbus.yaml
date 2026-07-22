@@ -816,6 +816,58 @@ script:
   # ==========================================
   # MODUS 2: HANDMATIGE OVERRULE MODUS
   # ==========================================
+
+
+
+  # ==========================================
+  # HOOFDREGELING: COORDINATOR SCRIPT (Routeert de modi)
+  # ==========================================
+  - id: wtw_rh_regeling
+    mode: restart
+    then:
+      # 1. Opstart checks
+      - lambda: |-
+          if (!id(wtw_systeem_volledig_online)) return;
+
+      # 2. Modus selectie op basis van de sensors en vlaggen
+      - if:
+          condition:
+            # Als de schakelaar uit staat, stoppen we alle regelingen
+            lambda: return (id(switch_rh_regeling).state == false);
+          then:
+            - script.stop: wtw_modus_douche
+            - script.stop: wtw_modus_handmatig
+            - script.stop: wtw_modus_normaal
+            - lambda: |-
+                id(start_verificatie_tijd) = 0;
+                id(wtw_handmatig_actief).publish_state(false);
+            - script.stop: wtw_rh_regeling
+
+      - if:
+          condition:
+            # Modus 1: Douche heeft de allerhoogste prioriteit (gebruikt de binary_sensor status)
+            lambda: return id(wtw_douche_actief).state;
+          then:
+            - script.execute: wtw_modus_douche
+            - script.stop: wtw_modus_handmatig
+            - script.stop: wtw_modus_normaal
+
+          else:
+            - if:
+                condition:
+                  # Modus 2: Handmatige bediening heeft prioriteit over normaal automatisch
+                  lambda: return id(wtw_handmatig_actief).state;
+                then:
+                  - script.execute: wtw_modus_handmatig
+                  - script.stop: wtw_modus_douche
+                  - script.stop: wtw_modus_normaal
+                else:
+                  # Modus 3: Normaal automatisch bedrijf
+                  - script.execute: wtw_modus_normaal
+                  - script.stop: wtw_modus_douche
+                  - script.stop: wtw_modus_handmatig
+
+  
   - id: wtw_modus_handmatig
     mode: restart
     then:
@@ -966,51 +1018,3 @@ script:
 
 
 
-
-  # ==========================================
-  # HOOFDREGELING: COORDINATOR SCRIPT (Routeert de modi)
-  # ==========================================
-  - id: wtw_rh_regeling
-    mode: restart
-    then:
-      # 1. Opstart checks
-      - lambda: |-
-          if (!id(wtw_systeem_volledig_online)) return;
-
-      # 2. Modus selectie op basis van de sensors en vlaggen
-      - if:
-          condition:
-            # Als de schakelaar uit staat, stoppen we alle regelingen
-            lambda: return (id(switch_rh_regeling).state == false);
-          then:
-            - script.stop: wtw_modus_douche
-            - script.stop: wtw_modus_handmatig
-            - script.stop: wtw_modus_normaal
-            - lambda: |-
-                id(start_verificatie_tijd) = 0;
-                id(wtw_handmatig_actief).publish_state(false);
-            - script.stop: wtw_rh_regeling
-
-      - if:
-          condition:
-            # Modus 1: Douche heeft de allerhoogste prioriteit (gebruikt de binary_sensor status)
-            lambda: return id(wtw_douche_actief).state;
-          then:
-            - script.execute: wtw_modus_douche
-            - script.stop: wtw_modus_handmatig
-            - script.stop: wtw_modus_normaal
-
-          else:
-            - if:
-                condition:
-                  # Modus 2: Handmatige bediening heeft prioriteit over normaal automatisch
-                  lambda: return id(wtw_handmatig_actief).state;
-                then:
-                  - script.execute: wtw_modus_handmatig
-                  - script.stop: wtw_modus_douche
-                  - script.stop: wtw_modus_normaal
-                else:
-                  # Modus 3: Normaal automatisch bedrijf
-                  - script.execute: wtw_modus_normaal
-                  - script.stop: wtw_modus_douche
-                  - script.stop: wtw_modus_handmatig
