@@ -1,0 +1,1023 @@
+substitutions:
+  modbus_tx_pin: GPIO17 #GPIO17   # Verbind met DI op de MAX485 module
+  modbus_rx_pin: GPIO16 #GPIO16   # Verbind met RO op de MAX485 module
+  
+esphome:
+  min_version: 2025.12.0
+  name: ducobox-modbus
+  friendly_name: Ducobox modbus
+  name_add_mac_suffix: false
+
+  on_boot:
+    priority: -100.0 # Dit start pas als de basistaken draaien
+    then:
+      - delay: 75s   # Wacht 75 seconden (dus tot ná de 60s boot-loop reset en sensor polls)
+      # - globals.set:
+      #     id: wtw_systeem_volledig_online
+      #     value: 'true'
+      - lambda: |-
+          // Schakel de handmatige modus geforceerd UIT
+          id(wtw_handmatig_actief).publish_state(false);
+          
+          // Reset ook direct de berekende doel-sensor naar de veilige basiswaarde
+          id(rh_berekend_doel).publish_state(55.0);
+          
+          ESP_LOGI("main", "WTW Regeling is gestart in AUTOMATISCH bedrijf.");
+      - globals.set:
+          id: wtw_systeem_volledig_online
+          value: 'true'
+
+esp32:
+  board: esp32dev
+  framework:
+    type: esp-idf
+    advanced:
+      minimum_chip_revision: "3.1"
+      sram1_as_iram: true
+      compiler_optimization: PERF
+
+# Verbind met uw Wi-Fi netwerk
+wifi:
+  ssid: !secret wifi_ssid
+  password: !secret wifi_password
+  power_save_mode: none
+  manual_ip:
+    static_ip: 192.168.1.119
+    gateway: 192.168.1.1
+    dns1: 192.168.1.5 
+    subnet: 255.255.255.0
+  ap:
+    ssid: !secret duco_modbus_wifi_ap_ssid
+    password: !secret duco_modbus_wifi_ap_password
+
+# Enable logging
+logger:
+  level: INFO 
+  baud_rate: 0
+
+  on_message:
+    - level: ERROR
+      then:
+        - homeassistant.event:
+            event: esphome.log_message
+            data:
+              level: ERROR
+              device: "ducobox-modbus"
+              tag: !lambda "return tag;"
+              message: !lambda "return message;"
+
+
+
+
+  
+
+# Enable Home Assistant API
+api:
+  port: 6053
+  encryption:
+    key: !secret duco_modbus_encryption_key
+
+# Allow Over-The-Air updates
+ota:
+- platform: esphome
+  password: !secret duco_modbus_ota_pass
+
+time:
+  - platform: homeassistant
+    id: homeassistant_time
+
+captive_portal:
+
+web_server:
+  port: 80
+  version: 3
+  local: True
+  include_internal: True
+  # auth:
+  #   username: !secret web_server_username
+  #   password: !secret web_server_password
+  sorting_groups:
+    - id: sorting_group_configuration_setup
+      name: "Configuration setup"
+      sorting_weight: 10
+    - id: sorting_group_timers
+      name: "Timers"
+      sorting_weight: 5
+  
+# 1. Seriële poort opzetten naar de MAX485 converter
+uart:
+  - id: modbus_uart
+    tx_pin: ${modbus_tx_pin} #GPIO17   # Verbind met DI op de MAX485 module
+    rx_pin: ${modbus_rx_pin} #GPIO16   # Verbind met RO op de MAX485 module
+    baud_rate: 9600  #9600  # Duco standaard baudrate (soms 19200)
+    data_bits: 8
+    stop_bits: 1
+    parity: NONE
+    rx_full_threshold: 1 # Helpt om de buffer direct te legen en timeouts 
+
+# 2. De basis Modbus-bus configureren
+modbus:
+  - uart_id: modbus_uart
+    id: modbus_client
+#    send_wait_time: 500ms
+#    turnaround_time: 300ms # default 100ms
+
+# 3. De Modbus Controller koppelen aan het Duco Slave adres
+modbus_controller:
+  - id: duco_box
+    modbus_id: modbus_client
+    address: 1
+    update_interval: 30s
+
+
+globals:
+  # 15 minuten wachttijd na setpoint verandering
+  - id: wtw_cooldown_actief
+    type: bool
+    restore_value: no
+    initial_value: 'false'
+  # Vrijgeven berekening na upload of herstart ESP
+  - id: wtw_systeem_volledig_online
+    type: bool
+    restore_value: no
+    initial_value: 'false'
+  - id: last_manual_setpoint_change
+    type: uint32_t
+    initial_value: '0'
+
+  # # NIEUW: Hierin slaan we het rh_berekende doel (55, 60, 65, etc.) tijdelijk op
+  # - id: rh_berekend_doel
+  #   type: int
+  #   restore_value: no
+  #   initial_value: '55'
+  # # Douche is actief
+  # - id: wtw_douche_actief_vlag
+  #   type: bool
+  #   restore_value: no
+  #   initial_value: 'false'
+# Vergeet niet om deze twee variabelen toe te voegen aan je 'globals:' sectie bovenin je YAML:
+
+  - id: start_verificatie_tijd
+    type: uint32_t
+    initial_value: '0'
+  - id: start_cooldown_tijd
+    type: uint32_t
+    initial_value: '0'
+  # - id: start_log_geprint
+  #   type: bool
+  #   initial_value: 'false'
+  - id: vorige_rh_setpoint
+    type: int
+    restore_value: no
+    initial_value: '0'
+
+              
+# 4. Entiteiten aanmaken om uit te lezen (Snsoren)
+button:
+  - platform: restart
+    name: "Restart ESP"
+    icon: "mdi:restart"
+    web_server:
+      sorting_group_id: sorting_group_configuration_setup
+      sorting_weight: 001
+
+  - platform: template
+    name: "Handmatige Modus Annuleren"
+    icon: "mdi:restart"
+    on_press:
+      then:
+        - lambda: |-
+            id(wtw_handmatig_actief).publish_state(false);
+            ESP_LOGI("main", "Handmatig modus is geannuleerd. Terug naar automatisch bedrijf.");
+    web_server:
+      sorting_group_id: sorting_group_configuration_setup
+      sorting_weight: 002
+
+
+switch:
+  - platform: template
+    name: "RH setpoint regeling (aan-uit)"
+    id: switch_rh_regeling
+    icon: "mdi:power-cycle"
+    optimistic: true
+    restore_mode: ALWAYS_ON #RESTORE_INVERTED_DEFAULT_ON
+    web_server:
+      sorting_group_id: sorting_group_configuration_setup
+      sorting_weight: 000
+
+
+# Node 58: Number RH setpoint    
+# 
+# number:
+#   - platform: modbus_controller
+#     modbus_controller_id: duco_box
+#     name: "WTW RH setpoint"
+#     id: rh_setpoint
+#     icon: "mdi:water-percent"
+#     register_type: holding
+#     address: 582
+#     device_class: humidity
+#     value_type: S_WORD
+#     min_value: 0
+#     max_value: 100
+#     step: 5
+#     mode: box
+#     unit_of_measurement: "%"
+#     disabled_by_default: false
+#     # VOEG DIT TOE OM POLLEXCEPTIONS TE VOORKOMEN:
+#     force_new_range: true 
+#     # Als jouw ESPHome versie 'skip_updates' ondersteunt bij modbus_controller numbers:
+#     # skip_updates: true 
+    
+#     write_lambda: |-
+#       int waarde_om_te_schrijven = (int)x;
+#       ESP_LOGI("main", "Schrijven van nieuwe waarde %d naar Duco setpoint...", waarde_om_te_schrijven);
+#       // Retourneer de gecaste integer zodat Modbus de juiste S_WORD payload opbouwt
+#       return waarde_om_te_schrijven;
+#     on_value:
+#       then:
+#         - lambda: |-
+#             // 1. BLOKKEER TIJDENS BOOT
+#             if (!id(wtw_systeem_volledig_online)) {
+#               id(vorige_rh_setpoint) = (int)x;
+#               return;
+#             }
+
+#             int binnenkomende_waarde = (int)x;
+#             int berekend_doel = (int)id(rh_berekend_doel).state;
+#             int vorige_waarde = id(vorige_rh_setpoint);
+
+#             // Sla de nieuwe waarde op voor de volgende poll
+#             id(vorige_rh_setpoint) = binnenkomende_waarde;
+
+#             // 2. Negeer de poll als de waarde exact gelijk is aan de vorige keer
+#             if (binnenkomende_waarde == vorige_waarde) {
+#               return;
+#             }
+
+#             // 3. Negeer automatische updates van onze eigen reguliere scripts
+#             if (binnenkomende_waarde == berekend_doel) {
+#               ESP_LOGI("main", "Automatische update gedetecteerd naar %d%%. Geen handmatige modus.", binnenkomende_waarde);
+#               return;
+#             }
+
+#             // 4. Als de handmatige modus al actief is, negeer dan de Modbus-echo's
+#             if (id(wtw_handmatig_actief).state) {
+#               return;
+#             }
+
+#             // 5. De gebruiker verandert ZELF de waarde via de UI -> Naar handmatig forceren!
+#             id(wtw_rh_regeling).stop();
+#             id(wtw_modus_normaal).stop();
+
+#             // Activeer de handmatige modus direct
+#             id(wtw_handmatig_actief).publish_state(true);
+#             ESP_LOGI("main", "Handmatige modus door gebruiker! Van %d%% naar %d%%.", vorige_waarde, binnenkomende_waarde);
+
+#         #// <<< DE GEVAARLIJKE 'IF CONDITION' DIE HIER STOND IS NU VOLLEDIG VERWIJDERD >>>
+#         #// Hierdoor zal de binnenkomende Modbus-data nooit meer ongewenst je scripts overhoop gooien.
+
+#     web_server:
+#       sorting_group_id: sorting_group_configuration_setup
+#       sorting_weight: 5
+
+
+# 1. Verwijder het 'platform: modbus_controller' deel voor nummer 582
+# 2. Maak in plaats daarvan een template number aan:
+number:
+  - platform: modbus_controller
+    modbus_controller_id: duco_box
+    name: "WTW RH setpoint"
+    id: rh_setpoint
+    icon: "mdi:water-percent"
+    register_type: holding
+    address: 582
+    device_class: humidity
+    value_type: S_WORD
+    min_value: 0
+    max_value: 100
+    step: 5
+    mode: box
+    unit_of_measurement: "%"
+    disabled_by_default: false
+    force_new_range: true 
+    
+    on_value:
+      then:
+        - lambda: |-
+            // 1. BLOKKEER TIJDENS BOOT EN NEGEER INCORRECTE NULLEN/NAN
+            if (std::isnan(x) || !id(wtw_systeem_volledig_online)) {
+              return; 
+            }
+
+            int binnenkomende_waarde = (int)x;
+            int berekend_doel = (int)id(rh_berekend_doel).state;
+            int vorige_waarde = id(vorige_rh_setpoint);
+
+            // CRUCIALE BOOT-FIX: Als de vorige waarde nog 0 is, is dit de allereerste poll na de upload.
+            // Sla de waarde op, maar activeer NOOIT de handmatige modus.
+            if (vorige_waarde == 0) {
+              id(vorige_rh_setpoint) = binnenkomende_waarde;
+              ESP_LOGI("main", "Eerste Modbus-poll succesvol verwerkt na boot (%d%%). Systeem blijft in AUTOMATISCH.", binnenkomende_waarde);
+              return;
+            }
+
+            // Sla de nieuwe waarde op voor de volgende poll
+            id(vorige_rh_setpoint) = binnenkomende_waarde;
+
+            // 2. Als de waarde exact gelijk is aan de vorige keer, doe niets
+            if (binnenkomende_waarde == vorige_waarde) {
+              return;
+            }
+
+            // 3. Negeer automatische updates van onze eigen reguliere scripts
+            if (binnenkomende_waarde == berekend_doel) {
+              ESP_LOGI("main", "Automatische update gedetecteerd naar %d%%. Geen handmatige modus.", binnenkomende_waarde);
+              return;
+            }
+
+            // 4. Als de handmatige modus al actief is, negeer dan de Modbus-echo's
+            if (id(wtw_handmatig_actief).state) {
+              return;
+                }
+
+            // 5. De gebruiker verandert ZELF de waarde via de UI -> Naar handmatig forceren!
+            id(wtw_rh_regeling).stop();
+            id(wtw_modus_normaal).stop();
+
+            // Activeer de handmatige modus direct
+            id(wtw_handmatig_actief).publish_state(true);
+            ESP_LOGI("main", "Handmatige modus door gebruiker! Van %d%% naar %d%%.", vorige_waarde, binnenkomende_waarde);
+
+    web_server:
+      sorting_group_id: sorting_group_configuration_setup
+      sorting_weight: 5
+
+  # # ==============================================================================
+  # # COORD_ZONE_2 (Node 2) - Maximale debiet aanpassing (m³/h)
+  # # ==============================================================================
+  # - platform: modbus_controller
+  #   modbus_controller_id: duco_box
+  #   name: "WTW Zone 2 Max Flow"
+  #   id: zone_2_max_flow
+  #   icon: "mdi:gauge"
+  #   register_type: holding
+  #   address: 260 #260 # (Node 2 * 100) + 60. Mocht dit niet reageren, probeer dan adres 80
+  #   value_type: S_WORD
+  #   min_value: 10
+  #   max_value: 300
+  #   step: 5
+  #   unit_of_measurement: "m³/h"
+  #   mode: box
+  #   force_new_range: true
+
+  # # ==============================================================================
+  # # COORD_ZONE_3 (Node 3) - Maximale debiet aanpassing (m³/h)
+  # # ==============================================================================
+  # - platform: modbus_controller
+  #   modbus_controller_id: duco_box
+  #   name: "WTW Zone 3 Max Flow"
+  #   id: zone_3_max_flow
+  #   icon: "mdi:gauge"
+  #   register_type: holding
+  #   address: 360 #360 # (Node 3 * 100) + 60. Mocht dit niet reageren, probeer dan adres 90
+  #   value_type: S_WORD
+  #   min_value: 10
+  #   max_value: 300
+  #   step: 5
+  #   unit_of_measurement: "m³/h"
+  #   mode: box
+  #   force_new_range: true
+
+
+    
+#   - platform: modbus_controller
+#     modbus_controller_id: duco_box
+#     name: "WTW Auto max"
+#     id: auto_max
+#     icon: "mdi:fan"
+#     register_type: holding
+#     address: 10
+#     device_class: volume_flow_rate
+#     value_type: S_WORD
+#     min_value: -1          # Toestaan van de -1 waarde
+#     max_value: 100
+#     step: 1               # Must be 1 to allow transition from 0 to -1
+#     mode: box
+#     unit_of_measurement: "%"
+#     disabled_by_default: false
+
+#     on_value:
+#       then:
+#         - lambda: |-
+#             int waarde = (int)x;
+            
+#             // Als de waarde -1 is, laten we deze ongemoeid
+#             if (waarde == -1) {
+#               return;
+#             }
+            
+#             // Als de waarde tussen 0 en 100 ligt, dwingen we stappen van 5 af via afronding
+#             if (waarde >= 0 && waarde <= 100) {
+#               int afgeronde_waarde = ((waarde + 2) / 5) * 5;
+              
+#               // Voorkom dat we buiten de max_value schieten door afronding
+#               if (afgeronde_waarde > 100) afgeronde_waarde = 100;
+              
+#               // Als de slider niet op een veelvoud van 5 stond, dwingen we de afgeronde waarde af
+#               if (waarde != afgeronde_waarde) {
+#                 auto call = id(auto_max).make_call();
+#                 call.set_value(afgeronde_waarde);
+#                 call.perform();
+#               }
+#             }
+
+# #    force_new_range: true 
+
+
+      
+
+# Signaleer douche gebruik max 30min zie script
+binary_sensor:
+  - platform: template
+    name: "WTW Douche Modus"
+    id: wtw_douche_actief
+    icon: "mdi:shower-head"
+    lambda: |-
+      // 1. Controleer eerst of beide sensoren een geldige meting hebben
+      if (!id(ducobox_rh_actual).has_state() || !id(ducobox_rh_filtered).has_state()) {
+        return false;
+      }
+
+      // 2. Haal de actuele waarden op
+      float val_actual = id(ducobox_rh_actual).state;
+      float val_filtered = id(ducobox_rh_filtered).state;
+      float verschil = val_actual - val_filtered;
+
+      // 3. Vraag de huidige status van deze binary sensor op (AAN of UIT)
+      bool momenteel_actief = id(wtw_douche_actief).state;
+
+      // 4. Evalueer de hysterese-voorwaarden
+      if (momenteel_actief) {
+        // De douchemodus IS al actief: houd hem actief totdat het verschil zakt naar 2.0 of lager
+        if (verschil <= 2.0) {
+          return false; // Schakel UIT
+        } else {
+          return true;  // Blijf AAN
+        }
+      } else {
+        // De douchemodus is momenteel UIT: schakel pas in als het verschil 3.0 of hoger is
+        if (verschil >= 3.0) {
+          return true;  // Schakel AAN
+        } else {
+          return false; // Blijf UIT
+        }
+      }
+
+
+  - platform: template
+    name: "WTW Handmatige Modus (30min)"
+    id: wtw_handmatig_actief 
+    icon: mdi:timer-edit-outline
+
+
+
+  - platform: template
+    name: "WTW Automatische Modus"
+    id: wtw_automatische_regeling_actief
+    icon: mdi:auto-mode
+    lambda: |-
+      return (!id(wtw_douche_actief).state && 
+              !id(wtw_handmatig_actief).state && 
+              id(wtw_systeem_volledig_online) && 
+              id(switch_rh_regeling).state);
+
+
+    
+sensor:
+    
+# Node 2: Zoneklep wonen
+  - platform: modbus_controller
+    modbus_controller_id: duco_box
+    name: "Duco zoneklep wonen"
+    register_type: read
+    address: 22
+    value_type: U_WORD
+    unit_of_measurement: "%"
+    state_class: "measurement"
+    icon: "mdi:valve"
+    disabled_by_default: true
+
+# Node 3: Zoneklep slapen    
+  - platform: modbus_controller
+    modbus_controller_id: duco_box
+    name: "Duco zoneklep slapen"
+    register_type: read
+    address: 32
+    value_type: U_WORD
+    unit_of_measurement: "%"
+    state_class: "measurement"
+    icon: "mdi:valve"
+    disabled_by_default: true
+
+
+############################################
+    
+
+        
+# Node 58: RH box
+  - platform: modbus_controller
+    modbus_controller_id: duco_box
+    name: "Ducobox RH gemeten"
+    id: ducobox_rh_actual
+    icon: "mdi:water-percent"
+    register_type: read         # Gewijzigd naar 'read'
+    address: 585                # Gecorrigeerd zonder voorloopnul
+    value_type: U_WORD
+    unit_of_measurement: "%"
+    state_class: "measurement"
+    device_class: humidity
+    accuracy_decimals: 1
+    internal: true
+    filters:
+      - lambda: return x / 100.0 * 1.00;  # factor 10.5 is het verschil tussen RH thermostaat en RH box, thermosstaat leiden
+    on_value:
+      then:
+        - component.update: ducobox_rh_filtered
+
+
+
+# Node 58: RH box filtered om pieken van douche en quooker weg te halen
+  - platform: template
+    name: "Ducobox RH gemeten en gefiltert"
+    id: ducobox_rh_filtered
+    unit_of_measurement: "%"
+    state_class: "measurement"
+    device_class: humidity
+    accuracy_decimals: 1
+    icon: "mdi:water-percent"
+    update_interval: never
+    disabled_by_default: true
+    lambda: |-
+      // 1. Controleer of de hoofd-sensor wel online is
+      if (!id(ducobox_rh_actual).has_state()) {
+        return NAN;
+      }
+
+      // 2. Haal de nieuwe waarde op
+      float x = id(ducobox_rh_actual).state;
+      
+      // 3. Onthoud de vorige geldige waarde
+      static float vorige_rh = NAN;
+      
+      // Eerste keer opstarten? Accepteer de waarde.
+      if (std::isnan(vorige_rh)) {
+        vorige_rh = x;
+        return x;
+      }
+      
+      float verschil = std::abs(x - vorige_rh);
+      float max_verandering = 1.2; 
+      
+      // 4. Filter de snelle pieken eruit
+      if (verschil > max_verandering) {
+        return vorige_rh; // Negeer de piek en geef de oude waarde terug
+      } else {
+        vorige_rh = x;    // Accepteer de trage verandering
+        return x;
+      }
+    on_value:
+      then:
+        - component.update: rh_actual_active
+
+  - platform: homeassistant
+    name: "Luchtvochtigheid Smart X (HA)"
+    entity_id: sensor.smart_thermostat_x_luchtvochtigheid
+    id: rh_smart_x_ha
+    internal: true # Hiermee voorkom je dat de sensor dubbel in Home Assistant verschijnt
+    unit_of_measurement: "%"
+    state_class: "measurement"  
+    device_class: humidity
+    icon: "mdi:water-percent"
+    accuracy_decimals: 1
+    filters:
+    - clamp:
+        min_value: 10
+        max_value: 99
+        ignore_out_of_range: true
+    on_value:
+      then:
+        - component.update: rh_actual_active
+
+
+
+  - platform: template
+    name: "RH waarde, bron voor de regeling"
+    id: rh_actual_active
+    unit_of_measurement: "%"
+    state_class: "measurement"
+    device_class: humidity
+    accuracy_decimals: 1
+    icon: "mdi:water-percent"
+    update_interval: 60s
+    disabled_by_default: true
+    lambda: |-
+      // 1. Controleer of 'rh_smart_x_ha' bestaat en een geldige waarde heeft
+      // Als HA 'unavailable' of 'unknown' stuurt, is .has_state() automatisch false.
+      if (id(rh_smart_x_ha).has_state() && !std::isnan(id(rh_smart_x_ha).state)) {
+        float ha_val = id(rh_smart_x_ha).state;
+        
+        // 2. Controleer of de waarde netjes tussen 1 en 100 ligt
+        if (ha_val >= 1.0 && ha_val <= 100.0) {
+          return ha_val; // Gebruik Home Assistant waarde
+        } else {
+          ESP_LOGW("duco_selectie", "Home Assistant RH waarde buiten bereik (1-100): %.1f%%.", ha_val);
+        }
+      } else {
+        ESP_LOGW("duco_selectie", "Home Assistant RH sensor is offline of onbeschikbaar.");
+      }
+      
+      // 3. Fallback: Gebruik de gefilterde Modbus waarde
+      if (id(ducobox_rh_filtered).has_state()) {
+        return id(ducobox_rh_filtered).state;
+      }
+      
+      // 4. Als echt alles offline is
+      ESP_LOGE("duco_selectie", "Zowel Home Assistant als Modbus sensor zijn onbeschikbaar!");
+      return NAN;
+
+    # HIER DE TRIGGER TOEVOEGEN:
+    on_value:
+      then:
+        - if:
+            condition:
+              lambda: |-
+                return (!isnan(x) && x > 0 && !id(wtw_rh_regeling).is_running() && id(switch_rh_regeling).state);
+            then:
+              - script.execute: wtw_rh_regeling
+
+
+
+  # Dynamische weergave van het berekende setpoint doel
+  - platform: template
+    name: "RH Berekend Doel"
+    id: rh_berekend_doel
+    unit_of_measurement: "%"
+    icon: "mdi:water-percent"
+    accuracy_decimals: 0
+    state_class: "measurement"
+    disabled_by_default: true
+    lambda: |-
+      // Geeft dynamisch de waarde terug die je via scripts of on_boot pusht
+      if (id(rh_berekend_doel).has_state()) {
+        return id(rh_berekend_doel).state;
+      }
+      return 55.0; // Fallback startwaarde
+
+
+
+
+  # ==============================================================================
+  # WEERGAVE SENSOR: RESTERENDE TIJD HANDMATIGE MODUS (In minuten via global)
+  # ==============================================================================
+  - platform: template
+    name: "Handmatig modus (resterende tijd)"
+    id: handmatig_resterende_tijd
+    unit_of_measurement: "min"
+    icon: "mdi:timer-outline"
+    accuracy_decimals: 1
+    update_interval: 10s
+    lambda: |-
+      // Controleer of de handmatige vlag actief is én of er een geldige starttijd is
+      if (id(wtw_handmatig_actief).state && id(last_manual_setpoint_change) > 0) {
+        uint32_t verstreken = millis() - id(last_manual_setpoint_change);
+        uint32_t totaal_handmatig_ms = 1800000; // 30 minuten in ms
+        
+        if (verstreken >= totaal_handmatig_ms) {
+          return 0.0;
+        }
+        
+        uint32_t resterend_ms = totaal_handmatig_ms - verstreken;
+        return (float)resterend_ms / 1000.0 / 60.0;
+      }
+      return 0.0;
+    web_server:
+      sorting_group_id: sorting_group_timers
+      sorting_weight: 20
+
+  # ==============================================================================
+  # WEERGAVE SENSOR: RESTERENDE TIJD COOLDOWN REGELING (Gecorrigeerd)
+  # ==============================================================================
+  - platform: template
+    name: "Cooldown modus (resterende tijd)"
+    id: cooldown_resterende_tijd
+    unit_of_measurement: "min"
+    icon: "mdi:timer-outline"
+    accuracy_decimals: 1
+    update_interval: 10s
+    lambda: |-
+      if (id(wtw_cooldown_actief) && id(start_cooldown_tijd) > 0) {
+        uint32_t verstreken = millis() - id(start_cooldown_tijd);
+        uint32_t totaal_cooldown_ms = 900000; // 15 minuten in ms
+        
+        if (verstreken >= totaal_cooldown_ms) {
+          return 0.0;
+        }
+        
+        uint32_t resterend_ms = totaal_cooldown_ms - verstreken;
+        return (float)resterend_ms / 1000.0 / 60.0;
+      }
+      return 0.0;
+    web_server:
+      sorting_group_id: sorting_group_timers
+      sorting_weight: 21
+
+  # ==============================================================================
+  # WEERGAVE SENSOR: RESTERENDE TIJD VERIFICATIE WACHTBUNDEL (In minuten)
+  # ==============================================================================
+  - platform: template
+    name: "Verificatie regeling (resterende tijd)"
+    id: verificatie_resterende_tijd
+    unit_of_measurement: "min"
+    icon: "mdi:timer-sand"
+    accuracy_decimals: 1
+    update_interval: 10s
+    lambda: |-
+      if (id(start_verificatie_tijd) > 0) {
+        uint32_t verstreken = millis() - id(start_verificatie_tijd);
+        uint32_t totaal_verificatie_ms = 300000; // 5 minuten in ms
+        
+        if (verstreken >= totaal_verificatie_ms) {
+          return 0.0;
+        }
+        
+        uint32_t resterend_ms = totaal_verificatie_ms - verstreken;
+        return (float)resterend_ms / 1000.0 / 60.0;
+      }
+      return 0.0;
+    web_server:
+      sorting_group_id: sorting_group_timers
+      sorting_weight: 22
+
+
+      
+# ==============================================================================
+# 5. CORE SCRIPTS (Regeling, Timers en Modus-coördinatie)
+# ==============================================================================
+script:
+  # ==========================================
+  # MODUS 1: DOUCHE BEDRIJF
+  # ==========================================
+  - id: wtw_modus_douche
+    mode: single
+    then:
+      - lambda: |-
+          int doel = 55;
+          id(rh_berekend_doel).publish_state(doel);
+
+          static bool log_gedaan = false;
+          if (!log_gedaan) {
+            ESP_LOGW("wtw_regeling", "STATUS: Douche modus actief. Doel geforceerd naar 55%%.");
+            log_gedaan = true;
+          }
+          
+          // HARD RESET: Deactiveer en wis de cooldown direct bij douche-activiteit
+          id(wtw_cooldown_actief) = false;
+          id(start_cooldown_tijd) = 0;
+          
+          // CRUCIALE RESET: Zet de 5-minuten verificatietimer direct op 0
+          id(start_verificatie_tijd) = 0;
+
+          // Stop de andere modi om timers en delays te resetten
+          id(wtw_modus_normaal).stop();
+          id(wtw_modus_handmatig).stop();
+          id(wtw_handmatig_actief).publish_state(false);
+
+
+      # Fysieke Modbus verzending
+      - if:
+          condition:
+            lambda: return ((int)id(rh_setpoint).state != 55);
+          then:
+            - lambda: ESP_LOGW("wtw_regeling", "Modbus Douche actief. Schrijf 55%%.");
+            - number.set:
+                id: rh_setpoint
+                value: 55
+
+
+    # ==========================================
+  # MODUS 2: HANDMATIGE OVERRULE MODUS
+  # ==========================================
+  - id: wtw_modus_handmatig
+    mode: restart
+    then:
+      - lambda: |-
+          // We lezen de handmatige invoer en spiegelen deze direct aan het doel.
+          int handmatig_doel = (int)id(rh_setpoint).state;
+          id(rh_berekend_doel).publish_state(handmatig_doel);
+
+          // Sla de starttijd op in de bestaande global voor onze weergavesensor
+          id(last_manual_setpoint_change) = millis();
+          
+          // CRUCIALE RESET: Zet de 5-minuten verificatietimer direct op 0
+          id(start_verificatie_tijd) = 0;
+
+          // We resetten de normale modus zodat de 5-minutentimer stopt
+          id(wtw_modus_normaal).stop();
+          ESP_LOGI("wtw_regeling", "Handmatige modus actief voor 30 minuten op %d%%.", handmatig_doel);
+
+
+      - delay: 30min
+      - lambda: |-
+          ESP_LOGI("wtw_regeling", "Handmatige modus tijd verstreken. Terug naar automatisch...");
+          id(wtw_handmatig_actief).publish_state(false);
+          id(last_manual_setpoint_change) = 0; // Reset de timer global
+      - script.execute: wtw_rh_regeling
+
+
+  # ==========================================
+  # MODUS 3: NORMAAL AUTOMATISCH BEDRIJF
+  # ==========================================
+  - id: wtw_modus_normaal
+    mode: single # Let op: staat op single, dat is goed!
+    then:
+      # Stap 1: Voorwaarden & Beveiligingen
+      - if:
+          condition:
+            lambda: |-
+              if (!id(wtw_systeem_volledig_online)) return true;
+              return (isnan(id(rh_setpoint).state) || isnan(id(rh_actual_active).state) || id(rh_setpoint).state <= 0);
+          then:
+            - lambda: |-
+                id(start_verificatie_tijd) = 0; // Reset als de modus niet mag draaien
+            - script.stop: wtw_modus_normaal
+
+
+      # Stap 2: Berekening (Exacte Hysteresis: Stijgen 0, Dalen -2)
+      - lambda: |-
+          if (!id(rh_actual_active).has_state()) return;
+          float actueel = (float)id(rh_actual_active).state;
+          int current_setpoint = (int)id(rh_setpoint).state;
+          int doel = 55;
+
+          // 1. Exacte Hysteresis bepaling op basis van stijgen/dalen
+          static float vorige_actuele_rh = -1.0;
+          float hys = 0.0;
+          
+          if (vorige_actuele_rh >= 0.0) {
+            if (actueel > vorige_actuele_rh) {
+              hys = 0.0;   // Bij stijgen: direct schakelen op de harde grens
+            } else if (actueel < vorige_actuele_rh) {
+              hys = -2.0;  // Bij dalen: verlaag de drempels met 2% (houdt de hogere stand langer vast)
+            }
+          }
+          vorige_actuele_rh = actueel;
+
+          // 2. Trap-bepaling met jouw hysteresis-factor
+          if (actueel > (90.0 + hys))       doel = 90;
+          else if (actueel > (80.0 + hys))  doel = 80;
+          else if (actueel > (65.0 + hys))  doel = 70;
+          else if (actueel > (60.0 + hys))  doel = 65;
+          else if (actueel > (55.0 + hys))  doel = 60;
+          else                              doel = 55;
+
+          // 3. CRUCIALE FIX: Als de luchtvochtigheid onder de absolute basisgrens (55%) zakt,
+          // mag de dalende hysteresis de waarde nooit meer in de 60% trap houden.
+          if (actueel <= 55.0) {
+            doel = 55;
+          }
+
+          id(rh_berekend_doel).publish_state(doel);
+
+          // Cooldown verwerking (15 min)
+          if (id(wtw_cooldown_actief)) {
+            if (id(start_cooldown_tijd) == 0) id(start_cooldown_tijd) = millis();
+            if (millis() - id(start_cooldown_tijd) >= 900000) {
+              id(wtw_cooldown_actief) = false;
+              id(start_cooldown_tijd) = 0;
+              ESP_LOGI("wtw_regeling", "Cooldown verstreken.");
+            }
+          }
+
+          if (id(wtw_cooldown_actief) && (doel > current_setpoint)) {
+            ESP_LOGD("wtw_regeling", "Wijziging geblokkeerd door actieve Cooldown.");
+            return; 
+          }
+
+
+      # --- STAP 3 & 4: TIMERVERIFICATIE EN VERZENDING VIA NATIVE YAML ---
+      - if:
+          condition:
+            lambda: |-
+              int current_setpoint = (int)id(rh_setpoint).state;
+              int doel = (int)id(rh_berekend_doel).state;
+              return (doel != current_setpoint);
+          then:
+            - lambda: |-
+                // Start de timer alleen als deze nog niet liep (voorkomt resetten tijdstempel)
+                if (id(start_verificatie_tijd) == 0) {
+                  id(start_verificatie_tijd) = millis();
+                  ESP_LOGI("wtw_regeling", "Woonkamer RH eist nieuw setpoint (%d%%, huidige stand: %d%%). Start 5 minuten verificatie...", (int)id(rh_berekend_doel).state, (int)id(rh_setpoint).state);
+                }
+            
+            - delay: 300s
+            
+            # Na 5 minuten controleren we de status opnieuw VOORDAT we de timer wissen
+            - if:
+                condition:
+                  lambda: |-
+                    int current_setpoint = (int)id(rh_setpoint).state;
+                    int doel = (int)id(rh_berekend_doel).state;
+                    return (doel != current_setpoint);
+                then:
+                  - lambda: |-
+                      // Reset de timer-registratie direct vóór het schrijven
+                      id(start_verificatie_tijd) = 0;
+                      ESP_LOGW("wtw_regeling", "Verificatie succesvol na 5 minuten. Schrijf nu %d%% naar Modbus.", (int)id(rh_berekend_doel).state);
+                  
+                  # Schrijf de waarde daadwerkelijk naar de Modbus register-slider
+                  - number.set:
+                      id: rh_setpoint
+                      value: !lambda |-
+                        return id(rh_berekend_doel).state;
+                else:
+                  - lambda: |-
+                      // Als de situatie in de 5 minuten al is opgelost, wis de timer geruisloos
+                      id(start_verificatie_tijd) = 0;
+          else:
+            - lambda: |-
+                // Doel is al gelijk aan setpoint, zorg dat de timer op 0 staat
+                id(start_verificatie_tijd) = 0;
+
+
+
+
+  # ==========================================
+  # HOOFDREGELING: COORDINATOR SCRIPT (Routeert de modi)
+  # ==========================================
+  - id: wtw_rh_regeling
+    mode: restart
+    then:
+      # 1. Opstart checks
+      - lambda: |-
+          if (!id(wtw_systeem_volledig_online)) return;
+
+      # 2. Douche detectie logica
+      - lambda: |-
+          float actueel = (float)id(rh_actual_active).state;
+          float ducobox_rh_actueel = (float)id(ducobox_rh_actual).state;
+          float ducobox_rh_gefilterd = (float)id(ducobox_rh_filtered).state;
+
+          static float vorige_actuele_rh = -1.0;
+          float hys = 0.0;
+          if (vorige_actuele_rh >= 0.0) {
+            if (actueel > vorige_actuele_rh) hys = 0.0;
+            if (actueel < vorige_actuele_rh) hys = -2.0;
+          }
+          vorige_actuele_rh = actueel;
+
+          if (id(ducobox_rh_actual).has_state() && id(ducobox_rh_filtered).has_state() && 
+              (ducobox_rh_actueel - ducobox_rh_gefilterd) >= (3.0 - hys)) {
+            id(wtw_douche_actief).publish_state(true);
+          } else {
+            id(wtw_douche_actief).publish_state(false);
+          }
+
+      # 3. ROUTERING MET RUNNING-CHECKS (Gecorrigeerd voor handmatige modus & verificatietimer)
+      - if:
+          condition:
+            lambda: |-
+              return id(wtw_douche_actief).state;
+          then:
+            - script.execute: wtw_modus_douche
+          else:
+            - if:
+                condition:
+                  lambda: |-
+                    return id(wtw_handmatig_actief).state;
+                then:
+                  # CRUCIALE FIX: Start de handmatige modus ALLEEN als deze nog NIET draait!
+                  # Dit voorkomt dat de sensor-updates de 30-minutentimer resetten.
+                  - if:
+                      condition:
+                        lambda: |-
+                          return !id(wtw_modus_handmatig).is_running();
+                      then:
+                        - script.execute: wtw_modus_handmatig
+                else:
+                  - if:
+                      condition:
+                        lambda: |-
+                          return !id(wtw_modus_normaal).is_running();
+                      then:
+                        - script.execute: wtw_modus_normaal
+                  
+                  # EXTRA VEILIGHEIDS-CHECK VOOR DE VERIFICATIETIMER:
+                  # Als we in de normale modus zitten, maar het doel is (weer) gelijk aan het setpoint,
+                  # mag de 5-minuten countdown niet onnodig blijven openstaan in de UI.
+                  - lambda: |-
+                      int current_setpoint = (int)id(rh_setpoint).state;
+                      int berekend_doel = (int)id(rh_berekend_doel).state;
+                      if (berekend_doel == current_setpoint) {
+                        id(start_verificatie_tijd) = 0;
+                      }
