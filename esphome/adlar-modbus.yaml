@@ -601,6 +601,7 @@ select:
     name: "Running Mode"
     address: 0x0307
     value_type: U_WORD
+    force_new_range: true
     optionsmap: 
       "Standard": 0
       "Boost": 1
