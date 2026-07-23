@@ -460,14 +460,15 @@ template:
       name: "Abolute humidity buiten"
       state_class: measurement
       unit_of_measurement: 'g/m³'
+      availability: >
+        {{ has_value('sensor.buitenluchtvochtigheid_gemiddeld') and 
+          has_value('sensor.buitentemperatuur_gemiddeld') }}
       state: >
-        {% if has_value('sensor.buitenluchtvochtigheid_gemiddeld') and has_value('sensor.buitentemperatuur_gemiddeld') %}
-          {% set h = states('sensor.buitenluchtvochtigheid_gemiddeld') | float(0) %}
-          {% set t = states('sensor.buitentemperatuur_gemiddeld') | float(0) %}
+        {% set h = states('sensor.buitenluchtvochtigheid_gemiddeld') | float(0) %}
+        {% set t = states('sensor.buitentemperatuur_gemiddeld') | float(0) %}
         {{ (h * 6.112 * 2.1674 * (e ** ((t * 17.67) / (t + 243.5))) / (t + 273.15)) | round(2) }}
-        {% else %}
-          unavailable
-        {% endif %}
+
+
 
 
   # - sensor:

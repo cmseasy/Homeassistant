@@ -157,8 +157,7 @@ frontend:
   extra_module_url:
     - /hacsfiles/lovelace-card-mod/card-mod.js?hacstag=190927524421
     - /hacsfiles/sidebar-organizer/sidebar-organizer.js?hacstag=932534411420
-#    - /hacsfiles/sidebar-organizer/sidebar-organizer.js?hacstag=932534411400
-#    - /hacsfiles/sidebar-organizer/sidebar-organizer.js?hacstag=932534411341
+
 
 
 
@@ -179,16 +178,23 @@ climate:
     heater: switch.hvac_verwarmen # <-required
     cooler: switch.hvac_koelen # <-required
 #    heat_pump_cooling: switch.hvac_koelen
-    heat_cool_mode: false # <-- or not set
     target_sensor: sensor.smart_thermostat_x_temperatuur
-#    heat_cool_mode: true # <-required
-#    initial_hvac_mode: "heat"
     min_temp: 10
     max_temp: 25
-    # target_temp_low: 19.5
-    # target_temp_high: 19.5
     keep_alive:
       minutes: 1
+# deze zomer toegevoegd, matig/niet getest
+# onbekend of dit werkt/een functie heeft ivm automatisering koelen/verwarmen
+    initial_hvac_mode: "heat_cool"
+    heat_cool_mode: true
+    target_temp_low: 20.0
+    target_temp_high: 23.0
+# wordt in automation verwarmen/koelen geregeld
+    # min_cycle_duration:
+    #   minutes: 15
+    # min_hysteresis: 0.3
+
+
 
 # sensor:
 #   - platform: min_max

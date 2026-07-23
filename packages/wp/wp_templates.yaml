@@ -219,23 +219,43 @@ template:
 
 
   - sensor:
-      - name: "WP AAN delta T temp set"
-        unique_id: wp_aan_delta_t_temp_set
-        icon: mdi:thermometer-check
-        unit_of_measurement: "°C" # Dit mag nu wél officieel gebruikt worden!
-        state_class: measurement
-        state: >
-          {% set delta_t_stop = states('sensor.wp_delta_t_bij_stop') | float(0) %}
-          {% set p26 = states('sensor.adlar_p26_hysterese_watertemperatuur_start_warmtepomp') | float(0) %}
-          {% set dauwpunt = states('sensor.dauwpunt_woonkamer') | float(0) | round(0, 'ceil') %}
-          {% set temp_set = states('number.adlar_temp_set_cooling') | float(0) %}
-          {% set outlet = states('sensor.adlar_water_outlet_temp_t7') | float(0) %}
+    - name: "WP AAN delta T temp set"
+      unique_id: wp_aan_delta_t_temp_set
+      icon: mdi:thermometer-check
+      unit_of_measurement: "°C"
+      state_class: measurement
+      state: >
+        {% set delta_t_stop = states('sensor.wp_delta_t_bij_stop') | float(0) %}
+        {% set p26 = states('sensor.adlar_p26_hysterese_watertemperatuur_start_warmtepomp') | float(0) %}
+        {% set temp_set = states('number.adlar_temp_set_cooling') | float(0) %}
+        {% set outlet = states('sensor.adlar_water_outlet_temp_t7') | float(0) %}
+          
+        {{ outlet - (temp_set + p26 + (delta_t_stop | abs)) }}
+      availability: >
+        {{ has_value('sensor.adlar_water_outlet_temp_t7') and has_value('number.adlar_temp_set_cooling') }}
+
+
+
+
+
+  # - sensor:
+  #     - name: "WP AAN delta T temp set"
+  #       unique_id: wp_aan_delta_t_temp_set
+  #       icon: mdi:thermometer-check
+  #       unit_of_measurement: "°C" # Dit mag nu wél officieel gebruikt worden!
+  #       state_class: measurement
+  #       state: >
+  #         {% set delta_t_stop = states('sensor.wp_delta_t_bij_stop') | float(0) %}
+  #         {% set p26 = states('sensor.adlar_p26_hysterese_watertemperatuur_start_warmtepomp') | float(0) %}
+  #         {% set dauwpunt = states('sensor.dauwpunt_woonkamer') | float(0) | round(0, 'ceil') %}
+  #         {% set temp_set = states('number.adlar_temp_set_cooling') | float(0) %}
+  #         {% set outlet = states('sensor.adlar_water_outlet_temp_t7') | float(0) %}
   
-          {% if has_value('sensor.adlar_water_outlet_temp_t7') and has_value('number.adlar_temp_set_cooling') %}
-            {{ outlet - (temp_set + p26 + (delta_t_stop | abs)) }}
-          {% else %}
-            unavailable
-          {% endif %}
+  #         {% if has_value('sensor.adlar_water_outlet_temp_t7') and has_value('number.adlar_temp_set_cooling') %}
+  #           {{ outlet - (temp_set + p26 + (delta_t_stop | abs)) }}
+  #         {% else %}
+  #           unavailable
+  #         {% endif %}
 
  
 
