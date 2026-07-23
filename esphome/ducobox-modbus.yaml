@@ -147,6 +147,10 @@ globals:
     type: int
     restore_value: no
     initial_value: '0'
+  - id: global_douche_vorige_status
+    type: bool
+    restore_value: no
+    initial_value: 'false'
 
               
 # 4. Entiteiten aanmaken om uit te lezen (Snsoren)
@@ -675,7 +679,6 @@ script:
   # ==========================================
   # HOOFDREGELING: COORDINATOR SCRIPT (Routeert de modi)
   # ==========================================
-
   - id: wtw_rh_regeling
     mode: restart
     then:
@@ -695,6 +698,7 @@ script:
             - lambda: |-
                 id(start_verificatie_tijd) = 0;
                 id(wtw_handmatig_actief).publish_state(false);
+                id(global_douche_vorige_status) = false;
             - script.stop: wtw_rh_regeling
 
       - if:
@@ -702,6 +706,11 @@ script:
             # Modus 1: Douche heeft de allerhoogste prioriteit (gebruikt de binary_sensor status)
             lambda: return id(wtw_douche_actief).state;
           then:
+            - lambda: |-
+                if (!id(global_douche_vorige_status)) {
+                  ESP_LOGW("wtw_regeling", "Douche modus wordt gestart. RH setpoint wordt op 55%% gezet.");
+                  id(global_douche_vorige_status) = true;
+                }
             - script.execute: wtw_modus_douche
             - script.stop: wtw_modus_handmatig
             - script.stop: wtw_modus_normaal
@@ -712,6 +721,11 @@ script:
                   # Modus 2: Handmatige bediening heeft prioriteit over normaal automatisch
                   lambda: return id(wtw_handmatig_actief).state;
                 then:
+                  - lambda: |-
+                      if (id(global_douche_vorige_status)) {
+                        ESP_LOGW("wtw_regeling", "Douche modus beëindigd. Regeling wordt overgedragen aan Automatische modus.");
+                        id(global_douche_vorige_status) = false;
+                      }
                   # --- FIX: Start het handmatige script ENKEL als het niet al draait ---
                   - if:
                       condition:
@@ -722,6 +736,11 @@ script:
                   - script.stop: wtw_modus_normaal
                 else:
                   # Modus 3: Normaal automatisch bedrijf
+                  - lambda: |-
+                      if (id(global_douche_vorige_status)) {
+                        ESP_LOGW("wtw_regeling", "Douche modus beëindigd. Regeling wordt overgedragen aan Automatische modus.");
+                        id(global_douche_vorige_status) = false;
+                      }
                   - script.execute: wtw_modus_normaal
                   - script.stop: wtw_modus_douche
                   - script.stop: wtw_modus_handmatig
@@ -735,13 +754,6 @@ script:
       - lambda: |-
           int doel = 55;
           id(rh_berekend_doel).publish_state(doel);
-
-          // Correcte static bool die ENKEL logt als de status écht verandert
-          static bool status_was_actief = false;
-          if (!status_was_actief) {
-            ESP_LOGW("wtw_regeling", "Douche modus wordt gestart. RH setpoint wordt op 55%% gezet.");
-            status_was_actief = true;
-          }
           
           // HARD RESET: Deactiveer en wis de cooldown direct bij douche-activiteit
           id(wtw_cooldown_actief) = false;
@@ -755,7 +767,7 @@ script:
           id(wtw_modus_handmatig).stop();
           id(wtw_handmatig_actief).publish_state(false);
 
-      # Fysieke Modbus verzending en loggen van einde
+      # Fysieke Modbus verzending
       - if:
           condition:
             lambda: return ((int)id(rh_setpoint).state != 55);
@@ -763,11 +775,8 @@ script:
             - number.set:
                 id: rh_setpoint
                 value: 55
-            - lambda: ESP_LOGW("wtw_regeling", "Douche modus actief. RH setpoint op 55%% gezet.");
-          else:
-            # --- NIEUW: Logmelding zodra de douchemodus stopt en de normale modus het overneemt ---
-            - lambda: |-
-                ESP_LOGW("wtw_regeling", "Douche modus beëindigd. Regeling wordt overgedragen aan Automatische modus.");
+            - lambda: ESP_LOGW("wtw_regeling", "Modbus opdracht verzonden RH setpoint op 55%% gezet.");
+
               
   # ==========================================
   # MODUS 2: HANDMATIGE OVERRULE MODUS
