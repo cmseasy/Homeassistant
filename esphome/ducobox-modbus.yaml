@@ -775,7 +775,7 @@ script:
             - number.set:
                 id: rh_setpoint
                 value: 55
-            - lambda: ESP_LOGW("wtw_regeling", "Modbus opdracht verzonden RH setpoint op 55%% gezet.");
+            - lambda: ESP_LOGI("wtw_regeling", "Modbus opdracht verzonden RH setpoint op 55%% gezet.");
 
               
   # ==========================================
