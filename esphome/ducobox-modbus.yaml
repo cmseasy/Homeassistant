@@ -738,12 +738,21 @@ script:
                   # Modus 3: Normaal automatisch bedrijf
                   - lambda: |-
                       if (id(global_douche_vorige_status)) {
-                        ESP_LOGW("wtw_regeling", "Douche modus beëindigd. Regeling wordt overgedragen aan Automatische modus.");
+                        ESP_LOGW("wtw_regeling", "Douche modus beëindigd. Directe overgang naar het nieuwe berekende doel.");
+                        // We resetten de verificatietijd naar 1 om direct doorschrijven toe te staan bij de eerste loop
+                        id(start_verificatie_tijd) = 1; 
                         id(global_douche_vorige_status) = false;
                       }
-                  - script.execute: wtw_modus_normaal
+                  # --- FIX: Start de normale modus ENKEL als deze nog niet draait! ---
+                  # Dit voorkomt dat de 5-minuten delay telkens opnieuw gereset wordt.
+                  - if:
+                      condition:
+                        lambda: return !id(wtw_modus_normaal).is_running();
+                      then:
+                        - script.execute: wtw_modus_normaal
                   - script.stop: wtw_modus_douche
                   - script.stop: wtw_modus_handmatig
+
 
   # ==========================================
   # MODUS 1: DOUCHE BEDRIJF (GEOPTIMALISEERD)
@@ -872,20 +881,20 @@ script:
             - if:
                 condition:
                   lambda: |-
-                    // FIX: Als de douche net uit is, neem direct het berekende doel over (ongeacht of dit 55% of 60% is)
-                    return (id(wtw_douche_actief).state == false);
+                    // Als start_verificatie_tijd exact 1 is, betekent dit dat de douche net uit is gegaan.
+                    // We omzeilen de 5 minuten timer eenmalig om direct de nieuwe waarde te forceren.
+                    return (id(start_verificatie_tijd) == 1);
                 then:
                   - lambda: |-
                       int doel = (int)id(rh_berekend_doel).state;
                       id(start_verificatie_tijd) = 0;
-                      ESP_LOGI("wtw_regeling", "RH setpoint naar (%d%%) zonder 5 minutes verificatie.", doel);
-                      //ESP_LOGW("wtw_regeling", "Douche modus afgelopen: RH setpoint naar (%d%%) zonder 5 minutes verificatie.", doel);
+                      ESP_LOGW("wtw_regeling", "Douche afgelopen: direct overschrijven naar %d%%.", doel);
                   - number.set:
                       id: rh_setpoint
                       value: !lambda |-
                         return id(rh_berekend_doel).state;
                 else:
-                  # --- Normale verloop met 5 minuten verificatie ---
+                  # --- Normaal verloop: Altijd 5 minuten verificatie ---
                   - lambda: |-
                       if (id(start_verificatie_tijd) == 0) {
                         id(start_verificatie_tijd) = millis();
@@ -894,7 +903,7 @@ script:
                   
                   - delay: 300s
                   
-                  # Na 5 minuten controleren we de status opnieuw VOORDAT we de timer wissen
+                  # Na 5 minuten controleren we de status opnieuw
                   - if:
                       condition:
                         lambda: |-
@@ -915,6 +924,4 @@ script:
           else:
             - lambda: |-
                 id(start_verificatie_tijd) = 0;
-
-
 
