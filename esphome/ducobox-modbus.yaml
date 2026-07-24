@@ -791,10 +791,11 @@ script:
           }
 
           // ====================================================================
-          // DE BOOT FIX (Blijft ongewijzigd)
+          // DE BOOT FIX (Met dynamische secondenweergave)
           // ====================================================================
           if (id(wtw_eerste_berekening_na_boot)) {
-            ESP_LOGW("wtw_regeling", "Systeem is online (75s voorbij). Eerste berekening activeert direct doel: %d%%", doel);
+            float opstart_seconden = millis() / 1000.0;
+            ESP_LOGW("wtw_regeling", "Systeem is online (%.1fs na boot). Eerste berekening activeert direct doel: %d%%", opstart_seconden, doel);
             id(rh_setpoint).make_call().set_value(doel).perform();
             id(start_verificatie_tijd) = 0;
             id(wtw_eerste_berekening_na_boot) = false;
