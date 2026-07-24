@@ -129,6 +129,11 @@ globals:
     type: bool
     restore_value: no
     initial_value: 'false'
+  # NIEUW: Zorgt voor directe Modbus-verzending bij de allereerste berekening
+  - id: wtw_eerste_berekening_na_boot
+    type: bool
+    restore_value: no
+    initial_value: 'true'
   # 15 minuten wachttijd na setpoint verandering
   - id: wtw_cooldown_actief
     type: bool
@@ -811,7 +816,7 @@ script:
   # MODUS 3: NORMAAL AUTOMATISCH BEDRIJF
   # ==========================================
   - id: wtw_modus_normaal
-    mode: single # Let op: staat op single, dat is goed!
+    mode: single
     then:
       # Stap 1: Voorwaarden & Beveiligingen
       - if:
@@ -866,67 +871,35 @@ script:
             if (millis() - id(start_cooldown_tijd) >= 900000) {
               id(wtw_cooldown_actief) = false;
               id(start_cooldown_tijd) = 0;
-              ESP_LOGI("wtw_regeling", "Cooldown verstreken.");
+              ESP_LOGI("wtw_regeling", "Cooldown beëindigd.");
             }
           }
 
-          if (id(wtw_cooldown_actief) && (doel > current_setpoint)) {
-            ESP_LOGD("wtw_regeling", "Wijziging geblokkeerd door actieve Cooldown.");
-            return; 
+          // ====================================================================
+          // DE FIX: Direct doorschrijven na verloop van de 75s opstarttijd
+          // ====================================================================
+          if (id(wtw_eerste_berekening_na_boot)) {
+            ESP_LOGW("wtw_regeling", "Systeem is online (75s voorbij). Eerste berekening activeert direct doel: %d%%", doel);
+            id(rh_setpoint).make_call().set_value(doel).perform();
+            id(start_verificatie_tijd) = 0;           // Reset de timer voor de toekomst
+            id(wtw_eerste_berekening_na_boot) = false; // Schakel de vlag permanent uit tot de volgende herstart
+            return;
           }
 
-      # --- STAP 3 & 4: TIMERVERIFICATIE EN VERZENDING VIA NATIVE YAML ---
-      - if:
-          condition:
-            lambda: |-
-              int current_setpoint = (int)id(rh_setpoint).state;
-              int doel = (int)id(rh_berekend_doel).state;
-              return (doel != current_setpoint);
-          then:
-            - if:
-                condition:
-                  lambda: |-
-                    // Als start_verificatie_tijd exact 1 is, betekent dit dat de douche net uit is gegaan.
-                    // We omzeilen de 5 minuten timer eenmalig om direct de nieuwe waarde te forceren.
-                    return (id(start_verificatie_tijd) == 1);
-                then:
-                  - lambda: |-
-                      int doel = (int)id(rh_berekend_doel).state;
-                      id(start_verificatie_tijd) = 0;
-                      ESP_LOGW("wtw_regeling", "Douche afgelopen: direct overschrijven naar %d%%.", doel);
-                  - number.set:
-                      id: rh_setpoint
-                      value: !lambda |-
-                        return id(rh_berekend_doel).state;
-                else:
-                  # --- Normaal verloop: Altijd 5 minuten verificatie ---
-                  - lambda: |-
-                      if (id(start_verificatie_tijd) == 0) {
-                        id(start_verificatie_tijd) = millis();
-                        ESP_LOGI("wtw_regeling", "Woonkamer RH eist nieuw setpoint (%d%%, huidige stand: %d%%). Start 5 minuten verificatie...", (int)id(rh_berekend_doel).state, (int)id(rh_setpoint).state);
-                      }
-                  
-                  - delay: 300s
-                  
-                  # Na 5 minuten controleren we de status opnieuw
-                  - if:
-                      condition:
-                        lambda: |-
-                          int current_setpoint = (int)id(rh_setpoint).state;
-                          int doel = (int)id(rh_berekend_doel).state;
-                          return (doel != current_setpoint);
-                      then:
-                        - lambda: |-
-                            id(start_verificatie_tijd) = 0;
-                            ESP_LOGW("wtw_regeling", "Verificatie succesvol na 5 minuten. Schrijf nu %d%% naar Modbus.", (int)id(rh_berekend_doel).state);
-                        - number.set:
-                            id: rh_setpoint
-                            value: !lambda |-
-                              return id(rh_berekend_doel).state;
-                      else:
-                        - lambda: |-
-                            id(start_verificatie_tijd) = 0;
-          else:
-            - lambda: |-
-                id(start_verificatie_tijd) = 0;
-
+          // ====================================================================
+          // NORMALE REGELING: Vanaf de TWEEDE loop treedt de 5 min delay in werking
+          // ====================================================================
+          if (doel != current_setpoint) {
+            if (id(start_verificatie_tijd) == 0) {
+              id(start_verificatie_tijd) = millis();
+              ESP_LOGI("wtw_regeling", "Nieuw doel berekend (%d%%). Start 5 minuten verificatietijd.", doel);
+            }
+            
+            if (millis() - id(start_verificatie_tijd) >= 300000) { // 300000 ms = 5 minuten
+              ESP_LOGI("wtw_regeling", "Verificatietijd verstreken. Schrijf nieuw setpoint naar Modbus: %d%%", doel);
+              id(rh_setpoint).make_call().set_value(doel).perform();
+              id(start_verificatie_tijd) = 0;
+            }
+          } else {
+            id(start_verificatie_tijd) = 0; // Reset timer als doel weer gelijk is aan setpoint
+          }
