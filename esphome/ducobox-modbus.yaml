@@ -34,21 +34,31 @@ esphome:
   friendly_name: Ducobox modbus
   name_add_mac_suffix: false
 
+
+
+# PAS DAARNA DE BOOT ACTIES (Direct tegen de kantlijn)
   on_boot:
     priority: -100.0
     then:
-      - delay: 3s             # Verlaagd naar 3 seconden voor een absolute turbostart
+      - delay: 3s             # De 3 seconden turbostart
       - lambda: |-
           id(wtw_handmatig_actief).publish_state(false);
           id(rh_berekend_doel).publish_state(55.0);
           ESP_LOGI("main", "WTW RH Regeling is gestart in AUTOMATISCHE modus.");
+    
+      # 1. Zet het systeem op online
       - globals.set:
           id: wtw_systeem_volledig_online
           value: 'true'
-# NIEUW: Als los hoofdblok geplaatst (zonder voorloopspaties)
+        
+      # 2. Dwing de hoofdregeling om NU DIRECT te starten (omzeil de 52 seconden wachtstand)
+      - script.execute: wtw_rh_regeling
+
+# EERST DE VEILIGHEIDSINSTELLINGEN (Direct tegen de kantlijn)
 safe_mode:
   boot_is_good_after: 10s   # Vertel de safe_mode na 10s al dat de boot succesvol was
-  num_attempts: 10
+  num_attempts: 10          
+
 
 
 
