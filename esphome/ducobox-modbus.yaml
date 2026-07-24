@@ -11,10 +11,11 @@ esphome:
   on_boot:
     priority: -100.0 # Dit start pas als de basistaken draaien
     then:
-      - delay: 75s   # Wacht 75 seconden (dus tot ná de 60s boot-loop reset en sensor polls)
+      #- delay: 750s   # Wacht 75 seconden (dus tot ná de 60s boot-loop reset en sensor polls)
       # - globals.set:
       #     id: wtw_systeem_volledig_online
       #     value: 'true'
+      - delay: 20s   # VERLAAGD van 75s naar 20s voor een snellere start
       - lambda: |-
           // Schakel de handmatige modus geforceerd UIT
           id(wtw_handmatig_actief).publish_state(false);
