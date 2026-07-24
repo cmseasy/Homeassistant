@@ -877,36 +877,30 @@ script:
                 id(start_verificatie_tijd) = 0; // Reset als de modus niet mag draaien
             - script.stop: wtw_modus_normaal
 
-      # Stap 2: Berekening (Exacte Hysteresis: Stijgen 0, Dalen -2)
+      # Stap 2: Berekening (Hysteresis gekoppeld aan de actuele Modbus-status)
       - lambda: |-
           if (!id(rh_actual_active).has_state()) return;
           float actueel = (float)id(rh_actual_active).state;
           int current_setpoint = (int)id(rh_setpoint).state;
           int doel = 55;
 
-          // 1. Exacte Hysteresis bepaling op basis van stijgen/dalen
-          static float vorige_actuele_rh = -1.0;
-          float hys = 0.0;
-          
-          if (vorige_actuele_rh >= 0.0) {
-            if (actueel > vorige_actuele_rh) {
-              hys = 0.0;   // Bij stijgen: direct schakelen op de harde grens
-            } else if (actueel < vorige_actuele_rh) {
-              hys = -2.0;  // Bij dalen: verlaag de drempels met 2% (houdt de hogere stand langer vast)
-            }
-          }
-          vorige_actuele_rh = actueel;
+          // 1. Dynamische hysteresis op basis van het HUIDIGE Modbus-setpoint
+          // Als we op een bepaalde trap staan, verlagen we de drempel om te zakken met 2%
+          float hys_90 = (current_setpoint == 90) ? -2.0 : 0.0;
+          float hys_80 = (current_setpoint == 80) ? -2.0 : 0.0;
+          float hys_70 = (current_setpoint == 70) ? -2.0 : 0.0;
+          float hys_65 = (current_setpoint == 65) ? -2.0 : 0.0;
+          float hys_60 = (current_setpoint == 60) ? -2.0 : 0.0;
 
-          // 2. Trap-bepaling met jouw hysteresis-factor
-          if (actueel > (90.0 + hys))       doel = 90;
-          else if (actueel > (80.0 + hys))  doel = 80;
-          else if (actueel > (65.0 + hys))  doel = 70;
-          else if (actueel > (60.0 + hys))  doel = 65;
-          else if (actueel > (55.0 + hys))  doel = 60;
-          else                              doel = 55;
+          // 2. Trap-bepaling met vaste stabiele hysteresis drempels
+          if (actueel > (90.0 + hys_90))       doel = 90;
+          else if (actueel > (80.0 + hys_80))  doel = 80;
+          else if (actueel > (65.0 + hys_70))  doel = 70;
+          else if (actueel > (60.0 + hys_65))  doel = 65;
+          else if (actueel > (55.0 + hys_60))  doel = 60;
+          else                                 doel = 55;
 
-          // 3. CRUCIALE FIX: Als de luchtvochtigheid onder de absolute basisgrens (55%) zakt,
-          // mag de dalende hysteresis de waarde nooit meer in de 60% trap houden.
+          // 3. Absolute basisgrens beveiliging
           if (actueel <= 55.0) {
             doel = 55;
           }
@@ -924,18 +918,18 @@ script:
           }
 
           // ====================================================================
-          // DE FIX: Direct doorschrijven na verloop van de opstarttijd
+          // DE BOOT FIX (Blijft ongewijzigd)
           // ====================================================================
           if (id(wtw_eerste_berekening_na_boot)) {
-            ESP_LOGW("wtw_regeling", "Systeem is online. Eerste berekening activeert direct doel: %d%%", doel);
+            ESP_LOGW("wtw_regeling", "Systeem is online (75s voorbij). Eerste berekening activeert direct doel: %d%%", doel);
             id(rh_setpoint).make_call().set_value(doel).perform();
-            id(start_verificatie_tijd) = 0;           // Reset de timer voor de toekomst
-            id(wtw_eerste_berekening_na_boot) = false; // Schakel de vlag permanent uit tot de volgende herstart
+            id(start_verificatie_tijd) = 0;
+            id(wtw_eerste_berekening_na_boot) = false;
             return;
           }
 
           // ====================================================================
-          // NORMALE REGELING: Vanaf de TWEEDE loop treedt de 5 min delay in werking
+          // NORMALE REGELING WITH TIMER (Blijft ongewijzigd)
           // ====================================================================
           if (doel != current_setpoint) {
             if (id(start_verificatie_tijd) == 0) {
@@ -943,11 +937,11 @@ script:
               ESP_LOGI("wtw_regeling", "Nieuw doel berekend (%d%%). Start 5 minuten verificatietijd.", doel);
             }
             
-            if (millis() - id(start_verificatie_tijd) >= 300000) { // 300000 ms = 5 minuten
+            if (millis() - id(start_verificatie_tijd) >= 300000) {
               ESP_LOGI("wtw_regeling", "Verificatietijd verstreken. Schrijf nieuw setpoint naar Modbus: %d%%", doel);
               id(rh_setpoint).make_call().set_value(doel).perform();
               id(start_verificatie_tijd) = 0;
             }
           } else {
-            id(start_verificatie_tijd) = 0; // Reset timer als doel weer gelijk is aan setpoint
+            id(start_verificatie_tijd) = 0;
           }
