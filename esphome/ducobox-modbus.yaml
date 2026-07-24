@@ -877,10 +877,10 @@ script:
           }
 
           // ====================================================================
-          // DE FIX: Direct doorschrijven na verloop van de 75s opstarttijd
+          // DE FIX: Direct doorschrijven na verloop van de opstarttijd
           // ====================================================================
           if (id(wtw_eerste_berekening_na_boot)) {
-            ESP_LOGW("wtw_regeling", "Systeem is online (75s voorbij). Eerste berekening activeert direct doel: %d%%", doel);
+            ESP_LOGW("wtw_regeling", "Systeem is online. Eerste berekening activeert direct doel: %d%%", doel);
             id(rh_setpoint).make_call().set_value(doel).perform();
             id(start_verificatie_tijd) = 0;           // Reset de timer voor de toekomst
             id(wtw_eerste_berekening_na_boot) = false; // Schakel de vlag permanent uit tot de volgende herstart
