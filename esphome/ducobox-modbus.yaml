@@ -469,6 +469,11 @@ sensor:
     icon: "mdi:water-percent"
     update_interval: never
     disabled_by_default: true
+    filters:
+      - median:
+          window_size: 5
+          send_every: 5
+          send_first_at: 1
     lambda: |-
       // 1. Controleer of de hoofd-sensor wel online is
       if (!id(ducobox_rh_actual).has_state()) {
