@@ -2,6 +2,32 @@ substitutions:
   modbus_tx_pin: GPIO17 #GPIO17   # Verbind met DI op de MAX485 module
   modbus_rx_pin: GPIO16 #GPIO16   # Verbind met RO op de MAX485 module
   
+# esphome:
+#   min_version: 2025.12.0
+#   name: ducobox-modbus
+#   friendly_name: Ducobox modbus
+#   name_add_mac_suffix: false
+
+#   on_boot:
+#     priority: -100.0 # Dit start pas als de basistaken draaien
+#     then:
+#       #- delay: 750s   # Wacht 75 seconden (dus tot ná de 60s boot-loop reset en sensor polls)
+#       # - globals.set:
+#       #     id: wtw_systeem_volledig_online
+#       #     value: 'true'
+#       - delay: 20s   # VERLAAGD van 75s naar 20s voor een snellere start
+#       - lambda: |-
+#           // Schakel de handmatige modus geforceerd UIT
+#           id(wtw_handmatig_actief).publish_state(false);
+          
+#           // Reset ook direct de berekende doel-sensor naar de veilige basiswaarde
+#           id(rh_berekend_doel).publish_state(55.0);
+          
+#           ESP_LOGI("main", "WTW RH Regeling is gestart in AUTOMATISCHE modus.");
+#       - globals.set:
+#           id: wtw_systeem_volledig_online
+#           value: 'true'
+
 esphome:
   min_version: 2025.12.0
   name: ducobox-modbus
@@ -9,24 +35,25 @@ esphome:
   name_add_mac_suffix: false
 
   on_boot:
-    priority: -100.0 # Dit start pas als de basistaken draaien
+    priority: -100.0
     then:
-      #- delay: 750s   # Wacht 75 seconden (dus tot ná de 60s boot-loop reset en sensor polls)
-      # - globals.set:
-      #     id: wtw_systeem_volledig_online
-      #     value: 'true'
-      - delay: 20s   # VERLAAGD van 75s naar 20s voor een snellere start
+      - delay: 3s             # Verlaagd naar 3 seconden voor een absolute turbostart
       - lambda: |-
-          // Schakel de handmatige modus geforceerd UIT
           id(wtw_handmatig_actief).publish_state(false);
-          
-          // Reset ook direct de berekende doel-sensor naar de veilige basiswaarde
           id(rh_berekend_doel).publish_state(55.0);
-          
           ESP_LOGI("main", "WTW RH Regeling is gestart in AUTOMATISCHE modus.");
       - globals.set:
           id: wtw_systeem_volledig_online
           value: 'true'
+# NIEUW: Als los hoofdblok geplaatst (zonder voorloopspaties)
+safe_mode:
+  boot_is_good_after: 10s   # Vertel de safe_mode na 10s al dat de boot succesvol was
+  num_attempts: 10
+
+
+
+  
+
 esp32:
   board: esp32dev
   framework:
