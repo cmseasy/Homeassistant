@@ -40,25 +40,20 @@ esphome:
   name_add_mac_suffix: false
 
 # GEOPTIMALISEERDE BOOT ACTIES (Direct tegen de kantlijn)
+# GEOPTIMALISEERDE BOOT ACTIES (Direct tegen de kantlijn)
   on_boot:
     priority: -100.0
     then:
       - lambda: ESP_LOGI("main", "Wachten op geldige Modbus sensorwaarden...");
       
-      # Veilige time-out lus van maximaal 30 seconden rechtstreeks in C++ lambda
-      - delay: 1s
-      - lambda: |-
-          int tellertje = 0;
-          while (isnan(id(rh_actual_active).state) && tellertje < 30) {
-            ESP_LOGD("main", "Sensoren nog niet klaar, wacht 1 seconde... (%d/30)", tellertje + 1);
-            delay(1000); // Wacht 1 seconde per stap
-            tellertje++;
-          }
-          if (tellertje >= 30) {
-            ESP_LOGW("main", "Time-out bereikt! Starten met noodwaarden.");
-          } else {
-            ESP_LOGI("main", "Modbus sensoren succesvol gedetecteerd.");
-          }
+      # De officiële ingebouwde ESPHome methode voor een timeout:
+      - wait_until:
+          condition:
+            lambda: return !isnan(id(rh_actual_active).state);
+          # Als het langer dan 30 seconden duurt, breekt ESPHome de wachtstand zelf af:
+          timeout: 30s
+      
+      - delay: 1s             # Heel even ademruimte om alle registers te vullen
       
       - lambda: |-
           id(wtw_handmatig_actief).publish_state(false);
@@ -73,10 +68,8 @@ esphome:
       # 2. Dwing het hoofdscript om NU direct te starten
       - script.execute: wtw_rh_regeling
   
-
-     
-
-
+  
+  
 
 
   
