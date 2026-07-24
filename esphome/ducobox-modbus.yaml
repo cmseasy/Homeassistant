@@ -39,23 +39,40 @@ esphome:
   friendly_name: Ducobox modbus
   name_add_mac_suffix: false
 
-# PAS DAARNA DE BOOT ACTIES (Direct tegen de kantlijn)
+# GEOPTIMALISEERDE BOOT ACTIES (Direct tegen de kantlijn)
   on_boot:
     priority: -100.0
     then:
-      - delay: 3s             # De 3 seconden turbostart
+      - lambda: ESP_LOGI("main", "Wachten op geldige Modbus sensorwaarden...");
+      
+      # Veilige time-out lus van maximaal 30 seconden rechtstreeks in C++ lambda
+      - delay: 1s
+      - lambda: |-
+          int tellertje = 0;
+          while (isnan(id(rh_actual_active).state) && tellertje < 30) {
+            ESP_LOGD("main", "Sensoren nog niet klaar, wacht 1 seconde... (%d/30)", tellertje + 1);
+            delay(1000); // Wacht 1 seconde per stap
+            tellertje++;
+          }
+          if (tellertje >= 30) {
+            ESP_LOGW("main", "Time-out bereikt! Starten met noodwaarden.");
+          } else {
+            ESP_LOGI("main", "Modbus sensoren succesvol gedetecteerd.");
+          }
+      
       - lambda: |-
           id(wtw_handmatig_actief).publish_state(false);
           id(rh_berekend_doel).publish_state(55.0);
           ESP_LOGI("main", "WTW RH Regeling is gestart in AUTOMATISCHE modus.");
-    
-      # 1. Zet het systeem op online
+      
+      # 1. Systeem is nu echt bruikbaar en online
       - globals.set:
           id: wtw_systeem_volledig_online
           value: 'true'
-        
-      # 2. Dwing de hoofdregeling om NU DIRECT te starten (omzeil de 52 seconden wachtstand)
+  
+      # 2. Dwing het hoofdscript om NU direct te starten
       - script.execute: wtw_rh_regeling
+  
 
      
 
