@@ -28,13 +28,16 @@ substitutions:
 #           id: wtw_systeem_volledig_online
 #           value: 'true'
 
+# EERST DE VEILIGHEIDSINSTELLINGEN (Direct tegen de kantlijn)
+safe_mode:
+  boot_is_good_after: 10s   # Vertel de safe_mode na 10s al dat de boot succesvol was
+  num_attempts: 10    
+
 esphome:
   min_version: 2025.12.0
   name: ducobox-modbus
   friendly_name: Ducobox modbus
   name_add_mac_suffix: false
-
-
 
 # PAS DAARNA DE BOOT ACTIES (Direct tegen de kantlijn)
   on_boot:
@@ -54,10 +57,7 @@ esphome:
       # 2. Dwing de hoofdregeling om NU DIRECT te starten (omzeil de 52 seconden wachtstand)
       - script.execute: wtw_rh_regeling
 
-# EERST DE VEILIGHEIDSINSTELLINGEN (Direct tegen de kantlijn)
-safe_mode:
-  boot_is_good_after: 10s   # Vertel de safe_mode na 10s al dat de boot succesvol was
-  num_attempts: 10          
+     
 
 
 
