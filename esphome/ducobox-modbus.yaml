@@ -1,32 +1,6 @@
 substitutions:
   modbus_tx_pin: GPIO17 #GPIO17   # Verbind met DI op de MAX485 module
   modbus_rx_pin: GPIO16 #GPIO16   # Verbind met RO op de MAX485 module
-  
-# esphome:
-#   min_version: 2025.12.0
-#   name: ducobox-modbus
-#   friendly_name: Ducobox modbus
-#   name_add_mac_suffix: false
-
-#   on_boot:
-#     priority: -100.0 # Dit start pas als de basistaken draaien
-#     then:
-#       #- delay: 750s   # Wacht 75 seconden (dus tot ná de 60s boot-loop reset en sensor polls)
-#       # - globals.set:
-#       #     id: wtw_systeem_volledig_online
-#       #     value: 'true'
-#       - delay: 20s   # VERLAAGD van 75s naar 20s voor een snellere start
-#       - lambda: |-
-#           // Schakel de handmatige modus geforceerd UIT
-#           id(wtw_handmatig_actief).publish_state(false);
-          
-#           // Reset ook direct de berekende doel-sensor naar de veilige basiswaarde
-#           id(rh_berekend_doel).publish_state(55.0);
-          
-#           ESP_LOGI("main", "WTW RH Regeling is gestart in AUTOMATISCHE modus.");
-#       - globals.set:
-#           id: wtw_systeem_volledig_online
-#           value: 'true'
 
 # EERST DE VEILIGHEIDSINSTELLINGEN (Direct tegen de kantlijn)
 safe_mode:
@@ -38,9 +12,7 @@ esphome:
   name: ducobox-modbus
   friendly_name: Ducobox modbus
   name_add_mac_suffix: false
-
-# GEOPTIMALISEERDE BOOT ACTIES (Direct tegen de kantlijn)
-# GEOPTIMALISEERDE BOOT ACTIES (Direct tegen de kantlijn)
+  # GEOPTIMALISEERDE BOOT ACTIES 
   on_boot:
     priority: -100.0
     then:
@@ -67,12 +39,6 @@ esphome:
   
       # 2. Dwing het hoofdscript om NU direct te starten
       - script.execute: wtw_rh_regeling
-  
-  
-  
-
-
-  
 
 esp32:
   board: esp32dev
@@ -177,7 +143,7 @@ globals:
     type: bool
     restore_value: no
     initial_value: 'false'
-  # NIEUW: Zorgt voor directe Modbus-verzending bij de allereerste berekening
+  # Zorgt voor directe Modbus-verzending bij de allereerste berekening
   - id: wtw_eerste_berekening_na_boot
     type: bool
     restore_value: no
@@ -204,7 +170,6 @@ globals:
     type: bool
     restore_value: no
     initial_value: 'false'
-
               
 # 4. Entiteiten aanmaken om uit te lezen (Snsoren)
 button:
@@ -320,85 +285,6 @@ number:
       sorting_group_id: sorting_group_configuration_setup
       sorting_weight: 5
 
-
-
-
-# number:
-#   - platform: modbus_controller
-#     modbus_controller_id: duco_box
-#     name: "WTW RH setpoint"
-#     id: rh_setpoint
-#     icon: "mdi:water-percent"
-#     register_type: holding
-#     address: 582
-#     device_class: humidity
-#     value_type: S_WORD
-#     min_value: 0
-#     max_value: 100
-#     step: 5
-#     mode: box
-#     unit_of_measurement: "%"
-#     disabled_by_default: false
-#     force_new_range: true 
-#     on_value:
-#       then:
-#         - lambda: |-
-#             // 1. BLOKKEER TIJDENS BOOT EN NEGEER INCORRECTE NULLEN/NAN
-#             if (std::isnan(x) || !id(wtw_systeem_volledig_online)) {
-#               return; 
-#             }
-
-#             int binnenkomende_waarde = (int)x;
-#             int berekend_doel = (int)id(rh_berekend_doel).state;
-#             int vorige_waarde = id(vorige_rh_setpoint);
-
-#             // CRUCIALE BOOT-FIX: Als de vorige waarde nog 0 is, is dit de allereerste poll na de upload.
-#             // Sla de waarde op, maar activeer NOOIT de handmatige modus.
-#             if (vorige_waarde == 0) {
-#               id(vorige_rh_setpoint) = binnenkomende_waarde;
-#               ESP_LOGI("main", "Eerste Modbus-poll succesvol verwerkt na boot. Systeem blijft in AUTOMATISCHE modus.\nDe RH regeling begint met een RH setpoint van %d%%.", binnenkomende_waarde);
-
-#               return;
-#             }
-
-#             // Sla de nieuwe waarde op voor de volgende poll
-#             id(vorige_rh_setpoint) = binnenkomende_waarde;
-
-#             // 2. Als de waarde exact gelijk is aan de vorige keer, doe niets
-#             if (binnenkomende_waarde == vorige_waarde) {
-#               return;
-#             }
-
-#             // 3. Negeer automatische updates van onze eigen reguliere scripts
-#             if (binnenkomende_waarde == berekend_doel) {
-#               ESP_LOGI("main", "Automatische RH setpoint update naar %d%%.", binnenkomende_waarde);
-#               return;
-#             }
-
-#             // --- CRUCIALE BLOKKADE: Fantoom handmatige modus voorkomen ---
-#             // Als de douche actief is, of Modus 3 regelt net de afloop in, negeer Modbus register-kruisingen
-#             if (id(wtw_douche_actief).state) {
-#               ESP_LOGD("main", "Modbus wijziging genegeerd: Douche-afwikkeling is actief.");
-#               return;
-#             }
-
-#             // 4. Als de handmatige modus al actief is, negeer dan de Modbus-echo's
-#             if (id(wtw_handmatig_actief).state) {
-#               return;
-#             }
-
-#             // 5. De gebruiker verandert ZELF de waarde via de UI -> Naar handmatig forceren!
-#             id(wtw_rh_regeling).stop();
-#             id(wtw_modus_normaal).stop();
-
-#             // Activeer de handmatige modus direct
-#             id(wtw_handmatig_actief).publish_state(true);
-#             ESP_LOGI("main", "Handmatige modus door gebruiker! Van %d%% naar %d%%.", vorige_waarde, binnenkomende_waarde);
-
-#     web_server:
-#       sorting_group_id: sorting_group_configuration_setup
-#       sorting_weight: 5
-
 # Signaleer douche gebruik max 30min zie script
 binary_sensor:
   - platform: template
@@ -452,19 +338,6 @@ binary_sensor:
               id(switch_rh_regeling).state);
     
 sensor:
-
-  # # Veilig en storingsvrij uitlezen van het actuele setpoint via Function Code 0x04
-  # - platform: modbus_controller
-  #   modbus_controller_id: duco_box
-  #   name: "Duco RH Setpoint Actueel"
-  #   id: rh_setpoint_sensor
-  #   register_type: read
-  #   address: 582
-  #   value_type: S_WORD
-  #   unit_of_measurement: "%"
-
-
-  
 # Node 2: Zoneklep wonen
   - platform: modbus_controller
     modbus_controller_id: duco_box
