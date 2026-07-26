@@ -51,7 +51,7 @@ esphome:
   # 2. Vraag PlatformIO om de externe bibliotheken te downloaden
   libraries:
     - WebSockets
-    - ArduinoJson
+ #   - ArduinoJson
     
 # # 3. We starten de C++ component op de achtergrond
 #   on_boot:
