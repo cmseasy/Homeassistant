@@ -419,7 +419,7 @@ sensor:
       }
       
       float verschil = std::abs(x - vorige_rh);
-      float max_verandering = 1.2; 
+      float max_verandering = 1.3; 
       
       // 4. Filter de snelle pieken eruit
       if (verschil > max_verandering) {
