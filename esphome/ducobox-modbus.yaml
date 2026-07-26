@@ -49,8 +49,8 @@ esphome:
   includes:
     - matter_ws_client.h
   # 2. Vraag PlatformIO om de externe bibliotheken te downloaden
-  libraries:
-    - WebSockets
+#  libraries:
+#    - WebSockets
  #   - ArduinoJson
     
 # # 3. We starten de C++ component op de achtergrond
