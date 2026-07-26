@@ -15,7 +15,13 @@ esphome:
   # GEOPTIMALISEERDE BOOT ACTIES 
   on_boot:
     priority: -100.0
+
     then:
+      - lambda: |-
+          // Vul hier het IP en de poort van je Docker server in
+          global_matter_client = new MatterWSClient("192.168.1.XX", 5580);
+          App.register_component(global_matter_client);
+          
       - lambda: ESP_LOGI("main", "Wachten op geldige Modbus sensorwaarden...");
       
       # De officiële ingebouwde ESPHome methode voor een timeout:
@@ -40,6 +46,21 @@ esphome:
       # 2. Dwing het hoofdscript om NU direct te starten
       - script.execute: wtw_rh_regeling
 
+  includes:
+    - matter_ws_client.h
+  # 2. Vraag PlatformIO om de externe bibliotheken te downloaden
+  libraries:
+    - WebSockets
+    - ArduinoJson
+    
+# # 3. We starten de C++ component op de achtergrond
+#   on_boot:
+#     priority: 200.0
+#     then:
+#       - lambda: |-
+#      #// Vul hier het IP en de poort van je Docker matterjs-server in
+#       auto client = new MatterWSClient("192.168.1.25", 5580);
+#       return {client};
 esp32:
   board: esp32dev
   framework:
@@ -49,6 +70,15 @@ esp32:
       sram1_as_iram: true
       compiler_optimization: PERF
 
+
+# # Wijs ESPHome naar je lokale componentenmap
+# external_components:
+#   - source:
+#       type: local
+#       path: my_components
+
+
+      
 # Verbind met uw Wi-Fi netwerk
 wifi:
   ssid: !secret wifi_ssid
@@ -63,6 +93,28 @@ wifi:
     ssid: !secret duco_modbus_wifi_ap_ssid
     password: !secret duco_modbus_wifi_ap_password
 
+
+
+
+
+
+
+
+
+# # Activeer de nieuwe component en vul de gegevens in
+# matter_ws:
+#   server_ip: "192.168.1.25" # IP van je Docker container host
+#   server_port: 5580
+
+
+
+
+
+
+
+
+
+    
 # Enable logging
 logger:
   level: INFO 
@@ -84,6 +136,8 @@ api:
   port: 6053
   encryption:
     key: !secret duco_modbus_encryption_key
+# start esp niet als ha restart:    
+  reboot_timeout: 0s
 
 # Allow Over-The-Air updates
 ota:
@@ -137,6 +191,26 @@ modbus_controller:
     address: 1
     update_interval: 10s #30s
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+    
 globals:
   # Vrijgeven berekening na upload of herstart ESP
   - id: wtw_systeem_volledig_online
@@ -170,6 +244,11 @@ globals:
     type: bool
     restore_value: no
     initial_value: 'false'
+
+  - id: my_global_pointer
+    type: "MatterWSClient*"
+    initial_value: "nullptr"
+    
               
 # 4. Entiteiten aanmaken om uit te lezen (Snsoren)
 button:
