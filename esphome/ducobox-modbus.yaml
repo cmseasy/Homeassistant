@@ -17,11 +17,7 @@ esphome:
     priority: -100.0
 
     then:
-      - lambda: |-
-          // Vul hier het IP en de poort van je Docker server in
-          global_matter_client = new MatterWSClient("192.168.1.XX", 5580);
-          App.register_component(global_matter_client);
-          
+       
       - lambda: ESP_LOGI("main", "Wachten op geldige Modbus sensorwaarden...");
       
       # De officiële ingebouwde ESPHome methode voor een timeout:
@@ -46,21 +42,7 @@ esphome:
       # 2. Dwing het hoofdscript om NU direct te starten
       - script.execute: wtw_rh_regeling
 
-  includes:
-    - matter_ws_client.h
-  # 2. Vraag PlatformIO om de externe bibliotheken te downloaden
-#  libraries:
-#    - WebSockets
- #   - ArduinoJson
-    
-# # 3. We starten de C++ component op de achtergrond
-#   on_boot:
-#     priority: 200.0
-#     then:
-#       - lambda: |-
-#      #// Vul hier het IP en de poort van je Docker matterjs-server in
-#       auto client = new MatterWSClient("192.168.1.25", 5580);
-#       return {client};
+
 esp32:
   board: esp32dev
   framework:
@@ -71,11 +53,6 @@ esp32:
       compiler_optimization: PERF
 
 
-# # Wijs ESPHome naar je lokale componentenmap
-# external_components:
-#   - source:
-#       type: local
-#       path: my_components
 
 
       
@@ -96,15 +73,6 @@ wifi:
 
 
 
-
-
-
-
-
-# # Activeer de nieuwe component en vul de gegevens in
-# matter_ws:
-#   server_ip: "192.168.1.25" # IP van je Docker container host
-#   server_port: 5580
 
 
 
@@ -245,9 +213,7 @@ globals:
     restore_value: no
     initial_value: 'false'
 
-  - id: my_global_pointer
-    type: "MatterWSClient*"
-    initial_value: "nullptr"
+
     
               
 # 4. Entiteiten aanmaken om uit te lezen (Snsoren)
@@ -417,17 +383,7 @@ binary_sensor:
               id(switch_rh_regeling).state);
     
 sensor:
-  - platform: template
-    name: "Matter Node 1 Temperatuur"
-    id: matter_temp
-    unit_of_measurement: "°C"
-    accuracy_decimals: 1
-    device_class: "temperature"
-    state_class: "measurement"
-    lambda: |-
-      if (global_matter_client == nullptr) return NAN;
-      return global_matter_client->current_temperature;
-
+ 
 
 
 
