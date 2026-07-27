@@ -42,7 +42,11 @@ esphome:
 
       # matter
       - script.execute: websocket_loop  
+  platformio_options:
+    lib_deps:
+      - gilmaesh/WebSocketsClientNonblocking @ ^1.0.1
 
+        
 #Matter        
   # libraries:
   #   # Geef de bibliotheek een naam en koppel daar de Git-URL aan:
@@ -58,8 +62,7 @@ esp32:
       sram1_as_iram: true
       compiler_optimization: PERF
 #matter
-      include_builtin_idf_components:
-        - esp_websocket_client
+
 
           
 # Verbind met uw Wi-Fi netwerk
