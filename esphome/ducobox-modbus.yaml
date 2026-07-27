@@ -40,6 +40,13 @@ esphome:
       # 2. Dwing het hoofdscript om NU direct te starten
       - script.execute: wtw_rh_regeling
 
+      # matter
+      - script.execute: websocket_loop  
+
+#Matter        
+  libraries:
+    - "Links2004/WebSockets @ 2.4.1"
+
 esp32:
   board: esp32dev
   framework:
@@ -385,8 +392,29 @@ binary_sensor:
               !id(wtw_handmatig_actief).state && 
               id(wtw_systeem_volledig_online) && 
               id(switch_rh_regeling).state);
+
+
+#matter
+text_sensor:
+  - platform: template
+    name: "Matter Ruwe Output"
+    id: matter_raw_output
+    icon: "mdi:code-json"
     
 sensor:
+
+
+#Matter
+  - platform: template
+    name: "Matter Kamer Temperatuur"
+    id: matter_room_temperature
+    unit_of_measurement: "°C"
+    device_class: "temperature"
+    state_class: "measurement"
+    accuracy_decimals: 1
+
+
+  
 # Node 2: Zoneklep wonen
   - platform: modbus_controller
     modbus_controller_id: duco_box
@@ -895,3 +923,91 @@ script:
           } else {
             id(start_verificatie_tijd) = 0;
           }
+
+#Matter
+  - id: websocket_loop
+    mode: restart
+    then:
+      - lambda: |-
+          #include <WebSocketsClient.h>
+          #include <ArduinoJson.h>
+
+          static WebSocketsClient webSocket;
+          static bool is_connected = false;
+          static unsigned long last_request = 0;
+
+          // Jouw specifieke read_attribute payload voor cluster 513
+          const char* matter_cmd = "{\"message_id\":\"1\",\"command\":\"read_attribute\",\"args\":{\"node_id\":1,\"attribute_path\":\"1/513/0\"}}";
+
+          webSocket.onEvent([](WStype_t type, uint8_t * payload, size_t length) {
+            switch(type) {
+              case WStype_DISCONNECTED:
+                ESP_LOGW("websocket", "Verbinding met Matter-server verbroken!");
+                is_connected = false;
+                break;
+                
+              case WStype_CONNECTED:
+                ESP_LOGI("websocket", "Succesvol verbonden met Matter-server op ESP32!");
+                is_connected = true;
+                // Direct de eerste meting aanvragen
+                webSocket.sendTXT(matter_cmd);
+                break;
+                
+              case WStype_TEXT: {
+                char* json_string = (char*)payload;
+                
+                // Toon de exacte JSON-respons in de text_sensor
+                id(matter_raw_output).publish_state(json_string);
+
+                // ESP32 heeft genoeg RAM, dus we gebruiken een ruime buffer voor stabiele parsing
+                DynamicJsonDocument doc(2048); 
+                DeserializationError error = deserializeJson(doc, json_string);
+
+                if (!error) {
+                  if (doc["message_id"] == "1") {
+                    if (doc.containsKey("result")) {
+                      float temp_value = 0.0;
+
+                      // Controleren of de server de waarde los instuurt of verpakt in een object
+                      if (doc["result"].is<JsonObject>()) {
+                        temp_value = doc["result"]["value"] | doc["result"]["val"];
+                      } else {
+                        temp_value = doc["result"].as<float>();
+                      }
+
+                      // Automatische Matter-honderdsten correctie (bijv. 2250 naar 22.5)
+                      if (temp_value > 500.0) {
+                        temp_value = temp_value / 100.0;
+                      }
+
+                      // Waarde naar de echte ESP32-temperatuursensor schrijven
+                      id(matter_room_temperature).publish_state(temp_value);
+                      ESP_LOGI("websocket", "Temperatuur bijgewerkt: %.1f °C", temp_value);
+                    }
+                  }
+                } else {
+                  ESP_LOGE("websocket", "JSON Parsing op ESP32 mislukt: %s", error.c_str());
+                }
+                break;
+              }
+              default:
+                break;
+            }
+          });
+
+          // WebSocket opstarten richting de Matter-server
+          webSocket.begin("192.168.1.25", 5580, "/ws");
+          webSocket.setReconnectInterval(5000);
+
+          while(true) {
+            webSocket.loop();
+            unsigned long now = millis();
+            
+            // Elke 30 seconden een nieuwe meting opvragen via de WebSocket verbinding
+            if (is_connected && (now - last_request > 30000)) {
+              webSocket.sendTXT(matter_cmd);
+              last_request = now;
+            }
+            delay(1); // Cruciaal om de ESP32 FreeRTOS watchdog tevreden te houden
+          }
+
