@@ -931,85 +931,88 @@ script:
     mode: restart
     then:
       - lambda: |-
-          #include <WebSocketsClient.h>
-          #include <ArduinoJson.h>
+          #include "esp_websocket_client.h"
+          #include <ArduinoJson.h> // ESPHome levert deze standaard mee
 
-          static WebSocketsClient webSocket;
+          static esp_websocket_client_handle_t client;
           static bool is_connected = false;
           static unsigned long last_request = 0;
 
           // Jouw specifieke read_attribute payload voor cluster 513
           const char* matter_cmd = "{\"message_id\":\"1\",\"command\":\"read_attribute\",\"args\":{\"node_id\":1,\"attribute_path\":\"1/513/0\"}}";
 
-          webSocket.onEvent([](WStype_t type, uint8_t * payload, size_t length) {
-            switch(type) {
-              case WStype_DISCONNECTED:
-                ESP_LOGW("websocket", "Verbinding met Matter-server verbroken!");
+          // Event handler voor de native ESP-IDF WebSocket
+          static void websocket_event_handler(void *handler_args, esp_event_base_t base, int32_t event_id, void *event_data) {
+            esp_websocket_event_data_t *data = (esp_websocket_event_data_t *)event_data;
+            switch (event_id) {
+              case WEBSOCKET_EVENT_CONNECTED:
+                ESP_LOGI("websocket", "Native ESP-IDF WebSocket verbonden!");
+                is_connected = true;
+                // Direct eerste verzoek sturen
+                esp_websocket_client_send_text(client, matter_cmd, strlen(matter_cmd), portMAX_DELAY);
+                break;
+              case WEBSOCKET_EVENT_DISCONNECTED:
+                ESP_LOGW("websocket", "Verbinding verbroken!");
                 is_connected = false;
                 break;
-                
-              case WStype_CONNECTED:
-                ESP_LOGI("websocket", "Succesvol verbonden met Matter-server op ESP32!");
-                is_connected = true;
-                // Direct de eerste meting aanvragen
-                webSocket.sendTXT(matter_cmd);
-                break;
-                
-              case WStype_TEXT: {
-                char* json_string = (char*)payload;
-                
-                // Toon de exacte JSON-respons in de text_sensor
-                id(matter_raw_output).publish_state(json_string);
+              case WEBSOCKET_EVENT_DATA:
+                if (data->op_code == 0x01 && data->data_len > 0) { // 0x01 = Text frame
+                  // Maak een veilige string van de binnenkomende data
+                  std::string json_str((char*)data->data_ptr, data->data_len);
+                  
+                  // Update de text_sensor voor debug-doeleinden
+                  id(matter_raw_output).publish_state(json_str);
 
-                // ESP32 heeft genoeg RAM, dus we gebruiken een ruime buffer voor stabiele parsing
-                DynamicJsonDocument doc(2048); 
-                DeserializationError error = deserializeJson(doc, json_string);
+                  // JSON parseren met de in ESPHome aanwezige V6/V7 parser
+                  #if ARDUINOJSON_VERSION_MAJOR >= 7
+                  JsonDocument doc;
+                  #else
+                  DynamicJsonDocument doc(2048);
+                  #endif
+                  
+                  DeserializationError error = deserializeJson(doc, json_str);
 
-                if (!error) {
-                  if (doc["message_id"] == "1") {
-                    if (doc.containsKey("result")) {
+                  if (!error) {
+                    if (doc["message_id"] == "1" && doc.containsKey("result")) {
                       float temp_value = 0.0;
-
-                      // Controleren of de server de waarde los instuurt of verpakt in een object
+                      
                       if (doc["result"].is<JsonObject>()) {
                         temp_value = doc["result"]["value"] | doc["result"]["val"];
                       } else {
                         temp_value = doc["result"].as<float>();
                       }
 
-                      // Automatische Matter-honderdsten correctie (bijv. 2250 naar 22.5)
+                      // Matter honderdstencorrectie (2250 -> 22.5)
                       if (temp_value > 500.0) {
                         temp_value = temp_value / 100.0;
                       }
 
-                      // Waarde naar de echte ESP32-temperatuursensor schrijven
                       id(matter_room_temperature).publish_state(temp_value);
-                      ESP_LOGI("websocket", "Temperatuur bijgewerkt: %.1f °C", temp_value);
+                      ESP_LOGI("websocket", "Temperatuur via ESP-IDF verwerkt: %.1f °C", temp_value);
                     }
                   }
-                } else {
-                  ESP_LOGE("websocket", "JSON Parsing op ESP32 mislukt: %s", error.c_str());
                 }
                 break;
-              }
-              default:
-                break;
             }
-          });
-
-          // WebSocket opstarten richting de Matter-server
-          webSocket.begin("192.168.1.25", 5580, "/ws");
-          webSocket.setReconnectInterval(5000);
-
-          while(true) {
-            webSocket.loop();
-            unsigned long now = millis();
-            
-            // Elke 30 seconden een nieuwe meting opvragen via de WebSocket verbinding
-            if (is_connected && (now - last_request > 30000)) {
-              webSocket.sendTXT(matter_cmd);
-              last_request = now;
-            }
-            delay(1); // Cruciaal om de ESP32 FreeRTOS watchdog tevreden te houden
           }
 
+          // WebSocket Client initialiseren (als dat nog niet gebeurd is)
+          if (client == NULL) {
+            esp_websocket_client_config_t ws_cfg = {};
+            ws_cfg.uri = "ws://192.168.1.25:5580/ws";
+            
+            client = esp_websocket_client_init(&ws_cfg);
+            esp_websocket_client_register_events(client, WEBSOCKET_EVENT_ANY, websocket_event_handler, NULL);
+            esp_websocket_client_start(client);
+          }
+
+          // Loop om periodiek gegevens op te vragen
+          while(true) {
+            unsigned long now = millis();
+            // Elke 30 seconden nieuwe data opvragen
+            if (is_connected && (now - last_request > 30000)) {
+              esp_websocket_client_send_text(client, matter_cmd, strlen(matter_cmd), portMAX_DELAY);
+              last_request = now;
+            }
+            delay(1); // Onmisbaar voor de ESP-IDF FreeRTOS scheduler tasking
+          }
