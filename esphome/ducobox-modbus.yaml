@@ -61,6 +61,7 @@ esp32:
       include_builtin_idf_components:
         - esp_websocket_client
 
+          
 # Verbind met uw Wi-Fi netwerk
 wifi:
   ssid: !secret wifi_ssid
