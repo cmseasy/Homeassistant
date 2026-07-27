@@ -2,31 +2,27 @@
 
 #
 # Huidig vermogen [W]
-# berekend op basis van Enphase en P1mon gegevens 
+# berekend op basis van Enphase en P1mon gegevens
 #
 - sensor:
     - name: "Huidig vermogen W"
       unique_id: huidig_vermogen_w
       device_class: power
       state_class: measurement
-      unit_of_measurement: 'W'
+      unit_of_measurement: "W"
       icon: mdi:home-lightning-bolt-outline
       availability: >
-        {{  states('sensor.envoy_122025007960_power_production') not in ['unavailable', 'unknown'] and
-            states('sensor.smartmeter_stroomverbruik') not in ['unavailable', 'unknown'] and
-            states('sensor.smartmeter_stroomproductie') not in ['unavailable', 'unknown']
-        }}
+        {{ has_value('sensor.envoy_122025007960_power_production') and
+           has_value('sensor.smartmeter_stroomverbruik') and
+           has_value('sensor.smartmeter_stroomproductie') }}
       state: >
+        {% set productie = states('sensor.envoy_122025007960_power_production') | int(0) %}
+        {% set verbruik = states('sensor.smartmeter_stroomverbruik') | int(0) %}
+        {% set levering = states('sensor.smartmeter_stroomproductie') | int(0) %}
+        {% set totaal = productie + verbruik - levering %}
 
-        {% if states('sensor.envoy_122025007960_power_production') | int(0)
-        + states('sensor.smartmeter_stroomverbruik') | int(0)
-        - states('sensor.smartmeter_stroomproductie') | int(0)
-        > 0 %}
-
-        {{ (states('sensor.envoy_122025007960_power_production') | int(0)
-          + states('sensor.smartmeter_stroomverbruik') | int(0)
-          - states('sensor.smartmeter_stroomproductie') | int(0)) 
-          }}
+        {% if totaal > 0 %}
+          {{ totaal }}
         {% else %}
           {{ this.state | default(0, true) }}
         {% endif %}
@@ -36,14 +32,14 @@
 #        # {% endif %}
 #
 # Energieverbruik [kWh]
-# berekend op basis van P1mon gegevens 
+# berekend op basis van P1mon gegevens
 #
 - sensor:
     - name: "Energie verbruik kWh"
       unique_id: energie_verbruik_kwh
       device_class: energy
       state_class: total_increasing
-      unit_of_measurement: 'kWh'
+      unit_of_measurement: "kWh"
       icon: mdi:home-lightning-bolt-outline
       availability: >
         {{  states('sensor.smartmeter_energieverbruik_laag_tarief') not in ['unavailable', 'unknown'] and
@@ -57,7 +53,6 @@
         {% set energie = laag + hoog %}
         {{ energie }}
 
-
 - sensor:
     - name: Frank prices
       unique_id: frank_prices
@@ -67,7 +62,7 @@
         {% set t = now().hour %}
         {% set prijs = state_attr('sensor.Frank_energie_prijzen_gemiddelde_elektriciteitsprijs_alle_uren_all_in', 'all_prices')[t].price | float %}
         {{ prijs }}
-      attributes: 
+      attributes:
         data: >
           {% set ns = namespace(items=[]) %}
           {% for item in states.sensor.frank_energie_prijzen_gemiddelde_elektriciteitsprijs_alle_uren_all_in.attributes.all_prices %}
@@ -87,11 +82,10 @@
 #       availability: >
 #         {{ has_value('sensor.frank_energie_prijzen_huidige_elektriciteitsprijs_all_in') }}
 #       state: >
-#         {{ states('sensor.frank_energie_prijzen_huidige_elektriciteitsprijs_all_in') }} 
+#         {{ states('sensor.frank_energie_prijzen_huidige_elektriciteitsprijs_all_in') }}
 #       # attributes:
 #       #   all_attributes: >
 #       #     {{ states.sensor.frank_energie_prijzen_huidige_elektriciteitsprijs_all_in.attributes }}
-
 
 - trigger:
     - trigger: state
@@ -118,9 +112,6 @@
         prices_today: "{{ state_attr('sensor.average_electricity_price', 'prices_today') }}"
         prices_tomorrow: "{{ state_attr('sensor.average_electricity_price', 'prices_tomorrow') }}"
         prices: "{{ state_attr('sensor.average_electricity_price', 'prices') }}"
-
-
-
 # Frank slim terugleveren
 # - binary_sensor:
 #     unique_id: frank_slim_terugleveren
@@ -175,23 +166,23 @@
 #           {% set bedrag_nu = state_attr('sensor.frank_slim_terugleveren_bedrag', "bedrag_som") | float(0) %}
 #             {{ (bedrag_nu + bedrag_delta) | round(2) }}
 #         attributes:
-#           huidige_prijs: >- 
+#           huidige_prijs: >-
 #             {% set prijs = states('sensor.frank_energie_prijzen_huidige_elektriciteitsprijs_all_in') | float(0) %}
 #             {{ prijs }}
-#           energie_laatst: >- 
+#           energie_laatst: >-
 #             {% set kwh = state_attr('sensor.frank_slim_terugleveren_bedrag', "energie_nu") | float(0) %}
 #               {{ kwh }}
-#           energie_nu: >- 
+#           energie_nu: >-
 #             {% set kwh = states('sensor.energie_verbruik_kwh') | float(0) %}
 #               {{ kwh }}
-#           energie_delta: >- 
+#           energie_delta: >-
 #             {% set kwh_nu = state_attr('sensor.frank_slim_terugleveren_bedrag', "energie_nu") | float(0) %}
 #             {% set kwh_laatst = state_attr('sensor.frank_slim_terugleveren_bedrag', "energie_laatst") | float(0) %}
 #             {% if kwh_nu > 0 and kwh_laatst > 0 and kwh_nu > kwh_laatst and kwh_nu - kwh_laatst < 1 %}
 #               {{ kwh_nu - kwh_laatst }}
 #             {% endif %}
 
-#           bedrag_delta: >- 
+#           bedrag_delta: >-
 #             {% set kwh = state_attr('sensor.frank_slim_terugleveren_bedrag', "energie_delta") | float(0) %}
 #             {% set prijs = states('sensor.frank_energie_prijzen_huidige_elektriciteitsprijs_all_in') | float(0) %}
 #             {#% if is_state('binary_sensor.frank_slim_terugleveren', 'on' ) %#}
@@ -199,7 +190,7 @@
 #               {{ kwh * prijs }}
 #             {% endif %}
 
-#           bedrag_som: >- 
+#           bedrag_som: >-
 #             {% set bedrag_delta = state_attr('sensor.frank_slim_terugleveren_bedrag', "bedrag_delta") | float(0) %}
 #             {% set bedrag_nu = state_attr('sensor.frank_slim_terugleveren_bedrag', "bedrag_som") | float(0) %}
 #               {{ (bedrag_nu + bedrag_delta) | round(5) }}

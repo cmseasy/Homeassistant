@@ -4,7 +4,6 @@
 default_config:
 
 homeassistant:
-
   packages: !include_dir_named packages
 
   auth_providers:
@@ -42,7 +41,7 @@ tts:
 # SQLite: database zonder history: tot purge datum
 #
 recorder:
-#  db_url: !secret mariadb_url
+  #  db_url: !secret mariadb_url
   purge_keep_days: 7
   commit_interval: 5
   auto_purge: true
@@ -67,9 +66,6 @@ recorder:
       - update
       - media_player
 
-
-      
-
 #
 # InfluxDB: database met history: lange termijn data
 #
@@ -78,9 +74,9 @@ influxdb:
   include:
     entity_globs:
       - sensor.smartmeter_*
-#      - sensor.envoy_lifetime_*
+      #      - sensor.envoy_lifetime_*
       - sensor.envoy_122025007960_*
-#      - sensor.adlar_warmtepomp_*
+      #      - sensor.adlar_warmtepomp_*
       - sensor.adlar*
       - sensor.zonnepanelen_*
       - sensor.wp_*
@@ -93,9 +89,7 @@ influxdb:
       - sensor.volle_zonuren
   exclude:
     entity_globs:
-      - adlar_warmtepomp_wp_*  # local tuya
-
-
+      - adlar_warmtepomp_wp_* # local tuya
 
 #
 # Files include
@@ -118,10 +112,20 @@ template: !include_dir_merge_list templates/
 # Log data
 #
 logger:
-  default: warning # critical fatal error warning(=default) warn info debug notset
-  filters: # filter out
+  default: warning
+  filters:
     homeassistant.components.script:
-      - 'Timeout when calling resource "http://192.168.1.73/*"'
+      - "Timeout when calling resource"
+    custom_components.dual_smart_thermostat.hvac_device.generic_hvac_device:
+      # Door de zin hier af te breken, filtert hij zowel de 'verwarmen' als 'koelen' varianter eruit
+      - "The climate mode is OFF, but the switch device is ON"
+  # logs:
+  #   homeassistant.components.automation: debug
+
+
+
+
+
 #  logs:
 #    rest_command: debug
 #    homeassistant.components.rest.util: error
@@ -138,14 +142,13 @@ logbook:
     domains:
       - Envoy-S-Metered-EU
       - Forecast.Solar
-#      - time_date
-#      - date_time
+      #      - time_date
+      #      - date_time
       - Uptime
       - OpenTherm
 
 #shell_command:
 #  run_remote_db_backup: !secret mariadb_backup
-
 
 # device_tracker:
 # - platform: ddwrt
@@ -158,11 +161,8 @@ frontend:
     - /hacsfiles/lovelace-card-mod/card-mod.js?hacstag=190927524421
     - /hacsfiles/sidebar-organizer/sidebar-organizer.js?hacstag=932534411420
 
-
-
-
 # climate:
-#   - platform: generic_thermostat 
+#   - platform: generic_thermostat
 #     name: WP thermostaat
 #     heater: switch.adlar_main_switch
 #     target_sensor: sensor.woonkamer_temperature
@@ -171,13 +171,13 @@ frontend:
 #     min_temp: 15
 #     max_temp: 23  932534411400
 #     ac_mode: false
-#     initial_hvac_mode: "off" 
+#     initial_hvac_mode: "off"
 climate:
   - platform: dual_smart_thermostat
     name: WP thermostaat
     heater: switch.hvac_verwarmen # <-required
     cooler: switch.hvac_koelen # <-required
-#    heat_pump_cooling: switch.hvac_koelen
+    #    heat_pump_cooling: switch.hvac_koelen
     target_sensor: sensor.smart_thermostat_x_temperatuur
     min_temp: 10
     max_temp: 25
@@ -185,16 +185,16 @@ climate:
       minutes: 1
 # deze zomer toegevoegd, matig/niet getest
 # onbekend of dit werkt/een functie heeft ivm automatisering koelen/verwarmen
-    initial_hvac_mode: "heat_cool"
+#    initial_hvac_mode: "heat"
+    # heat_pump_cooling: switch.hvac_koelen
     heat_cool_mode: true
-    target_temp_low: 20.0
-    target_temp_high: 23.0
+#    keep_alive: 0
+#    target_temp_low: 20.0
+#    target_temp_high: 23.0
 # wordt in automation verwarmen/koelen geregeld
-    # min_cycle_duration:
-    #   minutes: 15
-    # min_hysteresis: 0.3
-
-
+# min_cycle_duration:
+#   minutes: 15
+# min_hysteresis: 0.3
 
 # sensor:
 #   - platform: min_max

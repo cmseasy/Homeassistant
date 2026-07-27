@@ -3677,6 +3677,20 @@
       hours: 0
       minutes: 0
       seconds: 10
+    enabled: true
+  - trigger: climate.hvac_mode_changed
+    target:
+      entity_id: climate.wp_thermostaat
+    options:
+      for:
+        hours: 0
+        minutes: 0
+        seconds: 10
+      hvac_mode:
+      - cool
+      - 'off'
+      - heat
+    enabled: false
   conditions: []
   actions:
   - choose:
@@ -3689,7 +3703,6 @@
           hours: 0
           minutes: 0
           seconds: 0
-        attribute: hvac_action
       sequence:
       - action: input_select.select_option
         metadata: {}
@@ -3701,12 +3714,11 @@
       - condition: state
         entity_id: climate.wp_thermostaat
         state:
-        - heating
+        - heat
         for:
           hours: 0
           minutes: 0
           seconds: 0
-        attribute: hvac_action
       sequence:
       - action: input_select.select_option
         metadata: {}
@@ -3718,12 +3730,11 @@
       - condition: state
         entity_id: climate.wp_thermostaat
         state:
-        - cooling
+        - cool
         for:
           hours: 0
           minutes: 0
           seconds: 0
-        attribute: hvac_action
       sequence:
       - action: input_select.select_option
         metadata: {}
@@ -4892,20 +4903,29 @@
     - 'off'
     id: Dicht
   conditions:
-  - condition: zone.occupancy_is_detected
-    options:
-      for:
-        hours: 0
-        minutes: 5
-        seconds: 0
-      zone: zone.home
   - condition: numeric_state
     entity_id: sensor.kamertemperatuur_gemiddeld
-    above: 22
-    enabled: false
+    above: 24
+    enabled: true
   - condition: time
     after: 08:00:00
     before: '23:55:00'
+  - condition: or
+    conditions:
+    - condition: zone.in_zone
+      target:
+        entity_id: device_tracker.gsm_martin
+      options:
+        behavior: any
+        for: 00:00:00
+        zone: zone.home
+    - condition: zone.in_zone
+      target:
+        entity_id: device_tracker.gsm_marjan
+      options:
+        behavior: any
+        for: 00:00:00
+        zone: zone.home
   actions:
   - choose:
     - conditions:
@@ -4965,47 +4985,3 @@
         '''') | replace(''[0;31m'', '''') | replace(''[0m'', '''') %} {{ trigger.event.data.tag
         }}: {{ msg }}'
     action: notify.persistent_notification
-- id: '1784734144077'
-  alias: Test aanwezigheid
-  description: ''
-  triggers:
-  - trigger: time_pattern
-    hours: /1
-  conditions:
-  - condition: zone.occupancy_is_detected
-    options:
-      for: 00:00:00
-      zone: zone.home
-  - condition: zone.in_zone
-    target:
-      entity_id: device_tracker.gsm_marjan
-    options:
-      for: 00:00:00
-      zone: zone.home
-  - condition: zone.in_zone
-    target:
-      entity_id: person.marjan
-    options:
-      for: 00:00:00
-      zone: zone.home
-  - condition: zone.in_zone
-    target:
-      entity_id: device_tracker.gsm_martin
-    options:
-      for: 00:00:00
-      zone: zone.home
-  - condition: zone.in_zone
-    target:
-      entity_id: person.martin
-    options:
-      for: 00:00:00
-      zone: zone.home
-  - condition: zone.occupancy_is_not_detected
-    options:
-      for:
-        hours: 0
-        minutes: 0
-        seconds: 0
-      zone: zone.home
-  actions: []
-  mode: single
