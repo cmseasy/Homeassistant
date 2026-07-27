@@ -669,7 +669,9 @@ sensor:
         return (float)(totaal_douche_ms - verstreken) / 1000.0 / 60.0;
       }
       return 0.0;
-
+    web_server:
+      sorting_group_id: sorting_group_timers
+      sorting_weight: 19
 
 
 
