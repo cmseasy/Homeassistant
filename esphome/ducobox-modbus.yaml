@@ -45,7 +45,7 @@ esphome:
 
 #Matter        
   libraries:
-    - "Links2004/WebSockets @ 2.4.1"
+    - "https://github.com/Links2004/arduinoWebSockets"
 
 esp32:
   board: esp32dev
