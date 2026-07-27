@@ -57,6 +57,9 @@ esp32:
       minimum_chip_revision: "3.1"
       sram1_as_iram: true
       compiler_optimization: PERF
+#matter
+      include_builtin_idf_components:
+        - esp_websocket_client
 
 # Verbind met uw Wi-Fi netwerk
 wifi:
