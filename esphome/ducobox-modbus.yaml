@@ -44,9 +44,11 @@ esphome:
       - script.execute: websocket_loop  
 
 #Matter        
-  libraries:
-    - "https://github.com/Links2004/arduinoWebSockets"
-
+  # libraries:
+  #   # Geef de bibliotheek een naam en koppel daar de Git-URL aan:
+  #   - source: https://github.com
+  #     name: arduinoWebSockets
+  
 esp32:
   board: esp32dev
   framework:
