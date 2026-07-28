@@ -496,22 +496,20 @@ sensor:
     accuracy_decimals: 2
     
     lambda: |-
-      // Maak een statische variabele die zijn waarde ONTHOUDT tussen de loops door
-      static float bewaarde_temperatuur = 24.0;
-
       if (id(global_ws_client) == nullptr) {
-        return bewaarde_temperatuur;
+        return 24.0; // Startwaarde tijdens het opstarten
       }
 
       auto* ws = (MyWebsocketComponent*) id(global_ws_client);
-      std::string x = ws->get_payload_if_ready();
+      std::string x = ws->get_payload();
 
-      // Alleen verwerken als de WebSocket ECHT nieuwe data heeft
+      // DE FILTER LOGICA RECHTTREEKS IN DE SENSOR:
       if (!x.empty()) {
-        // Controleer of de string de temperatuurwaarde bevat
-        if (x.find("1/513/0") != std::string::npos) {
-          
-          size_t path_pos = x.find("1/513/0");
+        // Zoek naar het exacte Matter temperatuur-pad
+        size_t path_pos = x.find("1/513/0");
+        
+        if (path_pos != std::string::npos) {
+          // Zoek naar het eerste cijfer direct na het pad (we slaan de tekst '"1/513/0":' over)
           size_t pos = x.find_first_of("0123456789", path_pos + 7);
           
           if (pos != std::string::npos) {
@@ -520,26 +518,27 @@ sensor:
               if (isdigit(x[i])) {
                 digits += x[i];
               } else if (!digits.empty() && !isdigit(x[i])) {
+                // Stop zodra het getal voorbij is (bijv. bij een komma, sluitaccolade of sluitbracket)
                 break;
               }
             }
             
             if (!digits.empty()) {
               float raw_temp = std::stof(digits);
+              // Validatie: Alleen accepteren als het een echte Tado temperatuur is (tussen 5 en 40 graden)
               if (raw_temp > 500 && raw_temp < 4000) {
-                // UPDATE: We slaan de nieuwe geldige temperatuur op!
-                bewaarde_temperatuur = raw_temp / 100.0;
+                return raw_temp / 100.0;
               }
             }
           }
         }
-        // Als er na 1 minuut een ANDER bericht binnenkomt (bijv. luchtvochtigheid),
-        // dan negeert de 'if' hierboven dat bericht, en blijft bewaarde_temperatuur intact.
       }
       
-      // Geef ALTIJD de laatst bewaarde succesvolle temperatuur terug aan de webinterface
-      return bewaarde_temperatuur;
-
+      // Fallback: Als er dit keer geen temperatuur-update in de buffer zat, behoud de huidige waarde
+      if (std::isnan(id(tado_woonkamer_temp).state)) {
+        return 24.0; 
+      }
+      return id(tado_woonkamer_temp).state;
 
 
 
