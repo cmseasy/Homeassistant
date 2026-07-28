@@ -40,18 +40,8 @@ esphome:
       # 2. Dwing het hoofdscript om NU direct te starten
       - script.execute: wtw_rh_regeling
 
-      # matter
-      - script.execute: websocket_loop  
-  platformio_options:
-    lib_deps:
-      - gilmaesh/WebSocketsClientNonblocking @ ^1.0.1
 
-        
-#Matter        
-  # libraries:
-  #   # Geef de bibliotheek een naam en koppel daar de Git-URL aan:
-  #   - source: https://github.com
-  #     name: arduinoWebSockets
+
   
 esp32:
   board: esp32dev
@@ -61,7 +51,7 @@ esp32:
       minimum_chip_revision: "3.1"
       sram1_as_iram: true
       compiler_optimization: PERF
-#matter
+
 
 
           
@@ -403,24 +393,12 @@ binary_sensor:
               id(switch_rh_regeling).state);
 
 
-#matter
-text_sensor:
-  - platform: template
-    name: "Matter Ruwe Output"
-    id: matter_raw_output
-    icon: "mdi:code-json"
+
     
 sensor:
 
 
-#Matter
-  - platform: template
-    name: "Matter Kamer Temperatuur"
-    id: matter_room_temperature
-    unit_of_measurement: "°C"
-    device_class: "temperature"
-    state_class: "measurement"
-    accuracy_decimals: 1
+
 
 
   
@@ -933,93 +911,3 @@ script:
             id(start_verificatie_tijd) = 0;
           }
 
-#Matter
-  - id: websocket_loop
-    mode: restart
-    then:
-      - lambda: |-
-          #include "esp_websocket_client.h"
-          #include <ArduinoJson.h> // ESPHome levert deze standaard mee
-
-          static esp_websocket_client_handle_t client;
-          static bool is_connected = false;
-          static unsigned long last_request = 0;
-
-          // Jouw specifieke read_attribute payload voor cluster 513
-          const char* matter_cmd = "{\"message_id\":\"1\",\"command\":\"read_attribute\",\"args\":{\"node_id\":1,\"attribute_path\":\"1/513/0\"}}";
-
-          // Event handler voor de native ESP-IDF WebSocket
-          static void websocket_event_handler(void *handler_args, esp_event_base_t base, int32_t event_id, void *event_data) {
-            esp_websocket_event_data_t *data = (esp_websocket_event_data_t *)event_data;
-            switch (event_id) {
-              case WEBSOCKET_EVENT_CONNECTED:
-                ESP_LOGI("websocket", "Native ESP-IDF WebSocket verbonden!");
-                is_connected = true;
-                // Direct eerste verzoek sturen
-                esp_websocket_client_send_text(client, matter_cmd, strlen(matter_cmd), portMAX_DELAY);
-                break;
-              case WEBSOCKET_EVENT_DISCONNECTED:
-                ESP_LOGW("websocket", "Verbinding verbroken!");
-                is_connected = false;
-                break;
-              case WEBSOCKET_EVENT_DATA:
-                if (data->op_code == 0x01 && data->data_len > 0) { // 0x01 = Text frame
-                  // Maak een veilige string van de binnenkomende data
-                  std::string json_str((char*)data->data_ptr, data->data_len);
-                  
-                  // Update de text_sensor voor debug-doeleinden
-                  id(matter_raw_output).publish_state(json_str);
-
-                  // JSON parseren met de in ESPHome aanwezige V6/V7 parser
-                  #if ARDUINOJSON_VERSION_MAJOR >= 7
-                  JsonDocument doc;
-                  #else
-                  DynamicJsonDocument doc(2048);
-                  #endif
-                  
-                  DeserializationError error = deserializeJson(doc, json_str);
-
-                  if (!error) {
-                    if (doc["message_id"] == "1" && doc.containsKey("result")) {
-                      float temp_value = 0.0;
-                      
-                      if (doc["result"].is<JsonObject>()) {
-                        temp_value = doc["result"]["value"] | doc["result"]["val"];
-                      } else {
-                        temp_value = doc["result"].as<float>();
-                      }
-
-                      // Matter honderdstencorrectie (2250 -> 22.5)
-                      if (temp_value > 500.0) {
-                        temp_value = temp_value / 100.0;
-                      }
-
-                      id(matter_room_temperature).publish_state(temp_value);
-                      ESP_LOGI("websocket", "Temperatuur via ESP-IDF verwerkt: %.1f °C", temp_value);
-                    }
-                  }
-                }
-                break;
-            }
-          }
-
-          // WebSocket Client initialiseren (als dat nog niet gebeurd is)
-          if (client == NULL) {
-            esp_websocket_client_config_t ws_cfg = {};
-            ws_cfg.uri = "ws://192.168.1.25:5580/ws";
-            
-            client = esp_websocket_client_init(&ws_cfg);
-            esp_websocket_client_register_events(client, WEBSOCKET_EVENT_ANY, websocket_event_handler, NULL);
-            esp_websocket_client_start(client);
-          }
-
-          // Loop om periodiek gegevens op te vragen
-          while(true) {
-            unsigned long now = millis();
-            // Elke 30 seconden nieuwe data opvragen
-            if (is_connected && (now - last_request > 30000)) {
-              esp_websocket_client_send_text(client, matter_cmd, strlen(matter_cmd), portMAX_DELAY);
-              last_request = now;
-            }
-            delay(1); // Onmisbaar voor de ESP-IDF FreeRTOS scheduler tasking
-          }
