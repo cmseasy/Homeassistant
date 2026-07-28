@@ -441,7 +441,8 @@ binary_sensor:
 
 
 sensor:
-  # SENSOR 1: Tado Woonkamer (Crash-proof versie)
+  # ... HIER STAAN JE HUIDIGE DUCOBOX SENSOREN AL EN DIE BLIJVEN INTACT ...
+
   - platform: template
     name: "Tado X Woonkamer Temperatuur"
     id: tado_woonkamer_temp
@@ -451,36 +452,53 @@ sensor:
     accuracy_decimals: 2
     
     lambda: |-
-      // STAP 1: Voorkom de crash als de WebSocket nog opstart
       if (id(global_ws_client) == nullptr) {
-        return 20.0; // Veilige tijdelijke startwaarde
+        return 20.0; // Veilige startwaarde tijdens booten
       }
 
       auto* ws = (MyWebsocketComponent*) id(global_ws_client);
       std::string x = ws->get_payload_if_ready();
 
-      // STAP 2: Filter alleen als er daadwerkelijk een nieuw WebSocket bericht is
       if (!x.empty()) {
-        if (x.find("513") != std::string::npos && x.find("LocalTemperature") != std::string::npos) {
-          size_t pos = x.find("value");
+        // MATTER FILTER: Zoek naar cluster 513 (Thermostat Cluster)
+        if (x.find("513") != std::string::npos) {
+          
+          // Zoek naar het woord 'value' of 'Value' na de cluster-identificatie
+          size_t pos = x.find("\"value\"");
+          if (pos == std::string::npos) pos = x.find("value");
           if (pos == std::string::npos) pos = x.find("Value");
           
           if (pos != std::string::npos) {
             std::string digits = "";
+            bool found_digit = false;
+            
+            // Loop door de karakters na "value" om het getal (bijv. 2392) te grijpen
             for (size_t i = pos; i < x.length(); i++) {
-              if (isdigit(x[i])) digits += x[i];
-              else if (!digits.empty() && !isdigit(x[i])) break;
+              if (isdigit(x[i])) {
+                digits += x[i];
+                found_digit = true;
+              } else if (found_digit) {
+                // Stop zodra het getal voorbij is (bijv. bij een komma of sluitaccolade)
+                break;
+              }
             }
+            
             if (!digits.empty()) {
-              return std::stof(digits) / 100.0;
+              float raw_temp = std::stof(digits);
+              
+              // Matter geeft temperaturen door in honderdtallen (2392 = 23.92°C)
+              // We bouwen een extra veiligheid in: Tado temperaturen liggen realistisch tussen 5 en 40 graden
+              if (raw_temp > 500 && raw_temp < 4000) {
+                return raw_temp / 100.0;
+              }
             }
           }
         }
       }
       
-      // Fallback als er nu geen bruikbare Tado data in de string zat
+      // Fallback: Als er geen nieuwe data was, behoud de huidige bekende staat
       if (std::isnan(id(tado_woonkamer_temp).state)) {
-        return 20.0;
+        return 20.0; 
       }
       return id(tado_woonkamer_temp).state;
 
