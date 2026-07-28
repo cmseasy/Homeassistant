@@ -50,8 +50,8 @@ esphome:
     - websocket_client.h
   # matter 
   #Zorg dat de ingebouwde WebSocket bibliotheek van de ESP32 aan staat
-  platformio_options:
-    build_flags: -DCONFIG_ESP_WEBSOCKET_CLIENT=1
+  build_flags:
+    - -DCONFIG_ESP_WEBSOCKET_CLIENT=1
 
 
 
