@@ -502,7 +502,7 @@ sensor:
     
     # 0s dwingt ESPHome om de lambda continu uit te voeren. 
     # Hierdoor mist hij de opstart-dump niet en zie je de waarde DIRECT.
-    update_interval: 0s
+    update_interval: 10s
     
     lambda: |-
       // Als de WebSocket nog niet up is, geef NAN terug (geen waarde)
