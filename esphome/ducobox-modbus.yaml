@@ -217,14 +217,14 @@ globals:
     initial_value: 'nullptr'
 
 #matter
-interval:
-  - interval: 1min
-    then:
-      - lambda: |-
-          if (id(global_ws_client) != nullptr) {
-            auto* ws = (MyWebsocketComponent*) id(global_ws_client);
-            ws->send_message("Hallo vanaf Proxmox via de officiële Espressif package manager!");
-          }
+# interval:
+#   - interval: 1min
+#     then:
+#       - lambda: |-
+#           if (id(global_ws_client) != nullptr) {
+#             auto* ws = (MyWebsocketComponent*) id(global_ws_client);
+#             ws->send_message("Hallo vanaf Proxmox via de officiële Espressif package manager!");
+#           }
 
     
 # 4. Entiteiten aanmaken om uit te lezen (Snsoren)
