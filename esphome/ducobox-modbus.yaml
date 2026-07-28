@@ -457,30 +457,30 @@ interval:
 
 
               
-text_sensor:
-  - platform: template
-    name: "Tado X Ruwe Datastroom"
-    id: tado_ruwe_datastroom
-    icon: "mdi:code-json"
-    update_interval: 1s 
-    internal: true
-    lambda: |-
-      if (id(global_ws_client) == nullptr) {
-        return {"Wachten op WebSocket..."};
-      }
+# text_sensor:
+#   - platform: template
+#     name: "Tado X Ruwe Datastroom"
+#     id: tado_ruwe_datastroom
+#     icon: "mdi:code-json"
+#     update_interval: 1s 
+#     internal: true
+#     lambda: |-
+#       if (id(global_ws_client) == nullptr) {
+#         return {"Wachten op WebSocket..."};
+#       }
 
-      auto* ws = (MyWebsocketComponent*) id(global_ws_client);
-      // GECORRIGEERD: Aangepast naar get_payload() zodat beide sensoren dezelfde buffer gebruiken
-      std::string x = ws->get_payload();
+#       auto* ws = (MyWebsocketComponent*) id(global_ws_client);
+#       // GECORRIGEERD: Aangepast naar get_payload() zodat beide sensoren dezelfde buffer gebruiken
+#       std::string x = ws->get_payload();
 
-      if (!x.empty()) {
-        return {x};
-      }
+#       if (!x.empty()) {
+#         return {x};
+#       }
       
-      if (id(tado_ruwe_datastroom).state.empty()) {
-        return {"Verbonden, wacht op eerste Matter pakket..."};
-      }
-      return id(tado_ruwe_datastroom).state;
+#       if (id(tado_ruwe_datastroom).state.empty()) {
+#         return {"Verbonden, wacht op eerste Matter pakket..."};
+#       }
+#       return id(tado_ruwe_datastroom).state;
 
 sensor:
   # ... HIER STAAN JE HUIDIGE DUCOBOX SENSOREN AL EN DIE BLIJVEN INTACT ...
