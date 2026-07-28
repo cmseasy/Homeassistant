@@ -52,10 +52,10 @@ esphome:
       # 2. Dwing het hoofdscript om NU direct te starten
       - script.execute: wtw_rh_regeling
         
-      #Matter
-      - lambda: |-
-          id(global_ws_client) = (void*) new MyWebsocketComponent();
-          ((MyWebsocketComponent*)id(global_ws_client))->setup();
+      # #Matter
+      # - lambda: |-
+      #     id(global_ws_client) = (void*) new MyWebsocketComponent();
+      #     ((MyWebsocketComponent*)id(global_ws_client))->setup();
 
 
 
@@ -88,6 +88,13 @@ wifi:
     gateway: 192.168.1.1
     dns1: 192.168.1.5 
     subnet: 255.255.255.0
+  on_connect:
+    then:
+      - lambda: |-
+          if (id(global_ws_client) == nullptr) {
+            id(global_ws_client) = (void*) new MyWebsocketComponent();
+            ((MyWebsocketComponent*)id(global_ws_client))->setup();
+          }
   ap:
     ssid: !secret duco_modbus_wifi_ap_ssid
     password: !secret duco_modbus_wifi_ap_password
