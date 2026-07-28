@@ -464,6 +464,7 @@ text_sensor:
     icon: "mdi:code-json"
     # Hoe vaak de sensor in de C++ string moet kijken (1s is perfect voor live debuggen)
     update_interval: 1s 
+    internal: true
     lambda: |-
       if (id(global_ws_client) == nullptr) {
         return {"Wachten op WebSocket..."};
