@@ -490,8 +490,8 @@ interval:
 #       return id(tado_ruwe_datastroom).state;
 
 sensor:
-  # ... HIER STAAN JE HUIDIGE DUCOBOX SENSOREN AL EN DIE BLIJVEN INTACT ...
 
+  # SENSOR 1: Tado X Woonkamer Temperatuur
   - platform: template
     name: "Tado X Woonkamer Temperatuur"
     id: tado_woonkamer_temp
@@ -499,47 +499,119 @@ sensor:
     device_class: "temperature"
     state_class: "measurement"
     accuracy_decimals: 2
-    
-    # 0s dwingt ESPHome om de lambda continu uit te voeren. 
-    # Hierdoor mist hij de opstart-dump niet en zie je de waarde DIRECT.
     update_interval: 10s
-    
     lambda: |-
-      // Als de WebSocket nog niet up is, geef NAN terug (geen waarde)
-      if (id(global_ws_client) == nullptr) {
-        return NAN; 
-      }
-
+      if (id(global_ws_client) == nullptr) { return NAN; }
       auto* ws = (MyWebsocketComponent*) id(global_ws_client);
-      std::string x = ws->get_payload();
+      std::string x = ws->get_temp_payload();
 
       if (!x.empty()) {
         size_t path_pos = x.find("1/513/0");
         if (path_pos != std::string::npos) {
           size_t pos = x.find_first_of("0123456789", path_pos + 7);
-          
           if (pos != std::string::npos) {
             std::string digits = "";
             for (size_t i = pos; i < x.length(); i++) {
-              if (isdigit(x[i])) {
-                digits += x[i];
-              } else if (!digits.empty() && !isdigit(x[i])) {
-                break;
-              }
+              if (isdigit(x[i])) digits += x[i];
+              else if (!digits.empty() && !isdigit(x[i])) break;
             }
-            
             if (!digits.empty()) {
               float raw_temp = std::stof(digits);
-              if (raw_temp > 500 && raw_temp < 4000) {
-                return raw_temp / 100.0; // Succes! Geeft direct de echte waarde terug
+              if (raw_temp > 500 && raw_temp < 4000) { return raw_temp / 100.0; }
+            }
+          }
+        }
+      }
+      return id(tado_woonkamer_temp).state;
+
+  # SENSOR 2: Tado X Woonkamer Luchtvochtigheid (Nieuw!)
+  - platform: template
+    name: "Tado X Woonkamer Luchtvochtigheid"
+    id: tado_woonkamer_rh
+    unit_of_measurement: "%"
+    device_class: "humidity"
+    state_class: "measurement"
+    accuracy_decimals: 2
+    update_interval: 10s
+    lambda: |-
+      if (id(global_ws_client) == nullptr) { return NAN; }
+      auto* ws = (MyWebsocketComponent*) id(global_ws_client);
+      
+      // Vraagt de eigen luchtvochtigheid-postbus op uit de C++ code
+      std::string x = ws->get_rh_payload();
+
+      if (!x.empty()) {
+        // FILTER CODE VOLLEDIG IN DE SENSOR: Zoek naar het vochtigheidspad
+        size_t path_pos = x.find("2/1029/0");
+        if (path_pos != std::string::npos) {
+          size_t pos = x.find_first_of("0123456789", path_pos + 8);
+          if (pos != std::string::npos) {
+            std::string digits = "";
+            for (size_t i = pos; i < x.length(); i++) {
+              if (isdigit(x[i])) digits += x[i];
+              else if (!digits.empty() && !isdigit(x[i])) break;
+            }
+            if (!digits.empty()) {
+              float raw_rh = std::stof(digits);
+              // Matter-validatie: Luchtvochtigheid ligt tussen 0% en 100% (0 tot 10000)
+              if (raw_rh >= 0 && raw_rh <= 10000) {
+                return raw_rh / 100.0; // Converteert bijv. 6215 naar 62.15 %
               }
             }
           }
         }
       }
+      return id(tado_woonkamer_rh).state;
+  # # ... HIER STAAN JE HUIDIGE DUCOBOX SENSOREN AL EN DIE BLIJVEN INTACT ...
+
+  # - platform: template
+  #   name: "Tado X Woonkamer Temperatuur"
+  #   id: tado_woonkamer_temp
+  #   unit_of_measurement: "°C"
+  #   device_class: "temperature"
+  #   state_class: "measurement"
+  #   accuracy_decimals: 2
+    
+  #   # 0s dwingt ESPHome om de lambda continu uit te voeren. 
+  #   # Hierdoor mist hij de opstart-dump niet en zie je de waarde DIRECT.
+  #   update_interval: 10s
+    
+  #   lambda: |-
+  #     // Als de WebSocket nog niet up is, geef NAN terug (geen waarde)
+  #     if (id(global_ws_client) == nullptr) {
+  #       return NAN; 
+  #     }
+
+  #     auto* ws = (MyWebsocketComponent*) id(global_ws_client);
+  #     std::string x = ws->get_payload();
+
+  #     if (!x.empty()) {
+  #       size_t path_pos = x.find("1/513/0");
+  #       if (path_pos != std::string::npos) {
+  #         size_t pos = x.find_first_of("0123456789", path_pos + 7);
+          
+  #         if (pos != std::string::npos) {
+  #           std::string digits = "";
+  #           for (size_t i = pos; i < x.length(); i++) {
+  #             if (isdigit(x[i])) {
+  #               digits += x[i];
+  #             } else if (!digits.empty() && !isdigit(x[i])) {
+  #               break;
+  #             }
+  #           }
+            
+  #           if (!digits.empty()) {
+  #             float raw_temp = std::stof(digits);
+  #             if (raw_temp > 500 && raw_temp < 4000) {
+  #               return raw_temp / 100.0; // Succes! Geeft direct de echte waarde terug
+  #             }
+  #           }
+  #         }
+  #       }
+  #     }
       
-      // Geen nieuwe netwerkdata in deze loop? Behoud de huidige status (of NAN bij de start)
-      return id(tado_woonkamer_temp).state;
+  #     // Geen nieuwe netwerkdata in deze loop? Behoud de huidige status (of NAN bij de start)
+  #     return id(tado_woonkamer_temp).state;
 
 
 
