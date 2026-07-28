@@ -441,38 +441,48 @@ binary_sensor:
 
 
 sensor:
-  # SENSOR 1: Tado Woonkamer
+  # SENSOR 1: Tado Woonkamer (Crash-proof versie)
   - platform: template
     name: "Tado X Woonkamer Temperatuur"
     id: tado_woonkamer_temp
     unit_of_measurement: "°C"
     device_class: "temperature"
     state_class: "measurement"
-    accuracy_decimals: 1
-#    update_interval: 10s # Hoe vaak de sensor in de string moet kijken naar updates
+    accuracy_decimals: 2
+    
     lambda: |-
-      // Haal de C++ component op via zijn ID
-      auto* ws = (MyWebsocketComponent*) id(global_ws_client);
-      std::string x = ws->latest_payload;
+      // STAP 1: Voorkom de crash als de WebSocket nog opstart
+      if (id(global_ws_client) == nullptr) {
+        return 20.0; // Veilige tijdelijke startwaarde
+      }
 
-      // Filter specifiek voor de Woonkamer (Node 1, Eindigt op 513)
-      if (x.find("513") != std::string::npos && x.find("LocalTemperature") != std::string::npos) {
-        size_t pos = x.find("value");
-        if (pos == std::string::npos) pos = x.find("Value");
-        
-        if (pos != std::string::npos) {
-          std::string digits = "";
-          for (size_t i = pos; i < x.length(); i++) {
-            if (isdigit(x[i])) digits += x[i];
-            else if (!digits.empty() && !isdigit(x[i])) break;
-          }
-          if (!digits.empty()) {
-            return std::stof(digits) / 100.0; // Geeft bijv. 23.92 terug
+      auto* ws = (MyWebsocketComponent*) id(global_ws_client);
+      std::string x = ws->get_payload_if_ready();
+
+      // STAP 2: Filter alleen als er daadwerkelijk een nieuw WebSocket bericht is
+      if (!x.empty()) {
+        if (x.find("513") != std::string::npos && x.find("LocalTemperature") != std::string::npos) {
+          size_t pos = x.find("value");
+          if (pos == std::string::npos) pos = x.find("Value");
+          
+          if (pos != std::string::npos) {
+            std::string digits = "";
+            for (size_t i = pos; i < x.length(); i++) {
+              if (isdigit(x[i])) digits += x[i];
+              else if (!digits.empty() && !isdigit(x[i])) break;
+            }
+            if (!digits.empty()) {
+              return std::stof(digits) / 100.0;
+            }
           }
         }
       }
-      return id(tado_woonkamer_temp).state; // Als er geen match is, behoud de oude waarde
-
+      
+      // Fallback als er nu geen bruikbare Tado data in de string zat
+      if (std::isnan(id(tado_woonkamer_temp).state)) {
+        return 20.0;
+      }
+      return id(tado_woonkamer_temp).state;
 
 
 
