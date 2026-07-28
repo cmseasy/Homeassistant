@@ -44,9 +44,9 @@ esphome:
         
       #Matter
       - lambda: |-
-          // We maken het object aan en slaan het op in de universele pointer
-          id(global_ws_client) = (void*) new MyWebsocketComponent();
-          ((MyWebsocketComponent*)id(global_ws_client))->setup();
+          // Initialiseer de C++ variabele direct
+          my_ws_client = new MyWebsocketComponent();
+          my_ws_client->setup();
 
   # # matter
   # includes:
@@ -210,21 +210,18 @@ globals:
   - id: start_douche_tijd
     type: uint32_t
     initial_value: '0'
-#Matter
-  - id: global_ws_client
-    type: MyWebsocketComponent*
-    initial_value: 'nullptr'
+# #Matter
+#   - id: global_ws_client
+#     type: MyWebsocketComponent*
+#     initial_value: 'nullptr'
 
 #matter
 interval:
   - interval: 1min
     then:
       - lambda: |-
-          if (id(global_ws_client) != nullptr) {
-            // We vertellen de compiler hier pas dat het om MyWebsocketComponent gaat
-            auto* ws = (MyWebsocketComponent*) id(global_ws_client);
-            ws->send_message("Hallo vanaf Proxmox via stabiele void-pointer!");
-          }
+          if (my_ws_client != nullptr) {
+            my_ws_client->send_message("Hallo vanaf Proxmox via pure C++ pointer!");
           }
     
 # 4. Entiteiten aanmaken om uit te lezen (Snsoren)
