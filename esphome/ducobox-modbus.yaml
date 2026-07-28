@@ -66,10 +66,10 @@ esp32:
   board: esp32dev
   framework:
     type: esp-idf
-    # advanced:
-    #   minimum_chip_revision: "3.1"
-    #   sram1_as_iram: true
-    #   compiler_optimization: PERF
+    advanced:
+      minimum_chip_revision: "3.1"
+      sram1_as_iram: true
+      compiler_optimization: PERF
     # #matter
     # sdkconfig_options:
     #   CONFIG_ESP_WEBSOCKET_CLIENT: "y"
