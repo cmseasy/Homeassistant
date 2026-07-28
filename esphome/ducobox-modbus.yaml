@@ -439,6 +439,31 @@ binary_sensor:
               id(switch_rh_regeling).state);
 
 
+text_sensor:
+  - platform: template
+    name: "Tado X Ruwe Datastroom"
+    id: tado_ruwe_datastroom
+    icon: "mdi:code-json"
+    # Hoe vaak de sensor in de C++ string moet kijken (1s is perfect voor live debuggen)
+    update_interval: 1s 
+    lambda: |-
+      if (id(global_ws_client) == nullptr) {
+        return {"Wachten op WebSocket..."};
+      }
+
+      auto* ws = (MyWebsocketComponent*) id(global_ws_client);
+      std::string x = ws->get_payload_if_ready();
+
+      // Als er een nieuw bericht is binnengekomen, toon dit direct in de sensor
+      if (!x.empty()) {
+        return {x};
+      }
+      
+      // Als er even geen nieuw bericht is, behoud de laatst getoonde tekst
+      if (id(tado_ruwe_datastroom).state.empty()) {
+        return {"Verbonden, wacht op eerste Matter pakket..."};
+      }
+      return id(tado_ruwe_datastroom).state;
 
 sensor:
   # ... HIER STAAN JE HUIDIGE DUCOBOX SENSOREN AL EN DIE BLIJVEN INTACT ...
