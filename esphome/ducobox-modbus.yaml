@@ -48,10 +48,10 @@ esphome:
   # matter
   includes:
     - websocket_client.h
-  # matter 
-  #Zorg dat de ingebouwde WebSocket bibliotheek van de ESP32 aan staat
-  build_flags:
-    - -DCONFIG_ESP_WEBSOCKET_CLIENT=1
+  # # matter 
+  # #Zorg dat de ingebouwde WebSocket bibliotheek van de ESP32 aan staat
+  # build_flags:
+  #   - -DCONFIG_ESP_WEBSOCKET_CLIENT=1
 
 
 
@@ -67,6 +67,9 @@ esp32:
       minimum_chip_revision: "3.1"
       sram1_as_iram: true
       compiler_optimization: PERF
+    #matter
+    sdkconfig_options:
+      CONFIG_ESP_WEBSOCKET_CLIENT: "y"
 
 
 
