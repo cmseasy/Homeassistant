@@ -39,9 +39,25 @@ esphome:
   
       # 2. Dwing het hoofdscript om NU direct te starten
       - script.execute: wtw_rh_regeling
+        
+      #Matter
+      - lambda: |-
+          id(global_ws_client) = new MyWebsocketComponent();
+          id(global_ws_client)->setup();
+
+  # matter
+  includes:
+    - websocket_client.h
+  # matter 
+  #Zorg dat de ingebouwde WebSocket bibliotheek van de ESP32 aan staat
+  platformio_options:
+    build_flags: -DCONFIG_ESP_WEBSOCKET_CLIENT=1
 
 
 
+  
+  
+  
   
 esp32:
   board: esp32dev
@@ -143,6 +159,21 @@ modbus_controller:
     address: 1
     update_interval: 10s #30s
 
+
+
+
+#Matter
+interval:
+  - interval: 1min
+    then:
+      - lambda: |-
+          if (id(global_ws_client) != nullptr) {
+            id(global_ws_client)->send_message("Hallo vanaf Proxmox zonder Python component!");
+          }
+
+
+
+  
 globals:
   # Vrijgeven berekening na upload of herstart ESP
   - id: wtw_systeem_volledig_online
@@ -180,6 +211,10 @@ globals:
   - id: start_douche_tijd
     type: uint32_t
     initial_value: '0'
+#Matter
+  - id: global_ws_client
+    type: MyWebsocketComponent*
+    initial_value: 'nullptr'
               
 # 4. Entiteiten aanmaken om uit te lezen (Snsoren)
 button:
