@@ -462,7 +462,6 @@ text_sensor:
     name: "Tado X Ruwe Datastroom"
     id: tado_ruwe_datastroom
     icon: "mdi:code-json"
-    # Hoe vaak de sensor in de C++ string moet kijken (1s is perfect voor live debuggen)
     update_interval: 1s 
     internal: true
     lambda: |-
@@ -471,14 +470,13 @@ text_sensor:
       }
 
       auto* ws = (MyWebsocketComponent*) id(global_ws_client);
-      std::string x = ws->get_payload_if_ready();
+      // GECORRIGEERD: Aangepast naar get_payload() zodat beide sensoren dezelfde buffer gebruiken
+      std::string x = ws->get_payload();
 
-      // Als er een nieuw bericht is binnengekomen, toon dit direct in de sensor
       if (!x.empty()) {
         return {x};
       }
       
-      // Als er even geen nieuw bericht is, behoud de laatst getoonde tekst
       if (id(tado_ruwe_datastroom).state.empty()) {
         return {"Verbonden, wacht op eerste Matter pakket..."};
       }
@@ -494,15 +492,12 @@ sensor:
     device_class: "temperature"
     state_class: "measurement"
     accuracy_decimals: 2
-    
     lambda: |-
       if (id(global_ws_client) == nullptr) {
-        return 24.0; // Startwaarde tijdens het opstarten
+        return 24.0; 
       }
 
       auto* ws = (MyWebsocketComponent*) id(global_ws_client);
-      
-      // HIER IS DE FUNCTIENAAM CORREKT AANGEPAST NAAR GET_PAYLOAD()
       std::string x = ws->get_payload();
 
       if (!x.empty()) {
@@ -534,7 +529,7 @@ sensor:
       }
       
       if (std::isnan(id(tado_woonkamer_temp).state)) {
-        return 24.0; 
+        return 20.0; 
       }
       return id(tado_woonkamer_temp).state;
 
