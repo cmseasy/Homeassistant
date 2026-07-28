@@ -54,7 +54,6 @@ esphome:
         
       #Matter
       - lambda: |-
-          // We maken het object aan en slaan het op als universele pointer
           id(global_ws_client) = (void*) new MyWebsocketComponent();
           ((MyWebsocketComponent*)id(global_ws_client))->setup();
 
@@ -74,9 +73,10 @@ esp32:
     # #matter
     # sdkconfig_options:
     #   CONFIG_ESP_WEBSOCKET_CLIENT: "y"
-
-
-
+#Matter
+    components:
+    - name: "espressif/esp_websocket_client"
+      ref: 1.5.0
           
 # Verbind met uw Wi-Fi netwerk
 wifi:
@@ -222,10 +222,10 @@ interval:
     then:
       - lambda: |-
           if (id(global_ws_client) != nullptr) {
-            // Pas hier binnen de actie 'casten' we de pointer naar de juiste klasse
             auto* ws = (MyWebsocketComponent*) id(global_ws_client);
-            ws->send_message("Hallo vanaf Proxmox via de stabiele void-pointer!");
+            ws->send_message("Hallo vanaf Proxmox via de officiële Espressif package manager!");
           }
+
     
 # 4. Entiteiten aanmaken om uit te lezen (Snsoren)
 button:
