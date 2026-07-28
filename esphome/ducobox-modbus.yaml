@@ -448,8 +448,8 @@ sensor:
     unit_of_measurement: "°C"
     device_class: "temperature"
     state_class: "measurement"
-    accuracy_decimals: 2
-    update_interval: 10s # Hoe vaak de sensor in de string moet kijken naar updates
+    accuracy_decimals: 1
+#    update_interval: 10s # Hoe vaak de sensor in de string moet kijken naar updates
     lambda: |-
       // Haal de C++ component op via zijn ID
       auto* ws = (MyWebsocketComponent*) id(global_ws_client);
