@@ -14,7 +14,9 @@ esphome:
   name_add_mac_suffix: false
   # GEOPTIMALISEERDE BOOT ACTIES 
   on_boot:
-    priority: -100.0
+    #priority: -100.0
+    #matter
+    priority: 200.0
     then:
       - lambda: ESP_LOGI("main", "Wachten op geldige Modbus sensorwaarden...");
       
@@ -42,8 +44,9 @@ esphome:
         
       #Matter
       - lambda: |-
-          id(global_ws_client) = new MyWebsocketComponent();
-          id(global_ws_client)->setup();
+          // We maken het object aan en slaan het op in de universele pointer
+          id(global_ws_client) = (void*) new MyWebsocketComponent();
+          ((MyWebsocketComponent*)id(global_ws_client))->setup();
 
   # # matter
   # includes:
@@ -218,7 +221,10 @@ interval:
     then:
       - lambda: |-
           if (id(global_ws_client) != nullptr) {
-            id(global_ws_client)->send_message("Hallo vanaf Proxmox met gedownloade IDF componenten!");
+            // We vertellen de compiler hier pas dat het om MyWebsocketComponent gaat
+            auto* ws = (MyWebsocketComponent*) id(global_ws_client);
+            ws->send_message("Hallo vanaf Proxmox via stabiele void-pointer!");
+          }
           }
     
 # 4. Entiteiten aanmaken om uit te lezen (Snsoren)
