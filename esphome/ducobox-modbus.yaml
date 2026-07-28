@@ -438,7 +438,25 @@ binary_sensor:
               id(wtw_systeem_volledig_online) && 
               id(switch_rh_regeling).state);
 
+#matter
+interval:
+  - interval: 1min
+    then:
+      - lambda: |-
+          if (id(global_ws_client) != nullptr) {
+            auto* ws = (MyWebsocketComponent*) id(global_ws_client);
+            // Gebruik exact jouw geformatteerde JSON string zonder ontsnap-fouten
+            ws->send_message(R"({
+              "message_id": "1",
+              "command": "get_node",
+              "args": {
+                "node_id": 1
+              }
+            })");
+          }
 
+
+              
 text_sensor:
   - platform: template
     name: "Tado X Ruwe Datastroom"
