@@ -45,9 +45,9 @@ esphome:
           id(global_ws_client) = new MyWebsocketComponent();
           id(global_ws_client)->setup();
 
-  # matter
-  includes:
-    - websocket_client.h
+  # # matter
+  # includes:
+  #   - websocket_client.h
   # # matter 
   # #Zorg dat de ingebouwde WebSocket bibliotheek van de ESP32 aan staat
   # build_flags:
@@ -63,13 +63,13 @@ esp32:
   board: esp32dev
   framework:
     type: esp-idf
-    advanced:
-      minimum_chip_revision: "3.1"
-      sram1_as_iram: true
-      compiler_optimization: PERF
-    #matter
-    sdkconfig_options:
-      CONFIG_ESP_WEBSOCKET_CLIENT: "y"
+    # advanced:
+    #   minimum_chip_revision: "3.1"
+    #   sram1_as_iram: true
+    #   compiler_optimization: PERF
+    # #matter
+    # sdkconfig_options:
+    #   CONFIG_ESP_WEBSOCKET_CLIENT: "y"
 
 
 
@@ -165,14 +165,7 @@ modbus_controller:
 
 
 
-#Matter
-interval:
-  - interval: 1min
-    then:
-      - lambda: |-
-          if (id(global_ws_client) != nullptr) {
-            id(global_ws_client)->send_message("Hallo vanaf Proxmox zonder Python component!");
-          }
+
 
 
 
@@ -218,7 +211,16 @@ globals:
   - id: global_ws_client
     type: MyWebsocketComponent*
     initial_value: 'nullptr'
-              
+
+#matter
+interval:
+  - interval: 1min
+    then:
+      - lambda: |-
+          if (id(global_ws_client) != nullptr) {
+            id(global_ws_client)->send_message("Hallo vanaf Proxmox met gedownloade IDF componenten!");
+          }
+    
 # 4. Entiteiten aanmaken om uit te lezen (Snsoren)
 button:
   - platform: restart
