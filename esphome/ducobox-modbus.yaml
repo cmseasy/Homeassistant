@@ -13,6 +13,16 @@ esphome:
   friendly_name: Ducobox modbus
   name_add_mac_suffix: false
   # GEOPTIMALISEERDE BOOT ACTIES 
+  # # matter
+  includes:
+    - websocket_client.h
+        
+  # # matter 
+  # #Zorg dat de ingebouwde WebSocket bibliotheek van de ESP32 aan staat
+  # build_flags:
+  #   - -DCONFIG_ESP_WEBSOCKET_CLIENT=1
+
+
   on_boot:
     #priority: -100.0
     #matter
@@ -44,21 +54,12 @@ esphome:
         
       #Matter
       - lambda: |-
-          // Initialiseer de C++ variabele direct
-          my_ws_client = new MyWebsocketComponent();
-          my_ws_client->setup();
-
-  # # matter
-  # includes:
-  #   - websocket_client.h
-  # # matter 
-  # #Zorg dat de ingebouwde WebSocket bibliotheek van de ESP32 aan staat
-  # build_flags:
-  #   - -DCONFIG_ESP_WEBSOCKET_CLIENT=1
+          // We maken het object aan en slaan het op als universele pointer
+          id(global_ws_client) = (void*) new MyWebsocketComponent();
+          ((MyWebsocketComponent*)id(global_ws_client))->setup();
 
 
 
-  
   
   
   
@@ -211,17 +212,19 @@ globals:
     type: uint32_t
     initial_value: '0'
 # #Matter
-#   - id: global_ws_client
-#     type: MyWebsocketComponent*
-#     initial_value: 'nullptr'
+  - id: global_ws_client
+    type: void*
+    initial_value: 'nullptr'
 
 #matter
 interval:
   - interval: 1min
     then:
       - lambda: |-
-          if (my_ws_client != nullptr) {
-            my_ws_client->send_message("Hallo vanaf Proxmox via pure C++ pointer!");
+          if (id(global_ws_client) != nullptr) {
+            // Pas hier binnen de actie 'casten' we de pointer naar de juiste klasse
+            auto* ws = (MyWebsocketComponent*) id(global_ws_client);
+            ws->send_message("Hallo vanaf Proxmox via de stabiele void-pointer!");
           }
     
 # 4. Entiteiten aanmaken om uit te lezen (Snsoren)
