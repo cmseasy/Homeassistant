@@ -492,20 +492,23 @@ sensor:
     device_class: "temperature"
     state_class: "measurement"
     accuracy_decimals: 2
+    
+    # 0s dwingt ESPHome om de lambda continu uit te voeren. 
+    # Hierdoor mist hij de opstart-dump niet en zie je de waarde DIRECT.
+    update_interval: 0s
+    
     lambda: |-
+      // Als de WebSocket nog niet up is, geef NAN terug (geen waarde)
       if (id(global_ws_client) == nullptr) {
-        return 24.0; 
+        return NAN; 
       }
 
       auto* ws = (MyWebsocketComponent*) id(global_ws_client);
       std::string x = ws->get_payload();
 
       if (!x.empty()) {
-        // Zoek naar het exacte Matter temperatuur-pad
         size_t path_pos = x.find("1/513/0");
-        
         if (path_pos != std::string::npos) {
-          // Zoek naar het eerste cijfer direct na het pad
           size_t pos = x.find_first_of("0123456789", path_pos + 7);
           
           if (pos != std::string::npos) {
@@ -521,16 +524,14 @@ sensor:
             if (!digits.empty()) {
               float raw_temp = std::stof(digits);
               if (raw_temp > 500 && raw_temp < 4000) {
-                return raw_temp / 100.0;
+                return raw_temp / 100.0; // Succes! Geeft direct de echte waarde terug
               }
             }
           }
         }
       }
       
-      if (std::isnan(id(tado_woonkamer_temp).state)) {
-        return 20.0; 
-      }
+      // Geen nieuwe netwerkdata in deze loop? Behoud de huidige status (of NAN bij de start)
       return id(tado_woonkamer_temp).state;
 
 
