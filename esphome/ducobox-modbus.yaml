@@ -501,15 +501,16 @@ sensor:
       }
 
       auto* ws = (MyWebsocketComponent*) id(global_ws_client);
+      
+      // HIER IS DE FUNCTIENAAM CORREKT AANGEPAST NAAR GET_PAYLOAD()
       std::string x = ws->get_payload();
 
-      // DE FILTER LOGICA RECHTTREEKS IN DE SENSOR:
       if (!x.empty()) {
         // Zoek naar het exacte Matter temperatuur-pad
         size_t path_pos = x.find("1/513/0");
         
         if (path_pos != std::string::npos) {
-          // Zoek naar het eerste cijfer direct na het pad (we slaan de tekst '"1/513/0":' over)
+          // Zoek naar het eerste cijfer direct na het pad
           size_t pos = x.find_first_of("0123456789", path_pos + 7);
           
           if (pos != std::string::npos) {
@@ -518,14 +519,12 @@ sensor:
               if (isdigit(x[i])) {
                 digits += x[i];
               } else if (!digits.empty() && !isdigit(x[i])) {
-                // Stop zodra het getal voorbij is (bijv. bij een komma, sluitaccolade of sluitbracket)
                 break;
               }
             }
             
             if (!digits.empty()) {
               float raw_temp = std::stof(digits);
-              // Validatie: Alleen accepteren als het een echte Tado temperatuur is (tussen 5 en 40 graden)
               if (raw_temp > 500 && raw_temp < 4000) {
                 return raw_temp / 100.0;
               }
@@ -534,7 +533,6 @@ sensor:
         }
       }
       
-      // Fallback: Als er dit keer geen temperatuur-update in de buffer zat, behoud de huidige waarde
       if (std::isnan(id(tado_woonkamer_temp).state)) {
         return 24.0; 
       }
