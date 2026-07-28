@@ -1,3 +1,52 @@
+# sensor:
+#   # ... HIER STAAN JE TADO EN DUCOBOX SENSOREN AL ...
+
+#   - platform: template
+#     name: "WTW Regeling Stuurtraject Temperatuur"
+#     id: wtw_stuurtraject_temp
+#     unit_of_measurement: "°C"
+#     device_class: "temperature"
+#     state_class: "measurement"
+#     accuracy_decimals: 2
+#     update_interval: 10s
+#     lambda: |-
+#       // Grijp de actuele status van beide kamersensoren
+#       float temp1 = id(tado_woonkamer_temp).state;
+#       float temp2 = id(tado_slaapkamer_temp).state; // Pas dit ID eventueel aan naar je 2e sensor
+
+#       bool temp1_ok = !std::isnan(temp1);
+#       bool temp2_ok = !std::isnan(temp2);
+
+#       // SITUATIE 1: Beide sensoren zijn online -> Neem het gemiddelde
+#       if (temp1_ok && temp2_ok) {
+#         return (temp1 + temp2) / 2.0;
+#       }
+
+#       // SITUATIE 2: Sensor 1 is uitgevallen -> Gebruik puur Sensor 2
+#       if (!temp1_ok && temp2_ok) {
+#         ESP_LOGW("fallback", "Woonkamersensor uitgevallen! Schakelt over op sensor 2.");
+#         return temp2;
+#       }
+
+#       // SITUATIE 3: Sensor 2 is uitgevallen -> Gebruik puur Sensor 1
+#       if (temp1_ok && !temp2_ok) {
+#         ESP_LOGW("fallback", "Slaapkamersensor uitgevallen! Schakelt over op sensor 1.");
+#         return temp1;
+#       }
+
+#       // SITUATIE 4: Volledige black-out (beide sensoren zijn offline)
+#       // Geef een harde nood-waarde op zodat de DucoBox niet crasht, bijv. 20.0 graden
+#       ESP_LOGE("fallback", "ALARM: Beide temperatuursensoren zijn offline!");
+#       return 20.0; 
+
+
+
+
+
+
+
+
+
 substitutions:
   modbus_tx_pin: GPIO17 #GPIO17   # Verbind met DI op de MAX485 module
   modbus_rx_pin: GPIO16 #GPIO16   # Verbind met RO op de MAX485 module
