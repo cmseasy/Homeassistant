@@ -495,55 +495,49 @@ sensor:
     accuracy_decimals: 2
     
     lambda: |-
+      // Maak een statische variabele die zijn waarde ONTHOUDT tussen de loops door
+      static float bewaarde_temperatuur = 24.0;
+
       if (id(global_ws_client) == nullptr) {
-        return 20.0; // Veilige startwaarde tijdens booten
+        return bewaarde_temperatuur;
       }
 
       auto* ws = (MyWebsocketComponent*) id(global_ws_client);
       std::string x = ws->get_payload_if_ready();
 
+      // Alleen verwerken als de WebSocket ECHT nieuwe data heeft
       if (!x.empty()) {
-        // MATTER FILTER: Zoek naar cluster 513 (Thermostat Cluster)
-        if (x.find("513") != std::string::npos) {
+        // Controleer of de string de temperatuurwaarde bevat
+        if (x.find("1/513/0") != std::string::npos) {
           
-          // Zoek naar het woord 'value' of 'Value' na de cluster-identificatie
-          size_t pos = x.find("\"value\"");
-          if (pos == std::string::npos) pos = x.find("value");
-          if (pos == std::string::npos) pos = x.find("Value");
+          size_t path_pos = x.find("1/513/0");
+          size_t pos = x.find_first_of("0123456789", path_pos + 7);
           
           if (pos != std::string::npos) {
             std::string digits = "";
-            bool found_digit = false;
-            
-            // Loop door de karakters na "value" om het getal (bijv. 2392) te grijpen
             for (size_t i = pos; i < x.length(); i++) {
               if (isdigit(x[i])) {
                 digits += x[i];
-                found_digit = true;
-              } else if (found_digit) {
-                // Stop zodra het getal voorbij is (bijv. bij een komma of sluitaccolade)
+              } else if (!digits.empty() && !isdigit(x[i])) {
                 break;
               }
             }
             
             if (!digits.empty()) {
               float raw_temp = std::stof(digits);
-              
-              // Matter geeft temperaturen door in honderdtallen (2392 = 23.92°C)
-              // We bouwen een extra veiligheid in: Tado temperaturen liggen realistisch tussen 5 en 40 graden
               if (raw_temp > 500 && raw_temp < 4000) {
-                return raw_temp / 100.0;
+                // UPDATE: We slaan de nieuwe geldige temperatuur op!
+                bewaarde_temperatuur = raw_temp / 100.0;
               }
             }
           }
         }
+        // Als er na 1 minuut een ANDER bericht binnenkomt (bijv. luchtvochtigheid),
+        // dan negeert de 'if' hierboven dat bericht, en blijft bewaarde_temperatuur intact.
       }
       
-      // Fallback: Als er geen nieuwe data was, behoud de huidige bekende staat
-      if (std::isnan(id(tado_woonkamer_temp).state)) {
-        return 20.0; 
-      }
-      return id(tado_woonkamer_temp).state;
+      // Geef ALTIJD de laatst bewaarde succesvolle temperatuur terug aan de webinterface
+      return bewaarde_temperatuur;
 
 
 
