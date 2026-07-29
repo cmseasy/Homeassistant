@@ -647,59 +647,6 @@ sensor:
 #   # ... HIER STAAN JE TADO EN DUCOBOX SENSOREN AL ...
 
   - platform: template
-    name: "WTW Regeling Stuurtraject Relatieve vochtigheid"
-    id: wtw_stuurtraject_rh
-    unit_of_measurement: "%"
-    state_class: "measurement"
-    device_class: humidity
-    accuracy_decimals: 1
-    icon: "mdi:water-percent"
-    update_interval: 10s
-    lambda: |-
-      // Grijp de actuele status van beide kamersensoren
-      float rh1 = id(tado_woonkamer_rh).state;
-      float rh2 = id(rh_smart_x_ha).state; 
-      float rh3 = id(ducobox_rh_actual).state; 
-
-      bool rh1_ok = !std::isnan(rh1);
-      bool rh2_ok = !std::isnan(rh2);
-
-      // SITUATIE 1: Beide sensoren zijn online -> Neem het gemiddelde
-      if (rh1_ok && rh2_ok) {
-        ESP_LOGI("fallback", "Beide Tado X RH sensoren zijn online en worden gemiddeld.");
-        return (rh1 + rh2) / 2.0;
-      }
-
-      // SITUATIE 2: Sensor 1 is uitgevallen -> Gebruik puur Sensor 2
-      if (!rh1_ok && rh2_ok) {
-        ESP_LOGW("fallback", "Woonkamer RH sensor van Homeassistant uitgevallen! Schakelt over op sensor 2.");
-        return rh2;
-      }
-
-      // SITUATIE 3: Sensor 2 is uitgevallen -> Gebruik puur Sensor 1
-      if (rh1_ok && !rh2_ok) {
-        ESP_LOGW("fallback", "Woonkamer RH sensor van Matterjs-server uitgevallen! Schakelt over op sensor 1.");
-        return rh1;
-      }
-
-      // SITUATIE 4: Sensor 1 en 2 is uitgevallen -> Gebruik puur Sensor 3
-       if (!rh1_ok && !rh2_ok) {
-       ESP_LOGW("fallback", "Beide sensoren uitgevallen! Schakelt over op sensor 3.");
-        return rh3;
-      }
-      // SITUATIE 5: Volledige black-out (alle 3 sensoren zijn offline)
-      // Geef een harde nood-waarde op zodat de DucoBox niet crasht, bijv. 20.0 graden
-      ESP_LOGE("fallback", "ALARM: Alle temperatuursensoren zijn offline!");
-      return 20.0; 
-
-
-
-
-
-
-
-          
-  - platform: template
     name: "RH waarde, bron voor de regeling"
     id: rh_actual_active
     unit_of_measurement: "%"
@@ -707,7 +654,7 @@ sensor:
     device_class: humidity
     accuracy_decimals: 1
     icon: "mdi:water-percent"
-    update_interval: 60s
+    update_interval: 10s
     disabled_by_default: true
     filters:
       - median:
@@ -715,29 +662,86 @@ sensor:
           send_every: 5
           send_first_at: 1
     lambda: |-
-      // 1. Controleer of 'rh_smart_x_ha' bestaat en een geldige waarde heeft
-      // Als HA 'unavailable' of 'unknown' stuurt, is .has_state() automatisch false.
-      if (id(rh_smart_x_ha).has_state() && !std::isnan(id(rh_smart_x_ha).state)) {
-        float ha_val = id(rh_smart_x_ha).state;
-        
-        // 2. Controleer of de waarde netjes tussen 1 en 100 ligt
-        if (ha_val >= 1.0 && ha_val <= 100.0) {
-          return ha_val; // Gebruik Home Assistant waarde
-        } else {
-          ESP_LOGW("duco_selectie", "Home Assistant RH waarde buiten bereik (1-100): %.1f%%.", ha_val);
+      // Grijp de actuele status van beide kamersensoren
+      float rh1 = id(tado_woonkamer_rh).state;
+      float rh2 = id(rh_smart_x_ha).state; 
+      float rh3 = id(ducobox_rh_actual).state; 
+  
+      bool rh1_ok = !std::isnan(rh1);
+      bool rh2_ok = !std::isnan(rh2);
+      bool rh3_ok = !std::isnan(rh3);
+  
+      // static variabelen onthouden hun waarde tussen de lambda-aanroepen door.
+      // We beginnen op 0 (geen eerdere situatie bekend).
+      static int vorige_situatie = 0; 
+      int huidige_situatie = 0;
+  
+  
+      // Bepaal de huidige situatie op basis van sensor beschikbaarheid
+      if (rh1_ok && rh2_ok) {
+        huidige_situatie = 1;
+      } 
+      else if (!rh1_ok && rh2_ok) {
+        huidige_situatie = 2;
+      } 
+      else if (rh1_ok && !rh2_ok) {
+        huidige_situatie = 3;
+      } 
+      else if (!rh1_ok && !rh2_ok && rh3_ok) {
+        huidige_situatie = 4;
+      } 
+      else {
+        huidige_situatie = 5; // Volledige blackout (alle 3 offline)
+      }
+  
+  
+      // LOGGEN: Alleen als de huidige situatie verschilt van de vorige situatie
+      if (huidige_situatie != vorige_situatie) {
+        vorige_situatie = huidige_situatie; // Sla de nieuwe situatie op
+  
+       switch (huidige_situatie) {
+          case 1:
+            ESP_LOGI("fallback", "SITUATIE 1: Beide Tado X RH sensoren zijn online en worden gemiddeld.");
+            break;
+  
+          case 2:
+            ESP_LOGW("fallback", "SITUATIE 2: Woonkamer RH sensor van Homeassistant uitgevallen! Schakelt over op sensor 2.");
+            break;
+  
+          case 3:
+            ESP_LOGW("fallback", "SITUATIE 3: Woonkamer RH sensor van Matterjs-server uitgevallen! Schakelt over op sensor 1.");
+            break;
+  
+          case 4:
+            ESP_LOGW("fallback", "SITUATIE 4: Beide sensoren uitgevallen! Schakelt over op sensor 3 (Ducobox RH).");
+            break;
+  
+          case 5:
+            ESP_LOGE("fallback", "SITUATIE 5 - ALARM: Alle temperatuursensoren zijn offline!");
+            break;
         }
-      } else {
-        ESP_LOGW("duco_selectie", "Home Assistant RH sensor is offline of onbeschikbaar.");
       }
-      
-      // 3. Fallback: Gebruik de gefilterde Modbus waarde
-      if (id(ducobox_rh_filtered).has_state()) {
-        return id(ducobox_rh_filtered).state;
+  
+  
+      // RETURNDATA: Voer de daadwerkelijke berekeningen en returns uit
+      if (huidige_situatie == 1) {
+        return (rh1 + rh2) / 2.0;
       }
-      
-      // 4. Als echt alles offline is
-      ESP_LOGE("duco_selectie", "Zowel Home Assistant als Modbus sensor zijn onbeschikbaar!");
-      return NAN;
+  
+      if (huidige_situatie == 2) {
+        return rh2;
+      }
+  
+      if (huidige_situatie == 3) {
+        return rh1;
+      }  
+  
+      if (huidige_situatie == 4) {
+        return rh3;
+      }
+    
+      return 60.0; // Noodwaarde bij situatie 5
+  
 
     # HIER DE TRIGGER TOEVOEGEN:
     on_value:
@@ -748,6 +752,63 @@ sensor:
                 return (!isnan(x) && x > 0 && !id(wtw_rh_regeling).is_running() && id(switch_rh_regeling).state);
             then:
               - script.execute: wtw_rh_regeling
+
+
+
+
+
+
+
+          
+  # - platform: template
+  #   name: "RH waarde, bron voor de regeling"
+  #   id: rh_actual_active
+  #   unit_of_measurement: "%"
+  #   state_class: "measurement"
+  #   device_class: humidity
+  #   accuracy_decimals: 1
+  #   icon: "mdi:water-percent"
+  #   update_interval: 60s
+  #   disabled_by_default: true
+  #   filters:
+  #     - median:
+  #         window_size: 5
+  #         send_every: 5
+  #         send_first_at: 1
+  #   lambda: |-
+  #     // 1. Controleer of 'rh_smart_x_ha' bestaat en een geldige waarde heeft
+  #     // Als HA 'unavailable' of 'unknown' stuurt, is .has_state() automatisch false.
+  #     if (id(rh_smart_x_ha).has_state() && !std::isnan(id(rh_smart_x_ha).state)) {
+  #       float ha_val = id(rh_smart_x_ha).state;
+        
+  #       // 2. Controleer of de waarde netjes tussen 1 en 100 ligt
+  #       if (ha_val >= 1.0 && ha_val <= 100.0) {
+  #         return ha_val; // Gebruik Home Assistant waarde
+  #       } else {
+  #         ESP_LOGW("duco_selectie", "Home Assistant RH waarde buiten bereik (1-100): %.1f%%.", ha_val);
+  #       }
+  #     } else {
+  #       ESP_LOGW("duco_selectie", "Home Assistant RH sensor is offline of onbeschikbaar.");
+  #     }
+      
+  #     // 3. Fallback: Gebruik de gefilterde Modbus waarde
+  #     if (id(ducobox_rh_filtered).has_state()) {
+  #       return id(ducobox_rh_filtered).state;
+  #     }
+      
+  #     // 4. Als echt alles offline is
+  #     ESP_LOGE("duco_selectie", "Zowel Home Assistant als Modbus sensor zijn onbeschikbaar!");
+  #     return NAN;
+
+  #   # HIER DE TRIGGER TOEVOEGEN:
+  #   on_value:
+  #     then:
+  #       - if:
+  #           condition:
+  #             lambda: |-
+  #               return (!isnan(x) && x > 0 && !id(wtw_rh_regeling).is_running() && id(switch_rh_regeling).state);
+  #           then:
+  #             - script.execute: wtw_rh_regeling
 
 # Dynamische weergave van het door scripts berekende setpoint doel
   - platform: template
