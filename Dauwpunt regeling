@@ -395,6 +395,21 @@ actions:
                 {{ [temp_set + 1, 15] | max }}
             action: number.set_value
             enabled: true
+          - delay:
+              hours: 0
+              minutes: 0
+              seconds: 20
+              milliseconds: 0
+          - action: timer.start
+            metadata: {}
+            target:
+              entity_id: timer.wachttijd_temp_set_veranderen
+            data:
+              duration:
+                hours: 0
+                minutes: 10
+                seconds: 0
+            enabled: true
           - action: logbook.log
             metadata: {}
             data:
@@ -419,16 +434,6 @@ actions:
 
                 Wp koelen (outlet) 3 temp set: van {{ temp_set }} naar {{
                 temp_set + 1 }} 
-            enabled: true
-          - action: timer.start
-            metadata: {}
-            target:
-              entity_id: timer.wachttijd_temp_set_veranderen
-            data:
-              duration:
-                hours: 0
-                minutes: 10
-                seconds: 0
             enabled: true
       - conditions:
           - condition: state
