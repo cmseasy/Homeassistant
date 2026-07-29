@@ -646,43 +646,44 @@ sensor:
 # sensor:
 #   # ... HIER STAAN JE TADO EN DUCOBOX SENSOREN AL ...
 
-#   - platform: template
-#     name: "WTW Regeling Stuurtraject Temperatuur"
-#     id: wtw_stuurtraject_temp
-#     unit_of_measurement: "°C"
-#     device_class: "temperature"
-#     state_class: "measurement"
-#     accuracy_decimals: 2
-#     update_interval: 10s
-#     lambda: |-
-#       // Grijp de actuele status van beide kamersensoren
-#       float temp1 = id(tado_woonkamer_temp).state;
-#       float temp2 = id(tado_slaapkamer_temp).state; // Pas dit ID eventueel aan naar je 2e sensor
+  - platform: template
+    name: "WTW Regeling Stuurtraject Relatieve vochtigheid"
+    id: wtw_stuurtraject_rh
+    unit_of_measurement: "%"
+    state_class: "measurement"
+    device_class: humidity
+    accuracy_decimals: 1
+    icon: "mdi:water-percent"
+    update_interval: 10s
+    lambda: |-
+      // Grijp de actuele status van beide kamersensoren
+      float rh1 = id(tado_woonkamer_rh).state;
+      float rh2 = id(rh_smart_x_ha).state; 
 
-#       bool temp1_ok = !std::isnan(temp1);
-#       bool temp2_ok = !std::isnan(temp2);
+      bool rh1_ok = !std::isnan(temp1);
+      bool rh2_ok = !std::isnan(temp2);
 
-#       // SITUATIE 1: Beide sensoren zijn online -> Neem het gemiddelde
-#       if (temp1_ok && temp2_ok) {
-#         return (temp1 + temp2) / 2.0;
-#       }
+      // SITUATIE 1: Beide sensoren zijn online -> Neem het gemiddelde
+      if (rh1_ok && rh2_ok) {
+        return (rh1 + rh2) / 2.0;
+      }
 
-#       // SITUATIE 2: Sensor 1 is uitgevallen -> Gebruik puur Sensor 2
-#       if (!temp1_ok && temp2_ok) {
-#         ESP_LOGW("fallback", "Woonkamersensor uitgevallen! Schakelt over op sensor 2.");
-#         return temp2;
-#       }
+      // SITUATIE 2: Sensor 1 is uitgevallen -> Gebruik puur Sensor 2
+      if (!rh1_ok && rh2_ok) {
+        ESP_LOGW("fallback", "Woonkamer RH sensor van Homeassistant uitgevallen! Schakelt over op sensor 2.");
+        return rh2;
+      }
 
-#       // SITUATIE 3: Sensor 2 is uitgevallen -> Gebruik puur Sensor 1
-#       if (temp1_ok && !temp2_ok) {
-#         ESP_LOGW("fallback", "Slaapkamersensor uitgevallen! Schakelt over op sensor 1.");
-#         return temp1;
-#       }
+      // SITUATIE 3: Sensor 2 is uitgevallen -> Gebruik puur Sensor 1
+      if (rh1_ok && !rh2_ok) {
+        ESP_LOGW("fallback", "Woonkamer RH sensor van Matterjs-server uitgevallen! Schakelt over op sensor 1.");
+        return rh1;
+      }
 
-#       // SITUATIE 4: Volledige black-out (beide sensoren zijn offline)
-#       // Geef een harde nood-waarde op zodat de DucoBox niet crasht, bijv. 20.0 graden
-#       ESP_LOGE("fallback", "ALARM: Beide temperatuursensoren zijn offline!");
-#       return 20.0; 
+      // SITUATIE 4: Volledige black-out (beide sensoren zijn offline)
+      // Geef een harde nood-waarde op zodat de DucoBox niet crasht, bijv. 20.0 graden
+      ESP_LOGE("fallback", "ALARM: Beide temperatuursensoren zijn offline!");
+      return id(rh_smart_x_ha).state;  #       return 20.0; 
 
 
 
