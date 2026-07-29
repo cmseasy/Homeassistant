@@ -555,7 +555,7 @@ sensor:
     disabled_by_default: true
 
 # ==============================================================================
-# Modbus - RH Reletieve vochtigheid
+# Modbus - Ducobox RH Reletieve vochtigheid
 # ==============================================================================
         
 # Node 58: RH box
@@ -578,7 +578,7 @@ sensor:
       then:
         - component.update: ducobox_rh_filtered
 
-# Node 58: RH box filtered om pieken van douche en quooker weg te halen
+# Node 58: RH box gefilterd om pieken van douche en quooker weg te halen
   - platform: template
     name: "Ducobox RH gemeten en gefiltert"
     id: ducobox_rh_filtered
@@ -733,7 +733,7 @@ sensor:
             then:
               - script.execute: wtw_rh_regeling
 
-# Dynamische weergave van het berekende setpoint doel
+# Dynamische weergave van het door scripts berekende setpoint doel
   - platform: template
     name: "RH Berekend Doel"
     id: rh_berekend_doel
@@ -855,10 +855,6 @@ sensor:
     web_server:
       sorting_group_id: sorting_group_timers
       sorting_weight: 19
-
-
-
-
       
 # ==============================================================================
 # 5. CORE SCRIPTS (Regeling, Timers en Modus-coördinatie)
