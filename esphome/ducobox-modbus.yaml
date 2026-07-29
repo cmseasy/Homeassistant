@@ -647,20 +647,14 @@ sensor:
 #   # ... HIER STAAN JE TADO EN DUCOBOX SENSOREN AL ...
 
   - platform: template
-    name: "RH waarde, bron voor de regeling"
-    id: rh_actual_active
+    name: "WTW Regeling Stuurtraject Relatieve vochtigheid"
+    id: wtw_stuurtraject_rh
     unit_of_measurement: "%"
     state_class: "measurement"
     device_class: humidity
     accuracy_decimals: 1
     icon: "mdi:water-percent"
     update_interval: 10s
-    disabled_by_default: true
-    filters:
-      - median:
-          window_size: 5
-          send_every: 5
-          send_first_at: 1
     lambda: |-
       // Grijp de actuele status van beide kamersensoren
       float rh1 = id(tado_woonkamer_rh).state;
@@ -672,6 +666,7 @@ sensor:
 
       // SITUATIE 1: Beide sensoren zijn online -> Neem het gemiddelde
       if (rh1_ok && rh2_ok) {
+        ESP_LOGW("fallback", "Beide Tado X RH sensoren zijn online en worden gemiddeld.");
         return (rh1 + rh2) / 2.0;
       }
 
@@ -695,7 +690,54 @@ sensor:
       // SITUATIE 5: Volledige black-out (alle 3 sensoren zijn offline)
       // Geef een harde nood-waarde op zodat de DucoBox niet crasht, bijv. 20.0 graden
       ESP_LOGE("fallback", "ALARM: Alle temperatuursensoren zijn offline!");
-      return 60.0;
+      return 20.0; 
+
+
+
+
+
+
+
+          
+  - platform: template
+    name: "RH waarde, bron voor de regeling"
+    id: rh_actual_active
+    unit_of_measurement: "%"
+    state_class: "measurement"
+    device_class: humidity
+    accuracy_decimals: 1
+    icon: "mdi:water-percent"
+    update_interval: 60s
+    disabled_by_default: true
+    filters:
+      - median:
+          window_size: 5
+          send_every: 5
+          send_first_at: 1
+    lambda: |-
+      // 1. Controleer of 'rh_smart_x_ha' bestaat en een geldige waarde heeft
+      // Als HA 'unavailable' of 'unknown' stuurt, is .has_state() automatisch false.
+      if (id(rh_smart_x_ha).has_state() && !std::isnan(id(rh_smart_x_ha).state)) {
+        float ha_val = id(rh_smart_x_ha).state;
+        
+        // 2. Controleer of de waarde netjes tussen 1 en 100 ligt
+        if (ha_val >= 1.0 && ha_val <= 100.0) {
+          return ha_val; // Gebruik Home Assistant waarde
+        } else {
+          ESP_LOGW("duco_selectie", "Home Assistant RH waarde buiten bereik (1-100): %.1f%%.", ha_val);
+        }
+      } else {
+        ESP_LOGW("duco_selectie", "Home Assistant RH sensor is offline of onbeschikbaar.");
+      }
+      
+      // 3. Fallback: Gebruik de gefilterde Modbus waarde
+      if (id(ducobox_rh_filtered).has_state()) {
+        return id(ducobox_rh_filtered).state;
+      }
+      
+      // 4. Als echt alles offline is
+      ESP_LOGE("duco_selectie", "Zowel Home Assistant als Modbus sensor zijn onbeschikbaar!");
+      return NAN;
 
     # HIER DE TRIGGER TOEVOEGEN:
     on_value:
@@ -706,63 +748,6 @@ sensor:
                 return (!isnan(x) && x > 0 && !id(wtw_rh_regeling).is_running() && id(switch_rh_regeling).state);
             then:
               - script.execute: wtw_rh_regeling
-
-
-
-
-
-
-
-          
-  # - platform: template
-  #   name: "RH waarde, bron voor de regeling"
-  #   id: rh_actual_active
-  #   unit_of_measurement: "%"
-  #   state_class: "measurement"
-  #   device_class: humidity
-  #   accuracy_decimals: 1
-  #   icon: "mdi:water-percent"
-  #   update_interval: 60s
-  #   disabled_by_default: true
-  #   filters:
-  #     - median:
-  #         window_size: 5
-  #         send_every: 5
-  #         send_first_at: 1
-  #   lambda: |-
-  #     // 1. Controleer of 'rh_smart_x_ha' bestaat en een geldige waarde heeft
-  #     // Als HA 'unavailable' of 'unknown' stuurt, is .has_state() automatisch false.
-  #     if (id(rh_smart_x_ha).has_state() && !std::isnan(id(rh_smart_x_ha).state)) {
-  #       float ha_val = id(rh_smart_x_ha).state;
-        
-  #       // 2. Controleer of de waarde netjes tussen 1 en 100 ligt
-  #       if (ha_val >= 1.0 && ha_val <= 100.0) {
-  #         return ha_val; // Gebruik Home Assistant waarde
-  #       } else {
-  #         ESP_LOGW("duco_selectie", "Home Assistant RH waarde buiten bereik (1-100): %.1f%%.", ha_val);
-  #       }
-  #     } else {
-  #       ESP_LOGW("duco_selectie", "Home Assistant RH sensor is offline of onbeschikbaar.");
-  #     }
-      
-  #     // 3. Fallback: Gebruik de gefilterde Modbus waarde
-  #     if (id(ducobox_rh_filtered).has_state()) {
-  #       return id(ducobox_rh_filtered).state;
-  #     }
-      
-  #     // 4. Als echt alles offline is
-  #     ESP_LOGE("duco_selectie", "Zowel Home Assistant als Modbus sensor zijn onbeschikbaar!");
-  #     return NAN;
-
-  #   # HIER DE TRIGGER TOEVOEGEN:
-  #   on_value:
-  #     then:
-  #       - if:
-  #           condition:
-  #             lambda: |-
-  #               return (!isnan(x) && x > 0 && !id(wtw_rh_regeling).is_running() && id(switch_rh_regeling).state);
-  #           then:
-  #             - script.execute: wtw_rh_regeling
 
 # Dynamische weergave van het door scripts berekende setpoint doel
   - platform: template
