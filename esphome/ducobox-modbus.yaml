@@ -659,6 +659,7 @@ sensor:
       // Grijp de actuele status van beide kamersensoren
       float rh1 = id(tado_woonkamer_rh).state;
       float rh2 = id(rh_smart_x_ha).state; 
+      float rh3 = id(ducobox_rh_actual).state; 
 
       bool rh1_ok = !std::isnan(temp1);
       bool rh2_ok = !std::isnan(temp2);
@@ -680,10 +681,15 @@ sensor:
         return rh1;
       }
 
-      // SITUATIE 4: Volledige black-out (beide sensoren zijn offline)
+      // SITUATIE 4: Sensor 1 en 2 is uitgevallen -> Gebruik puur Sensor 3
+       if (!rh1_ok && !rh2_ok) {
+       ESP_LOGW("fallback", "Beide sensoren uitgevallen! Schakelt over op sensor 3.");
+        return rh3;
+      }
+      // SITUATIE 5: Volledige black-out (alle 3 sensoren zijn offline)
       // Geef een harde nood-waarde op zodat de DucoBox niet crasht, bijv. 20.0 graden
-      ESP_LOGE("fallback", "ALARM: Beide temperatuursensoren zijn offline!");
-      return id(rh_smart_x_ha).state;  #       return 20.0; 
+      ESP_LOGE("fallback", "ALARM: Alle temperatuursensoren zijn offline!");
+      return 20.0; 
 
 
 
