@@ -666,58 +666,47 @@ sensor:
       float rh1 = id(tado_woonkamer_rh).state;
       float rh2 = id(rh_smart_x_ha).state; 
       float rh3 = id(ducobox_rh_actual).state; 
-  
-      // Controleer of de sensor daadwerkelijk een actieve status heeft EN geen NaN is
-      bool rh1_ok = id(tado_woonkamer_rh).has_state() && !std::isnan(rh1);
-      bool rh2_ok = id(rh_smart_x_ha).has_state() && !std::isnan(rh2);
-      bool rh3_ok = id(ducobox_rh_actual).has_state() && !std::isnan(rh3);
-  
+      // Nu Home Assistant 'unavailable' doorgeeft, worden deze sensoren dankzij het filter echt NaN
+      bool rh1_ok = !std::isnan(rh1);
+      bool rh2_ok = !std::isnan(rh2);
+      bool rh3_ok = !std::isnan(rh3);
       // static variabelen onthouden hun waarde tussen de lambda-aanroepen door.
       // We beginnen op 0 (geen eerdere situatie bekend).
       static int vorige_situatie = 0; 
       int huidige_situatie = 0;
-  
-  
       // Bepaal de huidige situatie op basis van sensor beschikbaarheid
       if (rh1_ok && rh2_ok) {
         huidige_situatie = 1;
-      } 
-      else if (!rh1_ok && rh2_ok) {
+      } else if (!rh1_ok && rh2_ok) {
         huidige_situatie = 2;
-      } 
-      else if (rh1_ok && !rh2_ok) {
+      } else if (rh1_ok && !rh2_ok) {
         huidige_situatie = 3;
-      } 
-      else if (!rh1_ok && !rh2_ok && rh3_ok) {
+      } else if (!rh1_ok && !rh2_ok && rh3_ok) {
         huidige_situatie = 4;
-      } 
-      else {
+      } else {
         huidige_situatie = 5; // Volledige blackout (alle 3 offline)
       }
-    
       // LOGGEN: Alleen als de huidige situatie verschilt van de vorige situatie
       if (huidige_situatie != vorige_situatie) {
         vorige_situatie = huidige_situatie; // Sla de nieuwe situatie op
-  
         switch (huidige_situatie) {
           case 1:
             ESP_LOGI("fallback", "SITUATIE 1: Beide Tado X RH sensoren zijn online en worden gemiddeld.");
             break;
           case 2:
-            ESP_LOGW("fallback", "SITUATIE 2: Matterjs-server uitgevallen! Schakelt over op sensor 2 (Homeassistant RH).");
+            ESP_LOGW("fallback", "SITUATIE 2: Woonkamer RH sensor van Homeassistant uitgevallen! Schakelt over op sensor 2.");
             break;
           case 3:
-            ESP_LOGW("fallback", "SITUATIE 3: Homeassistant uitgevallen! Schakelt over op sensor 1 (Matterjs RH).");
+            ESP_LOGW("fallback", "SITUATIE 3: Woonkamer RH sensor van Matterjs-server uitgevallen! Schakelt over op sensor 1.");
             break;
           case 4:
             ESP_LOGW("fallback", "SITUATIE 4: Beide sensoren uitgevallen! Schakelt over op sensor 3 (Ducobox RH).");
             break;
           case 5:
-            ESP_LOGE("fallback", "SITUATIE 5 - ALARM: Alle temperatuursensoren zijn offline! RH setpoint = 60%");
+            ESP_LOGE("fallback", "SITUATIE 5 - ALARM: Alle temperatuursensoren zijn offline!");
             break;
         }
       }
-  
       // RETURNDATA: Voer de daadwerkelijke berekeningen en returns uit
       if (huidige_situatie == 1) {
         return (rh1 + rh2) / 2.0;
@@ -727,11 +716,12 @@ sensor:
       }
       if (huidige_situatie == 3) {
         return rh1;
-      }  
+      }
       if (huidige_situatie == 4) {
         return rh3;
       }
       return 60.0; // Noodwaarde bij situatie 5
+
   
     # HIER DE TRIGGER TOEVOEGEN:
     on_value:
