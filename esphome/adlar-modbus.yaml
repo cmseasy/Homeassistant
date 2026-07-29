@@ -504,7 +504,8 @@ number:
     mode: box
     unit_of_measurement: °C
     entity_category: "config"
-    skip_updates: 5
+    force_new_range: true  # <--- Dwingt een aparte Modbus-groep af
+    skip_updates: 2        # <--- Slaat nu gegarandeerd 2 grote polls (60 sec na schrijven)
 
   - platform: modbus_controller
     modbus_controller_id: modbus_adlar
