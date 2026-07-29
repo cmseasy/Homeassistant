@@ -257,7 +257,7 @@ number:
     skip_updates: 12 
 
     write_lambda: |-
-      ESP_LOGW("main", "Schrijf setpoint %d%% naar Modbus.", (int)x);
+      ESP_LOGI("main", "Schrijf setpoint %d%% naar Modbus.", (int)x);
       return x;
 
     # Jouw complete ongewijzigde regellogica
@@ -1053,7 +1053,7 @@ script:
           // ====================================================================
           if (id(wtw_eerste_berekening_na_boot)) {
             float opstart_seconden = millis() / 1000.0;
-            ESP_LOGW("wtw_regeling", "Systeem is online (%.1fs na boot). Eerste berekening activeert direct doel: %d%%", opstart_seconden, doel);
+            ESP_LOGI("wtw_regeling", "Systeem is online (%.1fs na boot). Eerste berekening activeert direct doel: %d%%", opstart_seconden, doel);
             id(rh_setpoint).make_call().set_value(doel).perform();
             id(start_verificatie_tijd) = 0;
             id(wtw_eerste_berekening_na_boot) = false;
