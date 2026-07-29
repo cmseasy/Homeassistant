@@ -506,7 +506,8 @@ sensor:
           }
         }
       }
-      return NAN; // Gewijzigd: Geef NAN terug in plaats van de oude status vast te houden
+      return NAN; 
+      # Gewijzigd: Geef NAN terug in plaats van de oude status vast te houden
       # return id(tado_woonkamer_rh).state;
 
 # ==============================================================================
