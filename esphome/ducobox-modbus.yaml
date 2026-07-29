@@ -573,8 +573,8 @@ sensor:
     name: "Ducobox RH gemeten"
     id: ducobox_rh_actual
     icon: "mdi:water-percent"
-    register_type: read         # Gewijzigd naar 'read'
-    address: 585                # Gecorrigeerd zonder voorloopnul
+    register_type: read
+    address: 585
     value_type: U_WORD
     unit_of_measurement: "%"
     state_class: "measurement"
@@ -584,10 +584,11 @@ sensor:
     filters:
       - lambda: |-
           if (std::isnan(x) || x == 0) return NAN;
-          return x / 100.0 * 1.00;  # factor 10.5 is het verschil tussen RH thermostaat en RH box, thermosstaat leiden
+          return x / 100.0 * 1.00;  // factor 10.5 is het verschil tussen RH thermostaat en RH box, thermosstaat leiden
     on_value:
       then:
         - component.update: ducobox_rh_filtered
+
 
 
 # Node 58: RH box gefilterd om pieken van douche en quooker weg te halen
