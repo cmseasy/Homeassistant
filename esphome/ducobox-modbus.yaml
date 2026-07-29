@@ -667,9 +667,10 @@ sensor:
       float rh2 = id(rh_smart_x_ha).state; 
       float rh3 = id(ducobox_rh_actual).state; 
   
-      bool rh1_ok = !std::isnan(rh1);
-      bool rh2_ok = !std::isnan(rh2);
-      bool rh3_ok = !std::isnan(rh3);
+      // Controleer of de sensor daadwerkelijk een actieve status heeft EN geen NaN is
+      bool rh1_ok = id(tado_woonkamer_rh).has_state() && !std::isnan(rh1);
+      bool rh2_ok = id(rh_smart_x_ha).has_state() && !std::isnan(rh2);
+      bool rh3_ok = id(ducobox_rh_actual).has_state() && !std::isnan(rh3);
   
       // static variabelen onthouden hun waarde tussen de lambda-aanroepen door.
       // We beginnen op 0 (geen eerdere situatie bekend).
