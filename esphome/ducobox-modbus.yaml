@@ -470,6 +470,7 @@ sensor:
       return id(tado_woonkamer_temp).state;
 
   # SENSOR 2: Tado X Woonkamer Luchtvochtigheid (Nieuw!)
+  # SENSOR 2: Tado X Woonkamer Luchtvochtigheid (Nieuw!)
   - platform: template
     name: "Tado X Woonkamer Luchtvochtigheid"
     id: tado_woonkamer_rh
@@ -482,10 +483,8 @@ sensor:
     lambda: |-
       if (id(global_ws_client) == nullptr) { return NAN; }
       auto* ws = (MyWebsocketComponent*) id(global_ws_client);
-      
       // Vraagt de eigen luchtvochtigheid-postbus op uit de C++ code
       std::string x = ws->get_rh_payload();
-
       if (!x.empty()) {
         // FILTER CODE VOLLEDIG IN DE SENSOR: Zoek naar het vochtigheidspad
         size_t path_pos = x.find("2/1029/0");
@@ -507,7 +506,7 @@ sensor:
           }
         }
       }
-      return id(tado_woonkamer_rh).state;
+      return NAN; // Gewijzigd: Geef NAN terug in plaats van de oude status vast te houden
 
 # ==============================================================================
 # Homeassistant - Woonkamer relatieve vochtihheid
@@ -523,6 +522,7 @@ sensor:
     icon: "mdi:water-percent"
     accuracy_decimals: 1
     filters:
+    - lambda: return x; # Dwingt de status naar NaN zodra HA offline gaat
     - clamp:
         min_value: 10
         max_value: 99
@@ -581,10 +581,13 @@ sensor:
     accuracy_decimals: 1
     internal: true
     filters:
-      - lambda: return x / 100.0 * 1.00;  # factor 10.5 is het verschil tussen RH thermostaat en RH box, thermosstaat leiden
+      - lambda: |-
+          if (std::isnan(x) || x == 0) return NAN;
+          return x / 100.0 * 1.00;  # factor 10.5 is het verschil tussen RH thermostaat en RH box, thermosstaat leiden
     on_value:
       then:
         - component.update: ducobox_rh_filtered
+
 
 # Node 58: RH box gefilterd om pieken van douche en quooker weg te halen
   - platform: template
