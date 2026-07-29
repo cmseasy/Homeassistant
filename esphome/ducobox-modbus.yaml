@@ -2,7 +2,7 @@ substitutions:
   modbus_tx_pin: GPIO17 #GPIO17   # Verbind met DI op de MAX485 module
   modbus_rx_pin: GPIO16 #GPIO16   # Verbind met RO op de MAX485 module
 
-# EERST DE VEILIGHEIDSINSTELLINGEN (Direct tegen de kantlijn)
+# EERST DE VEILIGHEIDSINSTELLINGEN
 safe_mode:
   boot_is_good_after: 10s   # Vertel de safe_mode na 10s al dat de boot succesvol was
   num_attempts: 10    
@@ -12,16 +12,10 @@ esphome:
   name: ducobox-modbus
   friendly_name: Ducobox modbus
   name_add_mac_suffix: false
-  # GEOPTIMALISEERDE BOOT ACTIES 
-  # # matter
+ 
+  # matterjs.server 
   includes:
-    - websocket_client.h
-        
-  # # matter 
-  # #Zorg dat de ingebouwde WebSocket bibliotheek van de ESP32 aan staat
-  # build_flags:
-  #   - -DCONFIG_ESP_WEBSOCKET_CLIENT=1
-
+    - websocket_client.h 
 
   on_boot:
     #priority: -100.0
@@ -37,7 +31,7 @@ esphome:
           # Als het langer dan 30 seconden duurt, breekt ESPHome de wachtstand zelf af:
           timeout: 30s
       
-      - delay: 1s             # Heel even ademruimte om alle registers te vullen
+      - delay: 1s             # Heel even ademruimte om alle modbus registers te vullen
       
       - lambda: |-
           id(wtw_handmatig_actief).publish_state(false);
@@ -52,16 +46,11 @@ esphome:
       # 2. Dwing het hoofdscript om NU direct te starten
       - script.execute: wtw_rh_regeling
         
-      # #Matter
+      # matterjs.server 
       - lambda: |-
           id(global_ws_client) = (void*) new MyWebsocketComponent();
           ((MyWebsocketComponent*)id(global_ws_client))->setup();
 
-
-
-  
-  
-  
 esp32:
   board: esp32dev
   framework:
@@ -70,10 +59,8 @@ esp32:
       minimum_chip_revision: "3.1"
       sram1_as_iram: true
       compiler_optimization: PERF
-    # #matter
-    # sdkconfig_options:
-    #   CONFIG_ESP_WEBSOCKET_CLIENT: "y"
-#Matter
+
+    # matterjs.server   
     components:
     - name: "espressif/esp_websocket_client"
       ref: 1.5.0
@@ -173,14 +160,7 @@ modbus_controller:
     address: 1
     update_interval: 10s #30s
 
-
-
-
-
-
-
-
-  
+# Glabale variabelen  
 globals:
   # Vrijgeven berekening na upload of herstart ESP
   - id: wtw_systeem_volledig_online
@@ -214,26 +194,15 @@ globals:
     type: bool
     restore_value: no
     initial_value: 'false'
- # VOEG DEZE REGELS TOE:
+ # Douchetijd
   - id: start_douche_tijd
     type: uint32_t
     initial_value: '0'
-# #Matter
+  # matterjs.server 
   - id: global_ws_client
     type: void*
     initial_value: 'nullptr'
 
-#matter
-# interval:
-#   - interval: 1min
-#     then:
-#       - lambda: |-
-#           if (id(global_ws_client) != nullptr) {
-#             auto* ws = (MyWebsocketComponent*) id(global_ws_client);
-#             ws->send_message("Hallo vanaf Proxmox via de officiële Espressif package manager!");
-#           }
-
-    
 # 4. Entiteiten aanmaken om uit te lezen (Snsoren)
 button:
   - platform: restart
@@ -349,7 +318,6 @@ number:
       sorting_weight: 5
 
 # Signaleer douche gebruik max 30min zie script
-
 binary_sensor:
   - platform: template
     name: "WTW Douche Modus"
@@ -395,41 +363,6 @@ binary_sensor:
         }
       }
 
-  # - platform: template
-  #   name: "WTW Douche Modus"
-  #   id: wtw_douche_actief
-  #   icon: "mdi:shower-head"
-  #   lambda: |-
-  #     // 1. Controleer eerst of beide sensoren een geldige meting hebben
-  #     if (!id(ducobox_rh_actual).has_state() || !id(ducobox_rh_filtered).has_state()) {
-  #       return false;
-  #     }
-
-  #     // 2. Haal de actuele waarden op
-  #     float val_actual = id(ducobox_rh_actual).state;
-  #     float val_filtered = id(ducobox_rh_filtered).state;
-  #     float verschil = val_actual - val_filtered;
-
-  #     // 3. Vraag de huidige status van deze binary sensor op (AAN of UIT)
-  #     bool momenteel_actief = id(wtw_douche_actief).state;
-
-  #     // 4. Evalueer de hysterese-voorwaarden
-  #     if (momenteel_actief) {
-  #       // De douchemodus IS al actief: houd hem actief totdat het verschil zakt naar 2.0 of lager
-  #       if (verschil <= 2.0) {
-  #         return false; // Schakel UIT
-  #       } else {
-  #         return true;  // Blijf AAN
-  #       }
-  #     } else {
-  #       // De douchemodus is momenteel UIT: schakel pas in als het verschil 3.0 of hoger is
-  #       if (verschil >= 3.0) {
-  #         return true;  // Schakel AAN
-  #       } else {
-  #         return false; // Blijf UIT
-  #       }
-  #     }
-
   - platform: template
     name: "WTW Handmatige Modus (30min)"
     id: wtw_handmatig_actief 
@@ -445,7 +378,7 @@ binary_sensor:
               id(wtw_systeem_volledig_online) && 
               id(switch_rh_regeling).state);
 
-#matter
+# matterjs.server node data ophalen 
 interval:
   - interval: 1min
     then:
@@ -463,7 +396,8 @@ interval:
           }
 
 
-              
+# matterjs.server sensor om de string te tonen die wordt binnengehaald
+# NIET UNCOMMENTEN tijdens bedrijf
 # text_sensor:
 #   - platform: template
 #     name: "Tado X Ruwe Datastroom"
@@ -491,6 +425,10 @@ interval:
 
 sensor:
 
+  # ==============================================================================
+  # Matterjs_server sensoren, temperaturen en vochtigheid
+  # ==============================================================================
+  
   # SENSOR 1: Tado X Woonkamer Temperatuur
   - platform: template
     name: "Tado X Woonkamer Temperatuur"
@@ -562,60 +500,35 @@ sensor:
         }
       }
       return id(tado_woonkamer_rh).state;
-  # # ... HIER STAAN JE HUIDIGE DUCOBOX SENSOREN AL EN DIE BLIJVEN INTACT ...
 
-  # - platform: template
-  #   name: "Tado X Woonkamer Temperatuur"
-  #   id: tado_woonkamer_temp
-  #   unit_of_measurement: "°C"
-  #   device_class: "temperature"
-  #   state_class: "measurement"
-  #   accuracy_decimals: 2
-    
-  #   # 0s dwingt ESPHome om de lambda continu uit te voeren. 
-  #   # Hierdoor mist hij de opstart-dump niet en zie je de waarde DIRECT.
-  #   update_interval: 10s
-    
-  #   lambda: |-
-  #     // Als de WebSocket nog niet up is, geef NAN terug (geen waarde)
-  #     if (id(global_ws_client) == nullptr) {
-  #       return NAN; 
-  #     }
+# ==============================================================================
+# Homeassistant - Woonkamer relatieve vochtihheid
+# ==============================================================================
+  - platform: homeassistant
+    name: "Luchtvochtigheid Smart X (HA)"
+    entity_id: sensor.smart_thermostat_x_luchtvochtigheid
+    id: rh_smart_x_ha
+    internal: true # Hiermee voorkom je dat de sensor dubbel in Home Assistant verschijnt
+    unit_of_measurement: "%"
+    state_class: "measurement"  
+    device_class: humidity
+    icon: "mdi:water-percent"
+    accuracy_decimals: 1
+    filters:
+    - clamp:
+        min_value: 10
+        max_value: 99
+        ignore_out_of_range: true
+    on_value:
+      then:
+        - component.update: rh_actual_active
 
-  #     auto* ws = (MyWebsocketComponent*) id(global_ws_client);
-  #     std::string x = ws->get_payload();
 
-  #     if (!x.empty()) {
-  #       size_t path_pos = x.find("1/513/0");
-  #       if (path_pos != std::string::npos) {
-  #         size_t pos = x.find_first_of("0123456789", path_pos + 7);
-          
-  #         if (pos != std::string::npos) {
-  #           std::string digits = "";
-  #           for (size_t i = pos; i < x.length(); i++) {
-  #             if (isdigit(x[i])) {
-  #               digits += x[i];
-  #             } else if (!digits.empty() && !isdigit(x[i])) {
-  #               break;
-  #             }
-  #           }
-            
-  #           if (!digits.empty()) {
-  #             float raw_temp = std::stof(digits);
-  #             if (raw_temp > 500 && raw_temp < 4000) {
-  #               return raw_temp / 100.0; // Succes! Geeft direct de echte waarde terug
-  #             }
-  #           }
-  #         }
-  #       }
-  #     }
+
       
-  #     // Geen nieuwe netwerkdata in deze loop? Behoud de huidige status (of NAN bij de start)
-  #     return id(tado_woonkamer_temp).state;
-
-
-
-
+# ==============================================================================
+# Modbus - de twee zonekleppen wonen en slapen
+# ==============================================================================
   
 # Node 2: Zoneklep wonen
   - platform: modbus_controller
@@ -641,7 +554,9 @@ sensor:
     icon: "mdi:valve"
     disabled_by_default: true
 
-############################################
+# ==============================================================================
+# Modbus - RH Reletieve vochtigheid
+# ==============================================================================
         
 # Node 58: RH box
   - platform: modbus_controller
@@ -711,24 +626,7 @@ sensor:
       then:
         - component.update: rh_actual_active
 
-  - platform: homeassistant
-    name: "Luchtvochtigheid Smart X (HA)"
-    entity_id: sensor.smart_thermostat_x_luchtvochtigheid
-    id: rh_smart_x_ha
-    internal: true # Hiermee voorkom je dat de sensor dubbel in Home Assistant verschijnt
-    unit_of_measurement: "%"
-    state_class: "measurement"  
-    device_class: humidity
-    icon: "mdi:water-percent"
-    accuracy_decimals: 1
-    filters:
-    - clamp:
-        min_value: 10
-        max_value: 99
-        ignore_out_of_range: true
-    on_value:
-      then:
-        - component.update: rh_actual_active
+
 
 
 
