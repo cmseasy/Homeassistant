@@ -666,7 +666,7 @@ sensor:
 
       // SITUATIE 1: Beide sensoren zijn online -> Neem het gemiddelde
       if (rh1_ok && rh2_ok) {
-        ESP_LOGW("fallback", "Beide Tado X RH sensoren zijn online en worden gemiddeld.");
+        ESP_LOGI("fallback", "Beide Tado X RH sensoren zijn online en worden gemiddeld.");
         return (rh1 + rh2) / 2.0;
       }
 
