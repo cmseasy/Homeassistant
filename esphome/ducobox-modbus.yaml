@@ -705,11 +705,12 @@ sensor:
             break;
   
           case 2:
-            ESP_LOGW("fallback", "SITUATIE 2: Woonkamer RH sensor van Homeassistant uitgevallen! Schakelt over op sensor 2.");
+            ESP_LOGW("fallback", "SITUATIE 2: Matterjs-server uitgevallen! Schakelt over op sensor 2 (Homeassistant RH).");
             break;
   
           case 3:
-            ESP_LOGW("fallback", "SITUATIE 3: Woonkamer RH sensor van Matterjs-server uitgevallen! Schakelt over op sensor 1.");
+            
+            ESP_LOGW("fallback", "SITUATIE 3: Homeassistant uitgevallen! Schakelt over op sensor 1 (Matterjs RH).");
             break;
   
           case 4:
@@ -717,7 +718,7 @@ sensor:
             break;
   
           case 5:
-            ESP_LOGE("fallback", "SITUATIE 5 - ALARM: Alle temperatuursensoren zijn offline!");
+            ESP_LOGE("fallback", "SITUATIE 5 - ALARM: Alle temperatuursensoren zijn offline! RH setpoint = 60%");
             break;
         }
       }
