@@ -1,6 +1,7 @@
 # Duco WTW RH regeling, zorgt dat het RH setpoint van de Duco boven de RH van de woonkamer blijft
+# waardoor de WTW niet onnodig optoerd.
 # Benodigd: matterjs-server (Proxmox), gekoppeld aan de Tado X voor de woonkamer RH waarde
-#           websocket_client.h voor de connectie met de matterjs_server
+#           het bestand websocket_client.h voor de connectie met de matterjs_server
 #           en/of Homeassistant met deze woonkamer RH sensor
 
 substitutions:
