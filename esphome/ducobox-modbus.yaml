@@ -470,7 +470,7 @@ sensor:
       return id(tado_woonkamer_temp).state;
 
 
-  # SENSOR 2: Tado X Woonkamer Luchtvochtigheid (Nieuw!)
+# SENSOR 2: Tado X Woonkamer Luchtvochtigheid (Nieuw!)
   - platform: template
     name: "RH Tado X Woonkamer"
     id: tado_woonkamer_rh
@@ -483,32 +483,38 @@ sensor:
     lambda: |-
       if (id(global_ws_client) == nullptr) { return NAN; }
       auto* ws = (MyWebsocketComponent*) id(global_ws_client);
+      
       // Vraagt de eigen luchtvochtigheid-postbus op uit de C++ code
       std::string x = ws->get_rh_payload();
-      if (!x.empty()) {
-        // FILTER CODE VOLLEDIG IN DE SENSOR: Zoek naar het vochtigheidspad
-        size_t path_pos = x.find("2/1029/0");
-        if (path_pos != std::string::npos) {
-          size_t pos = x.find_first_of("0123456789", path_pos + 8);
-          if (pos != std::string::npos) {
-            std::string digits = "";
-            for (size_t i = pos; i < x.length(); i++) {
-              if (isdigit(x[i])) digits += x[i];
-              else if (!digits.empty() && !isdigit(x[i])) break;
-            }
-            if (!digits.empty()) {
-              float raw_rh = std::stof(digits);
-              // Matter-validatie: Luchtvochtigheid ligt tussen 0% en 100% (0 tot 10000)
-              if (raw_rh >= 0 && raw_rh <= 10000) {
-                return raw_rh / 100.0; // Converteert bijv. 6215 naar 62.15 %
-              }
+      
+      // 1. Als de payload helemaal leeg is, behoud dan de huidige status (voorkomt flapperen)
+      if (x.empty()) {
+        return id(tado_woonkamer_rh).state;
+      }
+      
+      // FILTER CODE VOLLEDIG IN DE SENSOR: Zoek naar het vochtigheidspad
+      size_t path_pos = x.find("2/1029/0");
+      if (path_pos != std::string::npos) {
+        size_t pos = x.find_first_of("0123456789", path_pos + 8);
+        if (pos != std::string::npos) {
+          std::string digits = "";
+          for (size_t i = pos; i < x.length(); i++) {
+            if (isdigit(x[i])) digits += x[i];
+            else if (!digits.empty() && !isdigit(x[i])) break;
+          }
+          if (!digits.empty()) {
+            float raw_rh = std::stof(digits);
+            // Matter-validatie: Luchtvochtigheid ligt tussen 0% en 100% (0 tot 10000)
+            if (raw_rh >= 0 && raw_rh <= 10000) {
+              return raw_rh / 100.0; // Converteert bijv. 6215 naar 62.15 %
             }
           }
         }
       }
-      //return NAN; 
-      // Gewijzigd: Geef NAN terug in plaats van de oude status vast te houden
-      return id(tado_woonkamer_rh).state;
+      
+      // 2. Als de payload wél gevuld was, maar de data was corrupt of de sensor ontbrak: geef NAN
+      return NAN; 
+
 
 # ==============================================================================
 # Homeassistant - Woonkamer relatieve vochtihheid
