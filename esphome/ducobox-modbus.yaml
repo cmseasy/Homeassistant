@@ -436,7 +436,7 @@ sensor:
   
   # SENSOR 1: Tado X Woonkamer Temperatuur
   - platform: template
-    name: "Tado X Woonkamer Temperatuur"
+    name: "Temp Tado X Woonkamer"
     id: tado_woonkamer_temp
     unit_of_measurement: "°C"
     device_class: "temperature"
@@ -469,10 +469,10 @@ sensor:
       }
       return id(tado_woonkamer_temp).state;
 
-  # SENSOR 2: Tado X Woonkamer Luchtvochtigheid (Nieuw!)
+
   # SENSOR 2: Tado X Woonkamer Luchtvochtigheid (Nieuw!)
   - platform: template
-    name: "Tado X Woonkamer Luchtvochtigheid"
+    name: "RH Tado X Woonkamer"
     id: tado_woonkamer_rh
     unit_of_measurement: "%"
     device_class: "humidity"
@@ -506,9 +506,9 @@ sensor:
           }
         }
       }
-      return NAN; 
+      //return NAN; 
       // Gewijzigd: Geef NAN terug in plaats van de oude status vast te houden
-      // return id(tado_woonkamer_rh).state;
+      return id(tado_woonkamer_rh).state;
 
 # ==============================================================================
 # Homeassistant - Woonkamer relatieve vochtihheid
