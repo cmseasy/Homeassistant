@@ -201,8 +201,12 @@ globals:
     restore_value: no
     initial_value: 'false'
  # Douchetijd
+  # - id: start_douche_tijd
+  #   type: uint32_t
+  #   initial_value: '0'
   - id: start_douche_tijd
-    type: uint32_t
+    type: unsigned long
+    restore_value: no
     initial_value: '0'
   # matterjs.server 
   - id: global_ws_client
@@ -329,6 +333,23 @@ binary_sensor:
     name: "WTW Douche Modus"
     id: wtw_douche_actief
     icon: "mdi:shower-head"
+    
+    # Gebruik filters om de sensor na exact 1 uur geforceerd uit te zetten
+    on_press:
+      - delay: 1h
+      - if:
+          condition:
+            binary_sensor.is_on: wtw_douche_actief
+          then:
+            - logger.log:
+                level: WARN
+                tag: "wtw_douche"
+                format: "Douche modus geforceerd beëindigd: maximale tijd van 1 uur bereikt."
+            # We forceren de uitschakeling door de globale timer handmatig op een herkenbare 'override' waarde te zetten
+            - lambda: |-
+                id(start_douche_tijd) = 999; 
+                id(wtw_douche_actief).publish_state(false);
+
     lambda: |-
       // 1. Controleer eerst of beide sensoren een geldige meting hebben
       if (!id(ducobox_rh_actual).has_state() || !id(ducobox_rh_filtered).has_state()) {
@@ -340,21 +361,22 @@ binary_sensor:
       float val_filtered = id(ducobox_rh_filtered).state;
       float verschil = val_actual - val_filtered;
 
-      // 3. Vraag de huidige status van deze binary sensor op (AAN of UIT)
+      // 3. Vraag de huidige status op
       bool momenteel_actief = id(wtw_douche_actief).state;
 
-      // 4. Evalueer de hysterese- en tijdvoorwaarden
-      if (momenteel_actief) {
-        // TIJDBEVEILIGING: Controleer of de modus al 1 uur (3.600.000 ms) draait
-        if (id(start_douche_tijd) > 0 && (millis() - id(start_douche_tijd) >= 3600000)) {
-          ESP_LOGW("wtw_douche", "Douche modus geforceerd beëindigd: maximale tijd van 1 uur bereikt.");
-          id(start_douche_tijd) = 0;
-          return false; // Schakel UIT
+      // Check of de 1-uurs timer de boel zojuist geforceerd heeft uitgezet
+      if (id(start_douche_tijd) == 999) {
+        // Houd de sensor uit totdat de badkamer weer droog is (verschil onder hysterese)
+        if (verschil <= 2.0) {
+          id(start_douche_tijd) = 0; // Reset de override status
         }
+        return false;
+      }
 
+      // 4. Evalueer de hysterese-voorwaarden
+      if (momenteel_actief) {
         // De douchemodus IS al actief: houd hem actief totdat het verschil zakt naar 2.0 of lager
         if (verschil <= 2.0) {
-          id(start_douche_tijd) = 0;
           return false; // Schakel UIT
         } else {
           return true;  // Blijf AAN
@@ -362,12 +384,57 @@ binary_sensor:
       } else {
         // De douchemodus is momenteel UIT: schakel pas in als het verschil 3.0 of hoger is
         if (verschil >= 3.0) {
-          id(start_douche_tijd) = millis(); // Start de 1-uurs timer
           return true;  // Schakel AAN
         } else {
           return false; // Blijf UIT
         }
       }
+
+
+# binary_sensor:
+#   - platform: template
+#     name: "WTW Douche Modus"
+#     id: wtw_douche_actief
+#     icon: "mdi:shower-head"
+#     lambda: |-
+#       // 1. Controleer eerst of beide sensoren een geldige meting hebben
+#       if (!id(ducobox_rh_actual).has_state() || !id(ducobox_rh_filtered).has_state()) {
+#         return false;
+#       }
+
+#       // 2. Haal de actuele waarden op
+#       float val_actual = id(ducobox_rh_actual).state;
+#       float val_filtered = id(ducobox_rh_filtered).state;
+#       float verschil = val_actual - val_filtered;
+
+#       // 3. Vraag de huidige status van deze binary sensor op (AAN of UIT)
+#       bool momenteel_actief = id(wtw_douche_actief).state;
+
+#       // 4. Evalueer de hysterese- en tijdvoorwaarden
+#       if (momenteel_actief) {
+#         // TIJDBEVEILIGING: Controleer of de modus al 1 uur (3.600.000 ms) draait
+#         if (id(start_douche_tijd) > 0 && (millis() - id(start_douche_tijd) >= 3600000)) {
+#           ESP_LOGW("wtw_douche", "Douche modus geforceerd beëindigd: maximale tijd van 1 uur bereikt.");
+#           id(start_douche_tijd) = 0;
+#           return false; // Schakel UIT
+#         }
+
+#         // De douchemodus IS al actief: houd hem actief totdat het verschil zakt naar 2.0 of lager
+#         if (verschil <= 2.0) {
+#           id(start_douche_tijd) = 0;
+#           return false; // Schakel UIT
+#         } else {
+#           return true;  // Blijf AAN
+#         }
+#       } else {
+#         // De douchemodus is momenteel UIT: schakel pas in als het verschil 3.0 of hoger is
+#         if (verschil >= 3.0) {
+#           id(start_douche_tijd) = millis(); // Start de 1-uurs timer
+#           return true;  // Schakel AAN
+#         } else {
+#           return false; // Blijf UIT
+#         }
+#       }
 
   - platform: template
     name: "WTW Handmatige Modus (30min)"
