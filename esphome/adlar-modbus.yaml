@@ -881,24 +881,49 @@ sensor:
           max_value: 150
           ignore_out_of_range: true
 
+  # - platform: modbus_controller
+  #   modbus_controller_id: modbus_adlar
+  #   name: "Fan Running Speed"
+  #   register_type: holding
+  #   address: 0x0041
+  #   device_class: frequency
+  #   value_type: S_WORD
+  #   accuracy_decimals: 0
+  #   unit_of_measurement: Hz
+  # #  #skip_updates: 5
+  #   filters:
+  # #    - heartbeat:
+  # #        period: 10s #60s
+  #   #      optimistic: true
+  #     - clamp:
+  #         min_value: 0
+  #         max_value: 999
+  #         ignore_out_of_range: true
+
   - platform: modbus_controller
     modbus_controller_id: modbus_adlar
     name: "Fan Running Speed"
+    id: fan_running_speed
     register_type: holding
     address: 0x0041
     device_class: frequency
     value_type: S_WORD
     accuracy_decimals: 0
     unit_of_measurement: Hz
-  #  #skip_updates: 5
     filters:
-  #    - heartbeat:
-  #        period: 10s #60s
-    #      optimistic: true
-      - clamp:
-          min_value: 0
-          max_value: 999
-          ignore_out_of_range: true
+      - lambda: |-
+          // 1. Controleer op Modbus-fouten (NAN) of waarden buiten het bereik (0 - 999)
+          if (isnan(x) || x < 0 || x > 999) {
+            // 2. Als er een oude geldige waarde is, stuur die dan opnieuw op
+            if (id(fan_running_speed).has_state()) {
+              return id(fan_running_speed).state;
+            }
+            // 3. Als er bij het opstarten nog geen waarde is, negeer de update
+            return {}; 
+          }
+          // 4. Als de waarde geldig is, stuur deze door
+          return x;
+
 
   - platform: modbus_controller
     modbus_controller_id: modbus_adlar
