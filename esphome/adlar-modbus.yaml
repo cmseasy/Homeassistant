@@ -777,15 +777,30 @@ binary_sensor:
           id: defrost_starts
           cycle: false
 
-  - platform: modbus_controller
-    modbus_controller_id: modbus_adlar
-    address: 0x0000    
-    register_type: holding
-    bitmask: 0x01000
-    name: "Compressor active" # was:  name: "Shutdown after Reaching Temp"
+  # - platform: modbus_controller # geeft extra on triggers
+  #   modbus_controller_id: modbus_adlar
+  #   address: 0x0000    
+  #   register_type: holding
+  #   bitmask: 0x01000
+  #   name: "Compressor active" # was:  name: "Shutdown after Reaching Temp"
+  #   id: compressor_active_1
+  #   disabled_by_default: true
+  #   #skip_updates: 5
+  #   on_press:
+  #     - number.increment:
+  #         id: compressor_starts
+  #         cycle: false
+
+
+  - platform: template
+    name: "Compressor Actief"
+    lambda: |-
+      if (id(compressor_frequentie).has_state()) {
+        return id(compressor_frequentie).state > 5.0;
+      }
+      return false;
     id: compressor_active
     disabled_by_default: true
-    #skip_updates: 5
     on_press:
       - number.increment:
           id: compressor_starts
@@ -846,6 +861,7 @@ sensor:
   - platform: modbus_controller
     modbus_controller_id: modbus_adlar
     name: "Compressor Running Frequency"
+    id: compressor_frequentie
     register_type: holding
     address: 0x0040
     device_class: frequency
