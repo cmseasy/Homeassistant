@@ -90,16 +90,17 @@ uart:
 modbus:
   - uart_id: uart_modbus
     id: modbus_client
-    send_wait_time: 3000ms  # DIT IS DE TIMEOUT: wacht tot 3 seconden op het eerste byte
-    turnaround_time: 300ms  # Rusttijd op de bus na een bericht
+    send_wait_time: 500ms    # Verlaagd van 3000ms naar 500ms (ruim voldoende voor de eerste byte)
+    turnaround_time: 50ms    # Verlaagd van 300ms naar 50ms voor een snellere bus-vrijgave
 
 modbus_controller:
   - id: modbus_adlar
     modbus_id: modbus_client
     address: 0x01
     update_interval: 30s
-    command_throttle: 1000ms
+    command_throttle: 100ms  # Verlaagd naar 100ms zodat commando's elkaar niet in de weg zitten
     setup_priority: -100
+
 
 
 
@@ -777,34 +778,36 @@ binary_sensor:
           id: defrost_starts
           cycle: false
 
-  # - platform: modbus_controller # geeft extra on triggers
-  #   modbus_controller_id: modbus_adlar
-  #   address: 0x0000    
-  #   register_type: holding
-  #   bitmask: 0x01000
-  #   name: "Compressor active" # was:  name: "Shutdown after Reaching Temp"
-  #   id: compressor_active_1
-  #   disabled_by_default: true
-  #   #skip_updates: 5
-  #   on_press:
-  #     - number.increment:
-  #         id: compressor_starts
-  #         cycle: false
-
-
-  - platform: template
-    name: "Compressor Actief"
-    lambda: |-
-      if (id(compressor_frequentie).has_state()) {
-        return id(compressor_frequentie).state > 5.0;
-      }
-      return false;
+  - platform: modbus_controller # geeft extra on triggers
+    modbus_controller_id: modbus_adlar
+    address: 0x0000    
+    register_type: holding
+    bitmask: 0x01000
+    name: "Compressor active" # was:  name: "Shutdown after Reaching Temp"
     id: compressor_active
     disabled_by_default: true
+    #skip_updates: 5
+    filters:
+        - delayed_on: 2s   # Moet minimaal 2 seconden ON zijn om ghost-triggers te filteren
     on_press:
       - number.increment:
           id: compressor_starts
           cycle: false
+
+
+  # - platform: template
+  #   name: "Compressor Actief"
+  #   lambda: |-
+  #     if (id(compressor_frequentie).has_state()) {
+  #       return id(compressor_frequentie).state > 5.0;
+  #     }
+  #     return false;
+  #   id: compressor_active
+  #   disabled_by_default: true
+  #   on_press:
+  #     - number.increment:
+  #         id: compressor_starts
+  #         cycle: false
 
   - platform: modbus_controller
     modbus_controller_id: modbus_adlar
