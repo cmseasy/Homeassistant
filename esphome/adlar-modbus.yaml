@@ -1203,18 +1203,21 @@ sensor:
     device_class: volume_flow_rate
     value_type: S_WORD
     accuracy_decimals: 0
-#    #skip_updates: 5
-    filters:
-      - filter_out: NAN
-#      - heartbeat:
-#          period: 60s
-#          optimistic: true
-      - lambda: |-
-          if (x < 0 || x > 18 || isnan(x)) {
-            return {}; // This ignores the value; the sensor keeps the last state
-          }
-          return x; // This accepts and publishes the new value
     unit_of_measurement: L/min
+    filters:
+      - lambda: |-
+          // 1. Controleer of de nieuwe waarde NAN is óf buiten het logische bereik valt
+          if (isnan(x) || x < 0 || x > 18) {
+            // 2. Als de sensor al een oude geldige waarde heeft, stuur die dan opnieuw op
+            if (id(water_flow).has_state()) {
+              return id(water_flow).state;
+            }
+            // 3. Mocht er bij het opstarten nog helemaal geen waarde zijn, negeer de update dan
+            return {}; 
+          }
+          // 4. Als de waarde wél geldig is, stuur deze gewoon door
+          return x;
+
 
   - platform: modbus_controller
     modbus_controller_id: modbus_adlar
