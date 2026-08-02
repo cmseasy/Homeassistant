@@ -90,15 +90,15 @@ uart:
 modbus:
   - uart_id: uart_modbus
     id: modbus_client
-    send_wait_time: 500ms    # Verlaagd van 3000ms naar 500ms (ruim voldoende voor de eerste byte)
-    turnaround_time: 50ms    # Verlaagd van 300ms naar 50ms voor een snellere bus-vrijgave
+    send_wait_time: 1000ms   # Verhoogd naar 1000ms om de trage Adlar meer tijd te geven
+    turnaround_time: 100ms   # Iets meer rusttijd tussen opeenvolgende commando's
 
 modbus_controller:
   - id: modbus_adlar
     modbus_id: modbus_client
     address: 0x01
     update_interval: 30s
-    command_throttle: 100ms  # Verlaagd naar 100ms zodat commando's elkaar niet in de weg zitten
+    command_throttle: 300ms  # Verhoogd: geef de warmtepomp 300ms ademruimte tussen registers
     setup_priority: -100
 
 
