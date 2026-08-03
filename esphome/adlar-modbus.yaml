@@ -25,9 +25,23 @@ esp32:
       sram1_as_iram: true
 
 
+# logger:
+#   level: INFO
+#   baud_rate: 0
+
 logger:
-  level: INFO
-  baud_rate: 0
+  level: VERY_VERBOSE
+  logs:
+    # We zetten de modbus-onderdelen op het meest gedetailleerde niveau:
+    modbus: VERY_VERBOSE
+    modbus_controller: VERY_VERBOSE
+    
+    # Dit voorkomt dat de rest van de ESP32 uw logscherm overspoelt:
+    api: DEBUG
+    wifi: DEBUG
+    component: DEBUG
+
+
 
 api:
   port: 6053
