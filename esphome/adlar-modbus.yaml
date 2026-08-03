@@ -703,10 +703,10 @@ number:
     entity_category: "config"
     force_new_range: true # <--- Houdt dit register apart voor maximale prioriteit
     
-    # Dit triggert nu veilig het script, wat de ESP stabiel houdt:
-    on_value:
-      then:
-        - script.execute: forceer_modbus_uitlezing
+    # # Dit triggert nu veilig het script, wat de ESP stabiel houdt:
+    # on_value:
+    #   then:
+    #     - script.execute: forceer_modbus_uitlezing
 
 
   
