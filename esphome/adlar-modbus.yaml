@@ -111,7 +111,7 @@ modbus_controller:
   - id: modbus_adlar_statisch # voor bv setpoints die niet vaak veranderen
     modbus_id: modbus_client
     address: 0x01
-    update_interval: 43207s  # Ongeveer 12 uur en een priemgetal
+    update_interval: 599s  # Ongeveer 1 uur en een priemgetal
     command_throttle: 300ms  # Verhoogd: geef de warmtepomp 300ms ademruimte tussen registers
     setup_priority: -100
 
