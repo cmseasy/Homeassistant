@@ -115,7 +115,14 @@ modbus_controller:
     command_throttle: 300ms  # Verhoogd: geef de warmtepomp 300ms ademruimte tussen registers
     setup_priority: -100
 
+script:
+  - id: forceer_modbus_uitlezing
+    mode: restart # <--- Dit voorkomt de loop! Als het script al draait, start het opnieuw ipv te stapelen
+    then:
+      - delay: 1s
+      - component.update: modbus_adlar
 
+    
 # Global varibelen
 # globals:
 #   - id: id_name
@@ -681,7 +688,7 @@ number:
   #   force_new_range: true  # <-- Houdt dit register apart voor maximale prioriteit
     
   - platform: modbus_controller
-    modbus_controller_id: modbus_adlar  # <-- Gekoppeld aan de snelle controller (30s)
+    modbus_controller_id: modbus_adlar
     name: "Temp. Set-Cooling"
     id: temp_set_cooling
     register_type: holding
@@ -694,15 +701,12 @@ number:
     mode: box
     unit_of_measurement: °C
     entity_category: "config"
-    force_new_range: true  # <-- Houdt dit register apart voor maximale prioriteit
+    force_new_range: true # <--- Houdt dit register apart voor maximale prioriteit
     
-    # Haal 'skip_updates' hier volledig weg!
-
-    # Vraagt direct de status op zodra er een wijziging is verwerkt:
-    # on_value_asynchronous:
-    #   then:
-    #     - delay: 500ms
-    #     - component.update: modbus_adlar
+    # Dit triggert nu veilig het script, wat de ESP stabiel houdt:
+    on_value:
+      then:
+        - script.execute: forceer_modbus_uitlezing
 
 
   
