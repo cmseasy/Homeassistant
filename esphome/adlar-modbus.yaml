@@ -291,9 +291,9 @@ number:
     web_server:
       sorting_group_id: sorting_group_configuration_setup
       sorting_weight: 110
-    on_value:
-      then:
-        - lambda: 'id(p26_hysterese_watertemp).publish_state(x);'
+    # on_value:
+    #   then:
+    #     - lambda: 'id(p26_hysterese_watertemp).publish_state(x);'
     # on_value:
     #   then:
     #     - delay: 1s
