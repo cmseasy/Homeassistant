@@ -101,7 +101,13 @@ modbus_controller:
     command_throttle: 300ms  # Verhoogd: geef de warmtepomp 300ms ademruimte tussen registers
     setup_priority: -100
 
-
+  - id: modbus_adlar_traag
+    modbus_id: modbus_client
+    address: 0x01
+    update_interval: 293s # Een priemgetal (~5 min) zodat hij bijna nooit tegelijk start met de 30s cyclus
+    command_throttle: 293ms  # Verhoogd: geef de warmtepomp 300ms ademruimte tussen registers
+    setup_priority: -100
+          # <--- DIT voorkomt dat ze tegelijk starten!
 
 
 
@@ -204,7 +210,7 @@ number:
       sorting_weight: 105
 
   - platform: modbus_controller
-    modbus_controller_id: modbus_adlar
+    modbus_controller_id: modbus_adlar_traag
     name: "Compensation value-Return water temperature"
     register_type: holding
     address: 0x0118
@@ -223,7 +229,7 @@ number:
       sorting_weight: 106
 
   - platform: modbus_controller
-    modbus_controller_id: modbus_adlar
+    modbus_controller_id: modbus_adlar_traag
     name: "Compensation value-Outlet water temperature"
     register_type: holding
     address: 0x0119
@@ -242,7 +248,7 @@ number:
       sorting_weight: 107
 
   - platform: modbus_controller
-    modbus_controller_id: modbus_adlar
+    modbus_controller_id: modbus_adlar_traag
     name: "P26 Hysterese watertemperatuur start warmtepomp"
     register_type: holding
     address: 0x011A
@@ -261,7 +267,7 @@ number:
       sorting_weight: 110
 
   - platform: modbus_controller
-    modbus_controller_id: modbus_adlar
+    modbus_controller_id: modbus_adlar_traag
     name: "P88 Silent mode - compressor maximum frequency"
     register_type: holding
     address: 0x0158
@@ -280,7 +286,7 @@ number:
       sorting_weight: 108
 
   - platform: modbus_controller
-    modbus_controller_id: modbus_adlar
+    modbus_controller_id: modbus_adlar_traag
     name: "P89 Silent mode - fan maximum frequency"
     register_type: holding
     address: 0x0159
@@ -299,7 +305,7 @@ number:
       sorting_weight: 109
 
   - platform: modbus_controller
-    modbus_controller_id: modbus_adlar
+    modbus_controller_id: modbus_adlar_traag
     name: "P99 Water pump speed regulation temperature differential"
     register_type: holding
     address: 0x0163
@@ -318,7 +324,7 @@ number:
       sorting_weight: 111
 
   - platform: modbus_controller
-    modbus_controller_id: modbus_adlar
+    modbus_controller_id: modbus_adlar_traag
     name: "P100 PWM pump minimum speed"
     register_type: holding
     address: 0x0164
@@ -337,7 +343,7 @@ number:
       sorting_weight: 112
 
   - platform: modbus_controller
-    modbus_controller_id: modbus_adlar
+    modbus_controller_id: modbus_adlar_traag
     name: "P111 Heating set temperature - lowest temperature"
     register_type: holding
     address: 0x016F
@@ -379,7 +385,7 @@ number:
   #   disabled_by_default: true
 
   - platform: modbus_controller
-    modbus_controller_id: modbus_adlar
+    modbus_controller_id: modbus_adlar_traag
     name: "Cooling set - highest temperature"
     register_type: holding
     address: 0x0170
@@ -398,7 +404,7 @@ number:
     #   sorting_weight: 113
 
   - platform: modbus_controller
-    modbus_controller_id: modbus_adlar
+    modbus_controller_id: modbus_adlar_traag
     name: "Colling set - lowest temperature"
     register_type: holding
     address: 0x0171
@@ -417,7 +423,7 @@ number:
     #   sorting_weight: 113
 
   - platform: modbus_controller
-    modbus_controller_id: modbus_adlar
+    modbus_controller_id: modbus_adlar_traag
     name: "Water pump PWM - range setting value"
     register_type: holding
     address: 0x0192
@@ -436,7 +442,7 @@ number:
       sorting_weight: 114
 
   - platform: modbus_controller
-    modbus_controller_id: modbus_adlar
+    modbus_controller_id: modbus_adlar_traag
     name: "P163 Water pump speed regulation - Minimum speed"
     register_type: holding
     address: 0x01A3
@@ -455,7 +461,7 @@ number:
       sorting_weight: 115
 
   - platform: modbus_controller
-    modbus_controller_id: modbus_adlar
+    modbus_controller_id: modbus_adlar_traag
     name: "P260 Maximum water pump speed"
     register_type: holding
     address: 0x0204
@@ -523,24 +529,25 @@ number:
     entity_category: "config"
     #skip_updates: 5
 
-  - platform: modbus_controller
-    modbus_controller_id: modbus_adlar
-    name: "Temp. Set-Floor Heating"
-    register_type: holding
-    address: 0x0303
-    device_class: temperature
-    value_type: S_WORD
-    min_value: 20
-    max_value: 60
-    step: 1
-    mode: box
-    unit_of_measurement: °C
-    disabled_by_default: true
-    entity_category: "config"
-    #skip_updates: 5
+  # - platform: modbus_controller
+  #   modbus_controller_id: modbus_adlar
+  #   name: "Temp. Set-Floor Heating"
+  #   register_type: holding
+  #   address: 0x0303
+  #   device_class: temperature
+  #   value_type: S_WORD
+  #   min_value: 20
+  #   max_value: 60
+  #   step: 1
+  #   mode: box
+  #   unit_of_measurement: °C
+  #   disabled_by_default: true
+  #   entity_category: "config"
+  #   #skip_updates: 5
 
 select:
   - platform: modbus_controller
+    modbus_controller_id: modbus_adlar
     name: "P37 Shutdown mode"
     icon: "mdi:form-select"
     address: 0x0125
@@ -557,6 +564,7 @@ select:
       
 
   - platform: modbus_controller
+    modbus_controller_id: modbus_adlar
     name: "P28 Waterpump mode"
     icon: "mdi:form-select"
     address: 0x011C
@@ -574,6 +582,7 @@ select:
       sorting_weight: 119
   
   - platform: modbus_controller
+    modbus_controller_id: modbus_adlar
     name: "P116 Regeling in- of outlet"
     icon: "mdi:form-select"
     address: 0x0174
@@ -588,6 +597,7 @@ select:
       sorting_weight: 118
 
   - platform: modbus_controller
+    modbus_controller_id: modbus_adlar
     name: "MODE"
     id: mode
     address: 0x0304
@@ -600,6 +610,7 @@ select:
     #skip_updates: 5
 
   - platform: modbus_controller
+    modbus_controller_id: modbus_adlar
     name: "Running Mode"
     address: 0x0307
     value_type: U_WORD
@@ -612,6 +623,7 @@ select:
     #skip_updates: 5
 
   - platform: modbus_controller
+    modbus_controller_id: modbus_adlar
     name: "Cooling Setting Curve"
     address: 0x0313
     value_type: U_WORD
@@ -638,6 +650,7 @@ select:
     #skip_updates: 5
 
   - platform: modbus_controller
+    modbus_controller_id: modbus_adlar
     name: "Heating Setting Curve"
     address: 0x0314
     value_type: U_WORD
@@ -664,6 +677,7 @@ select:
     #skip_updates: 5
 
   - platform: modbus_controller
+    modbus_controller_id: modbus_adlar
     name: "Underfloor Heating Setting Curve"
     address: 0x0316
     value_type: U_WORD
