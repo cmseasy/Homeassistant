@@ -115,12 +115,12 @@ modbus_controller:
     command_throttle: 300ms  # Verhoogd: geef de warmtepomp 300ms ademruimte tussen registers
     setup_priority: -100
 
-script:
-  - id: forceer_modbus_uitlezing
-    mode: restart # <--- Dit voorkomt de loop! Als het script al draait, start het opnieuw ipv te stapelen
-    then:
-      - delay: 1s
-      - component.update: modbus_adlar
+# script:
+#   - id: forceer_modbus_uitlezing
+#     mode: restart # <--- Dit voorkomt de loop! Als het script al draait, start het opnieuw ipv te stapelen
+#     then:
+#       - delay: 1s
+#       - component.update: modbus_adlar
 
     
 # Global varibelen
@@ -743,7 +743,8 @@ number:
 
 select:
   - platform: modbus_controller
-    modbus_controller_id: modbus_adlar
+    modbus_controller_id: modbus_adlar_statisch
+    optimistic: true
     name: "P37 Shutdown mode"
     icon: "mdi:form-select"
     address: 0x0125
@@ -760,7 +761,8 @@ select:
       
 
   - platform: modbus_controller
-    modbus_controller_id: modbus_adlar
+    modbus_controller_id: modbus_adlar_statisch
+    optimistic: true
     name: "P28 Waterpump mode"
     icon: "mdi:form-select"
     address: 0x011C
@@ -778,7 +780,8 @@ select:
       sorting_weight: 119
   
   - platform: modbus_controller
-    modbus_controller_id: modbus_adlar
+    modbus_controller_id: modbus_adlar_statisch
+    optimistic: true
     name: "P116 Regeling in- of outlet"
     icon: "mdi:form-select"
     address: 0x0174
@@ -793,7 +796,8 @@ select:
       sorting_weight: 118
 
   - platform: modbus_controller
-    modbus_controller_id: modbus_adlar
+    modbus_controller_id: modbus_adlar_statisch
+    optimistic: true
     name: "MODE"
     id: mode
     address: 0x0304
@@ -806,7 +810,8 @@ select:
     #skip_updates: 5
 
   - platform: modbus_controller
-    modbus_controller_id: modbus_adlar
+    modbus_controller_id: modbus_adlar_statisch
+    optimistic: true
     name: "Running Mode"
     address: 0x0307
     value_type: U_WORD
@@ -819,7 +824,8 @@ select:
     #skip_updates: 5
 
   - platform: modbus_controller
-    modbus_controller_id: modbus_adlar
+    modbus_controller_id: modbus_adlar_statisch
+    optimistic: true
     name: "Cooling Setting Curve"
     address: 0x0313
     value_type: U_WORD
@@ -846,7 +852,8 @@ select:
     #skip_updates: 5
 
   - platform: modbus_controller
-    modbus_controller_id: modbus_adlar
+    modbus_controller_id: modbus_adlar_statisch
+    optimistic: true
     name: "Heating Setting Curve"
     address: 0x0314
     value_type: U_WORD
@@ -873,7 +880,8 @@ select:
     #skip_updates: 5
 
   - platform: modbus_controller
-    modbus_controller_id: modbus_adlar
+    modbus_controller_id: modbus_adlar_statisch
+    optimistic: true
     name: "Underfloor Heating Setting Curve"
     address: 0x0316
     value_type: U_WORD
