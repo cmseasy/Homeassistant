@@ -755,6 +755,7 @@ number:
     mode: box
     unit_of_measurement: °C
     entity_category: "config"
+    force_new_range: true 
     #skip_updates: 5
 
   # - platform: modbus_controller
