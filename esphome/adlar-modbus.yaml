@@ -253,7 +253,7 @@ number:
       sorting_weight: 107
 
   # - platform: modbus_controller
-  #   modbus_controller_id: modbus_adlar_statisch
+  #   modbus_controller_id: modbus_adlar_traag
   #   name: "P26 Hysterese watertemperatuur start warmtepomp"
   #   register_type: holding
   #   address: 0x011A
@@ -270,6 +270,8 @@ number:
   #   web_server:
   #     sorting_group_id: sorting_group_configuration_setup
   #     sorting_weight: 110
+
+  
 
   - platform: modbus_controller
     modbus_controller_id: modbus_adlar_statisch
@@ -289,17 +291,15 @@ number:
     web_server:
       sorting_group_id: sorting_group_configuration_setup
       sorting_weight: 110
-    # Dwingt een directe Modbus-uitlezing af na een handmatige aanpassing:
     on_value:
       then:
         - delay: 1s
         - component.update: modbus_adlar_statisch
 
-
-  
   - platform: modbus_controller
-    modbus_controller_id: modbus_adlar_traag
+    modbus_controller_id: modbus_adlar_statisch
     name: "P88 Silent mode - compressor maximum frequency"
+    id: p88_silent_mode_compressor_max
     register_type: holding
     address: 0x0158
     device_class: frequency
@@ -311,14 +311,18 @@ number:
     unit_of_measurement: Hz
     disabled_by_default: true
     entity_category: "config"  
-    #skip_updates: 5
     web_server:
       sorting_group_id: sorting_group_configuration_setup
       sorting_weight: 108
+    on_value:
+      then:
+        - delay: 1s
+        - component.update: modbus_adlar_statisch
 
   - platform: modbus_controller
-    modbus_controller_id: modbus_adlar_traag
+    modbus_controller_id: modbus_adlar_statisch
     name: "P89 Silent mode - fan maximum frequency"
+    id: p89_silent_mode_fan_max
     register_type: holding
     address: 0x0159
     device_class: frequency
@@ -330,14 +334,18 @@ number:
     unit_of_measurement: Hz
     disabled_by_default: true
     entity_category: "config"
-    #skip_updates: 5
     web_server:
       sorting_group_id: sorting_group_configuration_setup
       sorting_weight: 109
+    on_value:
+      then:
+        - delay: 1s
+        - component.update: modbus_adlar_statisch
 
   - platform: modbus_controller
-    modbus_controller_id: modbus_adlar_traag
+    modbus_controller_id: modbus_adlar_statisch
     name: "P99 Water pump speed regulation temperature differential"
+    id: p99_water_pump_speed_diff
     register_type: holding
     address: 0x0163
     device_class: temperature
@@ -349,14 +357,18 @@ number:
     unit_of_measurement: °C
     disabled_by_default: true
     entity_category: "config"
-    #skip_updates: 5
     web_server:
       sorting_group_id: sorting_group_configuration_setup
       sorting_weight: 111
+    on_value:
+      then:
+        - delay: 1s
+        - component.update: modbus_adlar_statisch
 
   - platform: modbus_controller
-    modbus_controller_id: modbus_adlar_traag
+    modbus_controller_id: modbus_adlar_statisch
     name: "P100 PWM pump minimum speed"
+    id: p100_pwm_pump_min_speed
     register_type: holding
     address: 0x0164
     device_class: frequency
@@ -368,14 +380,18 @@ number:
     unit_of_measurement: "%" 
     disabled_by_default: true
     entity_category: "config"
-    #skip_updates: 5
     web_server:
       sorting_group_id: sorting_group_configuration_setup
       sorting_weight: 112
+    on_value:
+      then:
+        - delay: 1s
+        - component.update: modbus_adlar_statisch
 
   - platform: modbus_controller
-    modbus_controller_id: modbus_adlar_traag
+    modbus_controller_id: modbus_adlar_statisch
     name: "P111 Heating set temperature - lowest temperature"
+    id: p111_heating_set_temp_lowest
     register_type: holding
     address: 0x016F
     device_class: temperature
@@ -387,10 +403,109 @@ number:
     unit_of_measurement: "°C" 
     disabled_by_default: true
     entity_category: "config"
-    #skip_updates: 5
     web_server:
       sorting_group_id: sorting_group_configuration_setup
       sorting_weight: 113
+    on_value:
+      then:
+        - delay: 1s
+        - component.update: modbus_adlar_statisch
+
+  
+  # - platform: modbus_controller
+  #   modbus_controller_id: modbus_adlar_traag
+  #   name: "P88 Silent mode - compressor maximum frequency"
+  #   register_type: holding
+  #   address: 0x0158
+  #   device_class: frequency
+  #   value_type: S_WORD
+  #   min_value: 20
+  #   max_value: 70
+  #   step: 1
+  #   mode: box
+  #   unit_of_measurement: Hz
+  #   disabled_by_default: true
+  #   entity_category: "config"  
+  #   #skip_updates: 5
+  #   web_server:
+  #     sorting_group_id: sorting_group_configuration_setup
+  #     sorting_weight: 108
+
+  # - platform: modbus_controller
+  #   modbus_controller_id: modbus_adlar_traag
+  #   name: "P89 Silent mode - fan maximum frequency"
+  #   register_type: holding
+  #   address: 0x0159
+  #   device_class: frequency
+  #   value_type: S_WORD
+  #   min_value: 20
+  #   max_value: 60
+  #   step: 1
+  #   mode: box
+  #   unit_of_measurement: Hz
+  #   disabled_by_default: true
+  #   entity_category: "config"
+  #   #skip_updates: 5
+  #   web_server:
+  #     sorting_group_id: sorting_group_configuration_setup
+  #     sorting_weight: 109
+
+  # - platform: modbus_controller
+  #   modbus_controller_id: modbus_adlar_traag
+  #   name: "P99 Water pump speed regulation temperature differential"
+  #   register_type: holding
+  #   address: 0x0163
+  #   device_class: temperature
+  #   value_type: S_WORD
+  #   min_value: 2
+  #   max_value: 10
+  #   step: 1
+  #   mode: box
+  #   unit_of_measurement: °C
+  #   disabled_by_default: true
+  #   entity_category: "config"
+  #   #skip_updates: 5
+  #   web_server:
+  #     sorting_group_id: sorting_group_configuration_setup
+  #     sorting_weight: 111
+
+  # - platform: modbus_controller
+  #   modbus_controller_id: modbus_adlar_traag
+  #   name: "P100 PWM pump minimum speed"
+  #   register_type: holding
+  #   address: 0x0164
+  #   device_class: frequency
+  #   value_type: S_WORD
+  #   min_value: 20
+  #   max_value: 80
+  #   step: 1
+  #   mode: box
+  #   unit_of_measurement: "%" 
+  #   disabled_by_default: true
+  #   entity_category: "config"
+  #   #skip_updates: 5
+  #   web_server:
+  #     sorting_group_id: sorting_group_configuration_setup
+  #     sorting_weight: 112
+
+  # - platform: modbus_controller
+  #   modbus_controller_id: modbus_adlar_traag
+  #   name: "P111 Heating set temperature - lowest temperature"
+  #   register_type: holding
+  #   address: 0x016F
+  #   device_class: temperature
+  #   value_type: S_WORD
+  #   min_value: 15
+  #   max_value: 30
+  #   step: 1
+  #   mode: box
+  #   unit_of_measurement: "°C" 
+  #   disabled_by_default: true
+  #   entity_category: "config"
+  #   #skip_updates: 5
+  #   web_server:
+  #     sorting_group_id: sorting_group_configuration_setup
+  #     sorting_weight: 113
 
 
 
