@@ -214,8 +214,9 @@ number:
       sorting_group_id: sorting_group_configuration_setup
       sorting_weight: 105
 
+# modbus gerelateerde nummbers
   - platform: modbus_controller
-    modbus_controller_id: modbus_adlar_traag
+    modbus_controller_id: modbus_adlar_statisch
     name: "Compensation value-Return water temperature"
     register_type: holding
     address: 0x0118
@@ -234,7 +235,7 @@ number:
       sorting_weight: 106
 
   - platform: modbus_controller
-    modbus_controller_id: modbus_adlar_traag
+    modbus_controller_id: modbus_adlar_statisch
     name: "Compensation value-Outlet water temperature"
     register_type: holding
     address: 0x0119
@@ -534,7 +535,7 @@ number:
   #   disabled_by_default: true
 
   - platform: modbus_controller
-    modbus_controller_id: modbus_adlar_traag
+    modbus_controller_id: modbus_adlar_statisch
     name: "Cooling set - highest temperature"
     register_type: holding
     address: 0x0170
@@ -553,7 +554,7 @@ number:
     #   sorting_weight: 113
 
   - platform: modbus_controller
-    modbus_controller_id: modbus_adlar_traag
+    modbus_controller_id: modbus_adlar_statisch
     name: "Colling set - lowest temperature"
     register_type: holding
     address: 0x0171
@@ -572,7 +573,7 @@ number:
     #   sorting_weight: 113
 
   - platform: modbus_controller
-    modbus_controller_id: modbus_adlar_traag
+    modbus_controller_id: modbus_adlar_statisch
     name: "Water pump PWM - range setting value"
     register_type: holding
     address: 0x0192
@@ -591,7 +592,7 @@ number:
       sorting_weight: 114
 
   - platform: modbus_controller
-    modbus_controller_id: modbus_adlar_traag
+    modbus_controller_id: modbus_adlar_statisch
     name: "P163 Water pump speed regulation - Minimum speed"
     register_type: holding
     address: 0x01A3
@@ -610,7 +611,7 @@ number:
       sorting_weight: 115
 
   - platform: modbus_controller
-    modbus_controller_id: modbus_adlar_traag
+    modbus_controller_id: modbus_adlar_statisch
     name: "P260 Maximum water pump speed"
     register_type: holding
     address: 0x0204
@@ -629,7 +630,7 @@ number:
       sorting_weight: 116
 
   - platform: modbus_controller
-    modbus_controller_id: modbus_adlar
+    modbus_controller_id: modbus_adlar_statisch
     name: "P261 Water pump speed - at constant temperature"
     register_type: holding
     address: 0x0205
