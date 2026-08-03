@@ -115,12 +115,12 @@ modbus_controller:
     command_throttle: 300ms  # Verhoogd: geef de warmtepomp 300ms ademruimte tussen registers
     setup_priority: -100
 
-# script:
-#   - id: forceer_modbus_uitlezing
-#     mode: restart # <--- Dit voorkomt de loop! Als het script al draait, start het opnieuw ipv te stapelen
-#     then:
-#       - delay: 1s
-#       - component.update: modbus_adlar
+script:
+  - id: forceer_modbus_statisch_uitlezen
+    mode: restart # <--- Dit voorkomt de loop! Als het script al draait, start het opnieuw ipv te stapelen
+    then:
+      - delay: 1s
+      - component.update: modbus_adlar_statisch
 
     
 # Global varibelen
@@ -138,15 +138,33 @@ button:
       sorting_group_id: sorting_group_configuration_setup
       sorting_weight: 000
 
+# switch:
+#   - platform: modbus_controller
+#     modbus_controller_id: modbus_adlar
+#     name: "Main switch"
+#     id: main_switch   # Urenteller warmtepomp
+#     icon: "mdi:heat-pump"
+#     register_type: holding
+#     address: 0x0305
+#     #skip_updates: 5
+#     web_server:
+#       sorting_group_id: sorting_group_configuration_setup
+#       sorting_weight: 100
+
 switch:
   - platform: modbus_controller
-    modbus_controller_id: modbus_adlar
+    modbus_controller_id: modbus_adlar_statisch
     name: "Main switch"
     id: main_switch   # Urenteller warmtepomp
     icon: "mdi:heat-pump"
     register_type: holding
     address: 0x0305
     #skip_updates: 5
+    # Zorgt voor directe respons in de interface na het schakelen:
+    on_turn_on:
+      - script.execute: forceer_modbus_statisch_uitlezen
+    on_turn_off:
+      - script.execute: forceer_modbus_statisch_uitlezen
     web_server:
       sorting_group_id: sorting_group_configuration_setup
       sorting_weight: 100
