@@ -25,21 +25,21 @@ esp32:
       sram1_as_iram: true
 
 
-# logger:
-#   level: INFO
-#   baud_rate: 0
-
 logger:
-  level: VERY_VERBOSE
-  logs:
-    # We zetten de modbus-onderdelen op het meest gedetailleerde niveau:
-    modbus: VERY_VERBOSE
-    modbus_controller: VERY_VERBOSE
+  level: INFO
+  baud_rate: 0
+
+# logger:
+#   level: VERY_VERBOSE
+#   logs:
+#     # We zetten de modbus-onderdelen op het meest gedetailleerde niveau:
+#     modbus: VERY_VERBOSE
+#     modbus_controller: VERY_VERBOSE
     
-    # Dit voorkomt dat de rest van de ESP32 uw logscherm overspoelt:
-    api: DEBUG
-    wifi: DEBUG
-    component: DEBUG
+#     # Dit voorkomt dat de rest van de ESP32 uw logscherm overspoelt:
+#     api: DEBUG
+#     wifi: DEBUG
+#     component: DEBUG
 
 
 
@@ -818,7 +818,6 @@ select:
       "Running in underfloor heating mode else cycling": 4
     entity_category: "config"
     force_new_range: true
-    #skip_updates: 5
     web_server:
       sorting_group_id: sorting_group_configuration_setup
       sorting_weight: 119
