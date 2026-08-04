@@ -130,7 +130,12 @@ modbus_controller:
     setup_priority: -100
 
 script:
-  - id: forceer_modbus_statisch_uitlezen
+  - id: forceer_modbus_uitlezing
+    mode: restart # <--- Dit voorkomt de loop! Als het script al draait, start het opnieuw ipv te stapelen
+    then:
+      - delay: 1s
+      - component.update: modbus_adlar
+  - id: forceer_modbus_statisch_uitlezing
     mode: restart # <--- Dit voorkomt de loop! Als het script al draait, start het opnieuw ipv te stapelen
     then:
       - delay: 1s
@@ -176,9 +181,9 @@ switch:
     #skip_updates: 5
     # Zorgt voor directe respons in de interface na het schakelen:
     on_turn_on:
-      - script.execute: forceer_modbus_statisch_uitlezen
+      - script.execute: forceer_modbus_statisch_uitlezing
     on_turn_off:
-      - script.execute: forceer_modbus_statisch_uitlezen
+      - script.execute: forceer_modbus_statisch_uitlezing
     web_server:
       sorting_group_id: sorting_group_configuration_setup
       sorting_weight: 100
@@ -734,11 +739,9 @@ number:
     unit_of_measurement: °C
     entity_category: "config"
     force_new_range: true # <--- Houdt dit register apart voor maximale prioriteit
-    
-    # # Dit triggert nu veilig het script, wat de ESP stabiel houdt:
-    # on_value:
-    #   then:
-    #     - script.execute: forceer_modbus_uitlezing
+    on_value:
+      then:
+        - script.execute: forceer_modbus_uitlezing
 
 
   
@@ -756,7 +759,9 @@ number:
     unit_of_measurement: °C
     entity_category: "config"
     force_new_range: true 
-    #skip_updates: 5
+    on_value:
+      then:
+        - script.execute: forceer_modbus_uitlezing
 
   # - platform: modbus_controller
   #   modbus_controller_id: modbus_adlar
