@@ -833,6 +833,7 @@ sensor:
               lambda: |-
                 return (!isnan(x) && x > 0 && !id(wtw_rh_regeling).is_running() && id(switch_rh_regeling).state);
             then:
+              - delay: 0s  # Dit haalt de druk van de sensor-loop af!
               - script.execute: wtw_rh_regeling
           
   # - platform: template
