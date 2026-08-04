@@ -854,13 +854,13 @@ select:
     force_new_range: true
     
     # Gecorrigeerde logica: we verversen altijd de controller als geheel
-    on_value:
-      then:
-        - lambda: |-
-            if (x == "Cooling" || x == "Heating" || x == "Floor Heating") {
-              ESP_LOGD("modbus_mode", "Modus veranderd naar %s. Statische registers worden ververst...", x.c_str());
-              id(modbus_adlar_statisch).update();
-            }
+    # on_value:
+    #   then:
+    #     - lambda: |-
+    #         if (x == "Cooling" || x == "Heating" || x == "Floor Heating") {
+    #           ESP_LOGD("modbus_mode", "Modus veranderd naar %s. Statische registers worden ververst...", x.c_str());
+    #           id(modbus_adlar_statisch).update();
+    #         }
 
 
 
