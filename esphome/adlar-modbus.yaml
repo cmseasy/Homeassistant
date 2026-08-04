@@ -850,21 +850,15 @@ select:
       "Floor Heating": 3
     entity_category: "config"
     
-    # Uitgebreide slimme logica:
+    # Gecorrigeerde logica: we verversen altijd de controller als geheel
     on_value:
       then:
         - lambda: |-
-            if (x == "Cooling") {
-              ESP_LOGD("modbus_mode", "Modus is Cooling. Ververs koelingsparameters...");
-              id(temp_set_cooling).update();
-              id(cooling_setting_curve).update(); // <-- Haal de curve NU pas veilig op!
-            } 
-            else if (x == "Heating" || x == "Floor Heating") {
-              ESP_LOGD("modbus_mode", "Modus is %s. Ververs verwarmingsparameters...", x.c_str());
-              id(modbus_adlar_statisch).update(); 
-              // Opmerking: id(modbus_adlar_statisch).update() leest de hele trage groep.
-              // Omdat 'cooling_setting_curve' op force_new_range staat, reist deze veilig mee.
+            if (x == "Cooling" || x == "Heating" || x == "Floor Heating") {
+              ESP_LOGD("modbus_mode", "Modus veranderd naar %s. Statische registers worden ververst...", x.c_str());
+              id(modbus_adlar_statisch).update();
             }
+
 
 
 
