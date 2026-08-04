@@ -1099,8 +1099,8 @@ script:
                         lambda: return !id(wtw_modus_handmatig).is_running();
                       then:
                         - script.execute: wtw_modus_handmatig
-                  - script.stop: wtw_modus_douche
-                  - script.stop: wtw_modus_normaal
+                        - script.stop: wtw_modus_douche
+                        - script.stop: wtw_modus_normaal
                 else:
                   # Modus 3: Normaal automatisch bedrijf
                   - lambda: |-
@@ -1117,8 +1117,8 @@ script:
                         lambda: return !id(wtw_modus_normaal).is_running();
                       then:
                         - script.execute: wtw_modus_normaal
-                  - script.stop: wtw_modus_douche
-                  - script.stop: wtw_modus_handmatig
+                        - script.stop: wtw_modus_douche
+                        - script.stop: wtw_modus_handmatig
 
 
   # ==========================================
