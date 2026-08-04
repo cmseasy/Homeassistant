@@ -1183,7 +1183,7 @@ binary_sensor:
 
 
   - platform: template
-    name: "Compressor Actief"
+    name: "Compressor Active"
     id: compressor_active
     device_class: running
     lambda: |-
