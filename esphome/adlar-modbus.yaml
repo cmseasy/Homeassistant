@@ -120,14 +120,14 @@ modbus_controller:
     address: 0x01
     update_interval: 293s # Een priemgetal (~5 min) zodat hij bijna nooit tegelijk start met de 30s cyclus
     command_throttle: 293ms  # Verhoogd: geef de warmtepomp 300ms ademruimte tussen registers
-    setup_priority: -100
+    setup_priority: -110
         
   - id: modbus_adlar_statisch # voor bv setpoints die niet vaak veranderen
     modbus_id: modbus_client
     address: 0x01
     update_interval: 599s  # Ongeveer 1 uur en een priemgetal
     command_throttle: 300ms  # Verhoogd: geef de warmtepomp 300ms ademruimte tussen registers
-    setup_priority: -100
+    setup_priority: -120
 
 script:
   - id: forceer_modbus_uitlezing
