@@ -41,8 +41,6 @@ logger:
 #     wifi: DEBUG
 #     component: DEBUG
 
-
-
 api:
   port: 6053
   encryption:
@@ -723,9 +721,74 @@ number:
   #   unit_of_measurement: °C
   #   entity_category: "config"
   #   force_new_range: true  # <-- Houdt dit register apart voor maximale prioriteit
-    
+
+  #################################
+  # - platform: modbus_controller
+  #   modbus_controller_id: modbus_adlar
+  #   name: "Temp. Set-Cooling"
+  #   id: temp_set_cooling
+  #   register_type: holding
+  #   address: 0x0300
+  #   device_class: temperature
+  #   value_type: S_WORD
+  #   min_value: 7
+  #   max_value: 25
+  #   step: 1
+  #   mode: box
+  #   unit_of_measurement: °C
+  #   entity_category: "config"
+  #   force_new_range: true # <--- Houdt dit register apart voor maximale prioriteit
+  #   # on_value:
+  #   #   then:
+  #   #     - script.execute: forceer_modbus_uitlezing
+
+
+  
+  # - platform: modbus_controller
+  #   modbus_controller_id: modbus_adlar
+  #   name: "Temp. Set-Heating"
+  #   id: temp_set_heating
+  #   register_type: holding
+  #   address: 0x0301
+  #   device_class: temperature
+  #   value_type: S_WORD
+  #   min_value: 20
+  #   max_value: 60
+  #   step: 1
+  #   mode: box
+  #   unit_of_measurement: °C
+  #   entity_category: "config"
+  #   force_new_range: true 
+  #   # on_value:
+  #   #   then:
+  #   #     - script.execute: forceer_modbus_uitlezing
+
+  # - platform: modbus_controller
+  #   modbus_controller_id: modbus_adlar
+  #   name: "Temp. Set-Floor Heating"
+  #   id: temp_set_floor_heating
+  #   register_type: holding
+  #   address: 0x0303
+  #   device_class: temperature
+  #   value_type: S_WORD
+  #   min_value: 20
+  #   max_value: 60
+  #   step: 1
+  #   mode: box
+  #   unit_of_measurement: °C
+  #   disabled_by_default: true
+  #   entity_category: "config"
+  #   # on_value:
+  #   #   then:
+  #   #     - script.execute: forceer_modbus_uitlezing
+
+
+
+
+
+  # 1. TEMPERATURE SET-COOLING
   - platform: modbus_controller
-    modbus_controller_id: modbus_adlar
+    modbus_controller_id: modbus_adlar  # Snel uitlezen (30s)
     name: "Temp. Set-Cooling"
     id: temp_set_cooling
     register_type: holding
@@ -737,16 +800,24 @@ number:
     step: 1
     mode: box
     unit_of_measurement: °C
+    disabled_by_default: true
     entity_category: "config"
-    force_new_range: true # <--- Houdt dit register apart voor maximale prioriteit
-    # on_value:
-    #   then:
-    #     - script.execute: forceer_modbus_uitlezing
+    force_new_range: true
+    web_server:
+      sorting_group_id: sorting_group_configuration_setup
+      sorting_weight: 106                  # Pas dit eventueel aan naar uw gewenste volgorde
+    lambda: |-
+      if (isnan(x) || x < 7 || x > 25) {
+        if (id(temp_set_cooling).has_state()) {
+          return id(temp_set_cooling).state;
+        }
+        return {};
+      }
+      return x;
 
-
-  
+  # 2. TEMPERATURE SET-HEATING
   - platform: modbus_controller
-    modbus_controller_id: modbus_adlar
+    modbus_controller_id: modbus_adlar  # Snel uitlezen (30s)
     name: "Temp. Set-Heating"
     id: temp_set_heating
     register_type: holding
@@ -758,18 +829,28 @@ number:
     step: 1
     mode: box
     unit_of_measurement: °C
+    disabled_by_default: true
     entity_category: "config"
-    force_new_range: true 
-    # on_value:
-    #   then:
-    #     - script.execute: forceer_modbus_uitlezing
+    force_new_range: true
+    web_server:
+      sorting_group_id: sorting_group_configuration_setup
+      sorting_weight: 107
+    lambda: |-
+      if (isnan(x) || x < 20 || x > 60) {
+        if (id(temp_set_heating).has_state()) {
+          return id(temp_set_heating).state;
+        }
+        return {};
+      }
+      return x;
 
+  # 3. TEMPERATURE SET-FLOOR HEATING
   - platform: modbus_controller
-    modbus_controller_id: modbus_adlar
+    modbus_controller_id: modbus_adlar  # Snel uitlezen (30s)
     name: "Temp. Set-Floor Heating"
     id: temp_set_floor_heating
     register_type: holding
-    address: 0x0303
+    address: 0x0302                     # Uw exacte vloerverwarmingsregister
     device_class: temperature
     value_type: S_WORD
     min_value: 20
@@ -779,10 +860,25 @@ number:
     unit_of_measurement: °C
     disabled_by_default: true
     entity_category: "config"
-    # on_value:
-    #   then:
-    #     - script.execute: forceer_modbus_uitlezing
+    force_new_range: true
+    web_server:
+      sorting_group_id: sorting_group_configuration_setup
+      sorting_weight: 108                  # Sluit nu netjes aan op de rest van uw gewichten
+    lambda: |-
+      if (isnan(x) || x < 20 || x > 60) {
+        if (id(temp_set_floor_heating).has_state()) {
+          return id(temp_set_floor_heating).state;
+        }
+        return {};
+      }
+      return x;
 
+
+
+
+
+
+    
 select:
   - platform: modbus_controller
     modbus_controller_id: modbus_adlar_statisch
