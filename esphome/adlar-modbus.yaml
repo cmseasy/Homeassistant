@@ -1273,8 +1273,8 @@ binary_sensor:
         return {}; // Geef nog geen status door (blijft 'unknown' in HA)
       }
 
-      // 5. Controleer of de waarde BINNEN de veilige marges ligt (> 0 en < 150)
-      if (freq > 0.0 && freq < 150.0) {
+      // 5. Controleer of de waarde BINNEN de veilige marges ligt (> 5 en < 150)
+      if (freq > 5.0 && freq < 150.0) {
         cycli_voldoet++;          
         cycli_voldoet_niet = 0;   
         
@@ -1283,7 +1283,7 @@ binary_sensor:
           huidige_status = true;
         }
       } 
-      // 6. De waarde valt BUITEN de marges (is exact 0, of is >= 150)
+      // 6. De waarde valt BUITEN de marges (is exact 5, of is >= 150)
       else {
         cycli_voldoet_niet++;     
         cycli_voldoet = 0;        
