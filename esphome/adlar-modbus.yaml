@@ -850,16 +850,22 @@ select:
       "Floor Heating": 3
     entity_category: "config"
     
-    # Slimme logica: ververs de statische controller zodra u van modus wisselt
+    # Uitgebreide slimme logica:
     on_value:
       then:
         - lambda: |-
-            // Zodra de modus verandert naar Cooling, Heating of Floor Heating,
-            // dwingen we de trage controller om direct één extra leesronde te doen.
-            if (x == "Cooling" || x == "Heating" || x == "Floor Heating") {
-              ESP_LOGD("modbus_mode", "Modus veranderd naar %s. Statische registers worden ververst...", x.c_str());
-              id(modbus_adlar_statisch).update();
+            if (x == "Cooling") {
+              ESP_LOGD("modbus_mode", "Modus is Cooling. Ververs koelingsparameters...");
+              id(temp_set_cooling).update();
+              id(cooling_setting_curve).update(); // <-- Haal de curve NU pas veilig op!
+            } 
+            else if (x == "Heating" || x == "Floor Heating") {
+              ESP_LOGD("modbus_mode", "Modus is %s. Ververs verwarmingsparameters...", x.c_str());
+              id(modbus_adlar_statisch).update(); 
+              // Opmerking: id(modbus_adlar_statisch).update() leest de hele trage groep.
+              // Omdat 'cooling_setting_curve' op force_new_range staat, reist deze veilig mee.
             }
+
 
 
       
@@ -895,6 +901,7 @@ select:
     modbus_controller_id: modbus_adlar_statisch
     optimistic: true
     name: "Cooling Setting Curve"
+    id: cooling_setting_curve 
     address: 0x0313
     value_type: U_WORD
     force_new_range: true    # REPARATIE: Dwingt ESPHome om dit register los aan te vragen
@@ -917,7 +924,7 @@ select:
       "L7": 17
       "L8": 18
     entity_category: "config"
-    #skip_updates: 5
+      
 
   - platform: modbus_controller
     modbus_controller_id: modbus_adlar_statisch
