@@ -800,7 +800,7 @@ number:
     step: 1
     mode: box
     unit_of_measurement: °C
-    disabled_by_default: true
+    disabled_by_default: false
     entity_category: "config"
     force_new_range: true
     web_server:
@@ -829,7 +829,7 @@ number:
     step: 1
     mode: box
     unit_of_measurement: °C
-    disabled_by_default: true
+    disabled_by_default: false
     entity_category: "config"
     force_new_range: true
     web_server:
