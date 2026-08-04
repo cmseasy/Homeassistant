@@ -1091,17 +1091,72 @@ binary_sensor:
     device_class: power # Optional: shows as 'on'/'off' instead of 'open'/'closed'
     
 
+#   - platform: template
+#     name: "Waterpomp in bedrijf"
+# #    id: waterpomp_in_bedrijf
+#     device_class: running
+#     lambda: |-
+#       if (id(water_flow).state > 5.0) {
+#         return true;
+#       } else {
+#         return false;
+#       } 
+
   - platform: template
     name: "Waterpomp in bedrijf"
 #    id: waterpomp_in_bedrijf
     device_class: running
     lambda: |-
-      if (id(water_flow).state > 5.0) {
-        return true;
-      } else {
-        return false;
-      } 
+      // 1. Haal de actuele frequentie op
+      float freq = id(water_flow).state;
 
+      // 2. ANTI-FAKE: Direct afbreken als de sensor offline (NaN) is
+      if (std::isnan(freq)) {
+        return {}; 
+      }
+
+      // 3. Statische variabelen (onthouden hun waarde tussen metingen)
+      static int cycli_voldoet = 0;       
+      static int cycli_voldoet_niet = 0;  
+      static bool huidige_status = false; 
+      static int opstart_metingen = 0;    // Telt hoe vaak de code is aangeroepen sinds boot
+
+      // 4. ANTI-FAKE OPSTART FILTER: Negeer de allereerste 3 metingen na een reboot
+      if (opstart_metingen < 3) {
+        opstart_metingen++;
+        return {}; // Geef nog geen status door (blijft 'unknown' in HA)
+      }
+
+      // 5. Controleer of de waarde BINNEN de veilige marges ligt (> 5 en < 25)
+      if (freq > 5.0 && freq < 25.0) {
+        cycli_voldoet++;          
+        cycli_voldoet_niet = 0;   
+        
+        // Pas na 2 opeenvolgende stabiele cycli naar ON
+        if (cycli_voldoet >= 2) {
+          huidige_status = true;
+        }
+      } 
+      // 6. De waarde valt BUITEN de marges (is exact 5, of is >= 25)
+      else {
+        cycli_voldoet_niet++;     
+        cycli_voldoet = 0;        
+        
+        // Pas na 2 opeenvolgende stabiele cycli naar OFF
+        if (cycli_voldoet_niet >= 2) {
+          huidige_status = false;
+        }
+      }
+
+      return huidige_status;
+
+
+
+
+
+
+
+      
   - platform: modbus_controller
     modbus_controller_id: modbus_adlar
     address: 0x0000    
