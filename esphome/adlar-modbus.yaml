@@ -29,6 +29,17 @@ logger:
   level: INFO
   baud_rate: 0
 
+  on_message:
+    - level: ERROR
+      then:
+        - homeassistant.event:
+            event: esphome.log_message
+            data:
+              level: ERROR
+              device: "ducobox-modbus"
+              tag: !lambda "return tag;"
+              message: !lambda "return message;"
+
 # logger:
 #   level: VERY_VERBOSE
 #   logs:
