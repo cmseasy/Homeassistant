@@ -748,6 +748,7 @@ number:
   - platform: modbus_controller
     modbus_controller_id: modbus_adlar
     name: "Temp. Set-Heating"
+    id: temp_set_heating
     register_type: holding
     address: 0x0301
     device_class: temperature
@@ -763,21 +764,24 @@ number:
       then:
         - script.execute: forceer_modbus_uitlezing
 
-  # - platform: modbus_controller
-  #   modbus_controller_id: modbus_adlar
-  #   name: "Temp. Set-Floor Heating"
-  #   register_type: holding
-  #   address: 0x0303
-  #   device_class: temperature
-  #   value_type: S_WORD
-  #   min_value: 20
-  #   max_value: 60
-  #   step: 1
-  #   mode: box
-  #   unit_of_measurement: °C
-  #   disabled_by_default: true
-  #   entity_category: "config"
-  #   #skip_updates: 5
+  - platform: modbus_controller
+    modbus_controller_id: modbus_adlar
+    name: "Temp. Set-Floor Heating"
+    id: temp_set_floor_heating
+    register_type: holding
+    address: 0x0303
+    device_class: temperature
+    value_type: S_WORD
+    min_value: 20
+    max_value: 60
+    step: 1
+    mode: box
+    unit_of_measurement: °C
+    disabled_by_default: true
+    entity_category: "config"
+    on_value:
+      then:
+        - script.execute: forceer_modbus_uitlezing
 
 select:
   - platform: modbus_controller
@@ -845,6 +849,38 @@ select:
       "Heating": 1
       "Floor Heating": 3
     entity_category: "config"
+    
+    # Slimme logica: ververs gericht de sensor die bij de gekozen modus hoort
+    on_value:
+      then:
+        - lambda: |-
+            if (x == "Cooling") {
+              ESP_LOGD("modbus_mode", "Modus is Cooling. Ververs Temp. Set-Cooling...");
+              id(temp_set_cooling).update();
+            } 
+            else if (x == "Heating") {
+              ESP_LOGD("modbus_mode", "Modus is Heating. Ververs Temp. Set-Heating...");
+              id(temp_set_heating).update();
+            }
+            else if (x == "Floor Heating") {
+              ESP_LOGD("modbus_mode", "Modus is Floor Heating. Ververs Temp. Set-FloorHeating...");
+              id(temp_set_floor_heating).update();
+            }
+
+
+      
+  # - platform: modbus_controller
+  #   modbus_controller_id: modbus_adlar_statisch
+  #   optimistic: true
+  #   name: "MODE"
+  #   id: mode
+  #   address: 0x0304
+  #   value_type: U_WORD
+  #   optionsmap: 
+  #     "Cooling": 0
+  #     "Heating": 1
+  #     "Floor Heating": 3
+  #   entity_category: "config"
     #skip_updates: 5
 
   - platform: modbus_controller
