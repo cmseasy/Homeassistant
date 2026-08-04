@@ -796,6 +796,7 @@ select:
       "Temperature shutdown": 1
       "Cooling intelligent": 2
     entity_category: "config"
+    force_new_range: true
     #skip_updates: 5
     web_server:
       sorting_group_id: sorting_group_configuration_setup
@@ -816,6 +817,7 @@ select:
       "Running in cooling/heating mode else cycling": 3
       "Running in underfloor heating mode else cycling": 4
     entity_category: "config"
+    force_new_range: true
     #skip_updates: 5
     web_server:
       sorting_group_id: sorting_group_configuration_setup
@@ -832,6 +834,7 @@ select:
       "Inlet": 0
       "Outlet": 1
     entity_category: "config"
+    force_new_range: true
     #skip_updates: 5
     web_server:
       sorting_group_id: sorting_group_configuration_setup
@@ -849,6 +852,7 @@ select:
       "Heating": 1
       "Floor Heating": 3
     entity_category: "config"
+    force_new_range: true
     
     # Gecorrigeerde logica: we verversen altijd de controller als geheel
     on_value:
