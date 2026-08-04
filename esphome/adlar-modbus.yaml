@@ -739,9 +739,9 @@ number:
     unit_of_measurement: °C
     entity_category: "config"
     force_new_range: true # <--- Houdt dit register apart voor maximale prioriteit
-    on_value:
-      then:
-        - script.execute: forceer_modbus_uitlezing
+    # on_value:
+    #   then:
+    #     - script.execute: forceer_modbus_uitlezing
 
 
   
@@ -760,9 +760,9 @@ number:
     unit_of_measurement: °C
     entity_category: "config"
     force_new_range: true 
-    on_value:
-      then:
-        - script.execute: forceer_modbus_uitlezing
+    # on_value:
+    #   then:
+    #     - script.execute: forceer_modbus_uitlezing
 
   - platform: modbus_controller
     modbus_controller_id: modbus_adlar
@@ -779,9 +779,9 @@ number:
     unit_of_measurement: °C
     disabled_by_default: true
     entity_category: "config"
-    on_value:
-      then:
-        - script.execute: forceer_modbus_uitlezing
+    # on_value:
+    #   then:
+    #     - script.execute: forceer_modbus_uitlezing
 
 select:
   - platform: modbus_controller
