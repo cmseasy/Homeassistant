@@ -850,21 +850,15 @@ select:
       "Floor Heating": 3
     entity_category: "config"
     
-    # Slimme logica: ververs gericht de sensor die bij de gekozen modus hoort
+    # Slimme logica: ververs de statische controller zodra u van modus wisselt
     on_value:
       then:
         - lambda: |-
-            if (x == "Cooling") {
-              ESP_LOGD("modbus_mode", "Modus is Cooling. Ververs Temp. Set-Cooling...");
-              id(temp_set_cooling).update();
-            } 
-            else if (x == "Heating") {
-              ESP_LOGD("modbus_mode", "Modus is Heating. Ververs Temp. Set-Heating...");
-              id(temp_set_heating).update();
-            }
-            else if (x == "Floor Heating") {
-              ESP_LOGD("modbus_mode", "Modus is Floor Heating. Ververs Temp. Set-FloorHeating...");
-              id(temp_set_floor_heating).update();
+            // Zodra de modus verandert naar Cooling, Heating of Floor Heating,
+            // dwingen we de trage controller om direct één extra leesronde te doen.
+            if (x == "Cooling" || x == "Heating" || x == "Floor Heating") {
+              ESP_LOGD("modbus_mode", "Modus veranderd naar %s. Statische registers worden ververst...", x.c_str());
+              id(modbus_adlar_statisch).update();
             }
 
 
