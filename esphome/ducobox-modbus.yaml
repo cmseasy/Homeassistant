@@ -172,10 +172,24 @@ modbus:
 
 # 3. De Modbus Controller koppelen aan het Duco Slave adres
 modbus_controller:
-  - id: duco_box
+  - id: modbus_duco
     modbus_id: modbus_client
     address: 1
     update_interval: 10s #30s
+
+  - id: modbus_duco_traag
+    modbus_id: modbus_client
+    address: 1
+    # update_interval: 293s # Een priemgetal (~5 min) zodat hij bijna nooit tegelijk start met de 30s cyclus
+    # command_throttle: 293ms  # Verhoogd: geef de warmtepomp 300ms ademruimte tussen registers
+    setup_priority: -110
+        
+  - id: modbus_duco_statisch # voor bv setpoints die niet vaak veranderen
+    modbus_id: modbus_client
+    address: 1
+    # update_interval: 599s  # Ongeveer 1 uur en een priemgetal
+    # command_throttle: 300ms  # Verhoogd: geef de warmtepomp 300ms ademruimte tussen registers
+    setup_priority: -120
 
 # Glabale variabelen  
 globals:
@@ -259,7 +273,7 @@ switch:
 # 2. Setpoint RH
 number:
   - platform: modbus_controller
-    modbus_controller_id: duco_box
+    modbus_controller_id: modbus_duco
     name: "WTW RH setpoint"
     id: rh_setpoint
     icon: "mdi:water-percent"
@@ -638,7 +652,7 @@ sensor:
   
 # Node 2: Zoneklep wonen
   - platform: modbus_controller
-    modbus_controller_id: duco_box
+    modbus_controller_id: modbus_duco
     name: "Duco zoneklep wonen"
     register_type: read
     address: 22
@@ -650,7 +664,7 @@ sensor:
 
 # Node 3: Zoneklep slapen    
   - platform: modbus_controller
-    modbus_controller_id: duco_box
+    modbus_controller_id: modbus_duco
     name: "Duco zoneklep slapen"
     register_type: read
     address: 32
@@ -666,7 +680,7 @@ sensor:
         
 # Node 58: RH box
   - platform: modbus_controller
-    modbus_controller_id: duco_box
+    modbus_controller_id: modbus_duco
     name: "Ducobox RH gemeten"
     id: ducobox_rh_actual
     icon: "mdi:water-percent"
