@@ -175,19 +175,20 @@ modbus_controller:
   - id: modbus_duco
     modbus_id: modbus_client
     address: 1
-    update_interval: 10s #30s
+    update_interval: 11s # 11 is priemgetal30s
 
   - id: modbus_duco_traag
     modbus_id: modbus_client
     address: 1
-    # update_interval: 293s # Een priemgetal (~5 min) zodat hij bijna nooit tegelijk start met de 30s cyclus
+    update_interval: 59s # Een priemgetal (~1 min) zodat hij bijna nooit tegelijk start met de 11s cyclus
+                         # matterjs-server interval staat op 61s, beide priemgetallen
     # command_throttle: 293ms  # Verhoogd: geef de warmtepomp 300ms ademruimte tussen registers
     setup_priority: -110
         
   - id: modbus_duco_statisch # voor bv setpoints die niet vaak veranderen
     modbus_id: modbus_client
     address: 1
-    # update_interval: 599s  # Ongeveer 1 uur en een priemgetal
+    update_interval: 599s  # Ongeveer 1 uur en een priemgetal
     # command_throttle: 300ms  # Verhoogd: geef de warmtepomp 300ms ademruimte tussen registers
     setup_priority: -120
 
@@ -226,9 +227,6 @@ globals:
     restore_value: no
     initial_value: 'false'
  # Douchetijd
-  # - id: start_douche_tijd
-  #   type: uint32_t
-  #   initial_value: '0'
   - id: start_douche_tijd
     type: unsigned long
     restore_value: no
@@ -273,7 +271,7 @@ switch:
 # 2. Setpoint RH
 number:
   - platform: modbus_controller
-    modbus_controller_id: modbus_duco
+    modbus_controller_id: modbus_duco_traag
     name: "WTW RH setpoint"
     id: rh_setpoint
     icon: "mdi:water-percent"
@@ -289,7 +287,7 @@ number:
     force_new_range: true 
     
     # CRUCIALE FIX: Polled deze holding slechts 1x per minuut (12 x 5s) om Exception 4 te voorkomen
-    skip_updates: 12 
+    # skip_updates: 12  # niet meer nodig, modbus controller staat op ca 1 minuut
 
     write_lambda: |-
       ESP_LOGI("main", "Schrijf setpoint %d%% naar Modbus.", (int)x);
@@ -478,7 +476,7 @@ binary_sensor:
 
 # matterjs.server node data ophalen 
 interval:
-  - interval: 1min
+  - interval: 61s # modbus_duco_traag staat op 59 sec, beide priemgetallen
     then:
       - lambda: |-
           if (id(global_ws_client) != nullptr) {
