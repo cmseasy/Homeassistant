@@ -13,8 +13,8 @@
       icon: mdi:home-lightning-bolt-outline
       availability: >
         {{ has_value('sensor.envoy_122025007960_power_production') and
-           has_value('sensor.smartmeter_stroomverbruik') and
-           has_value('sensor.smartmeter_stroomproductie') }}
+          has_value('sensor.smartmeter_stroomverbruik') and
+          has_value('sensor.smartmeter_stroomproductie') }}
       state: >
         {% set productie = states('sensor.envoy_122025007960_power_production') | int(0) %}
         {% set verbruik = states('sensor.smartmeter_stroomverbruik') | int(0) %}
@@ -27,9 +27,6 @@
           {{ this.state | default(0, true) }}
         {% endif %}
 
-#        # {% else %}
-#        #   {{ states('sensor.huidig_vermogen_w') }}
-#        # {% endif %}
 #
 # Energieverbruik [kWh]
 # berekend op basis van P1mon gegevens
@@ -53,40 +50,11 @@
         {% set energie = laag + hoog %}
         {{ energie }}
 
-- sensor:
-    - name: Frank prices
-      unique_id: frank_prices
-      availability: >
-        {{ states('sensor.Frank_energie_prijzen_gemiddelde_elektriciteitsprijs_alle_uren_all_in') not in ['unavailable', 'unknown'] }}
-      state: >
-        {% set t = now().hour %}
-        {% set prijs = state_attr('sensor.Frank_energie_prijzen_gemiddelde_elektriciteitsprijs_alle_uren_all_in', 'all_prices')[t].price | float %}
-        {{ prijs }}
-      attributes:
-        data: >
-          {% set ns = namespace(items=[]) %}
-          {% for item in states.sensor.frank_energie_prijzen_gemiddelde_elektriciteitsprijs_alle_uren_all_in.attributes.all_prices %}
-          {% set ns.items = ns.items + [{
-          'start_time': (item.from | as_datetime | as_local).isoformat(),
-          'price_per_kwh': item.price
-          }] %}
-          {% endfor %}
-          {{ ns.items | sort(attribute='start_time') }}
 
-# - sensor:
-#     - name: "Huidige elektriciteitsprijs (all in)"
-#       unique_id: huidige_elektriciteitsprijs_all_in
-#       unit_of_measurement: €/kWh
-#       device_class: monetary
-#       icon: mdi:currency-eur
-#       availability: >
-#         {{ has_value('sensor.frank_energie_prijzen_huidige_elektriciteitsprijs_all_in') }}
-#       state: >
-#         {{ states('sensor.frank_energie_prijzen_huidige_elektriciteitsprijs_all_in') }}
-#       # attributes:
-#       #   all_attributes: >
-#       #     {{ states.sensor.frank_energie_prijzen_huidige_elektriciteitsprijs_all_in.attributes }}
-
+#
+# Huidige elektriciteitsprijs (all in) (€/kWh)
+# Vandaag en morgen, per kwartier
+#
 - trigger:
     - trigger: state
       entity_id: sensor.average_electricity_price
@@ -112,91 +80,276 @@
         prices_today: "{{ state_attr('sensor.average_electricity_price', 'prices_today') }}"
         prices_tomorrow: "{{ state_attr('sensor.average_electricity_price', 'prices_tomorrow') }}"
         prices: "{{ state_attr('sensor.average_electricity_price', 'prices') }}"
-# Frank slim terugleveren
-# - binary_sensor:
-#     unique_id: frank_slim_terugleveren
-#     name: "Frank slim terugleveren"
-#     state: >
-#       {{ iif (states('sensor.envoy_122025007960_power_production')|float(1) == 0 )
-#       and (states('sensor.buitenluchtvochtigheid_gemiddeld') | float(0) > 20 )
-#       }}
 
-# - trigger:
-#     - trigger: state
-#       entity_id:
-#         - sensor.frank_energie_prijzen_huidige_elektriciteitsprijs_all_in
-#       from: null
-#       to: null
-#     - trigger: state
-#       entity_id:
-#         - binary_sensor.frank_slim_terugleveren
-#       from:
-#         - "off"
-#       to:
-#         - "on"
-#       id: Slim terugleveren aan
-#     - trigger: state
-#       entity_id:
-#         - binary_sensor.frank_slim_terugleveren
-#       from:
-#         - "on"
-#       to:
-#         - "off"
-#       id: Slim terugleveren uit
-# #    - trigger: time_pattern
-# #      seconds: "10"
-# #      minutes: "/1"
-#     - trigger: state
-#       entity_id:
-#         - sensor.energie_verbruik_kwh
-# #      from: null
-# #      to: nullverbruik kw
-#   sensor:
-#       - name: Frank slim terugleveren bedrag
-#         unique_id: frank_slim_terugleveren_bedrag
-#         device_class: monetary
-#         state_class: total
-#         unit_of_measurement: €
-#         availability: >
-#           {{ states('binary_sensor.frank_slim_terugleveren') not in ['unavailable', 'unknown']
-#           and states('sensor.energie_verbruik_kwh') not in ['unavailable', 'unknown']
-#           and states('sensor.frank_energie_prijzen_huidige_elektriciteitsprijs_all_in') not in ['unavailable', 'unknown'] }}
-#         state: >
-#           {% set bedrag_delta = state_attr('sensor.frank_slim_terugleveren_bedrag', "bedrag_delta") | float(0) %}
-#           {% set bedrag_nu = state_attr('sensor.frank_slim_terugleveren_bedrag', "bedrag_som") | float(0) %}
-#             {{ (bedrag_nu + bedrag_delta) | round(2) }}
-#         attributes:
-#           huidige_prijs: >-
-#             {% set prijs = states('sensor.frank_energie_prijzen_huidige_elektriciteitsprijs_all_in') | float(0) %}
-#             {{ prijs }}
-#           energie_laatst: >-
-#             {% set kwh = state_attr('sensor.frank_slim_terugleveren_bedrag', "energie_nu") | float(0) %}
-#               {{ kwh }}
-#           energie_nu: >-
-#             {% set kwh = states('sensor.energie_verbruik_kwh') | float(0) %}
-#               {{ kwh }}
-#           energie_delta: >-
-#             {% set kwh_nu = state_attr('sensor.frank_slim_terugleveren_bedrag', "energie_nu") | float(0) %}
-#             {% set kwh_laatst = state_attr('sensor.frank_slim_terugleveren_bedrag', "energie_laatst") | float(0) %}
-#             {% if kwh_nu > 0 and kwh_laatst > 0 and kwh_nu > kwh_laatst and kwh_nu - kwh_laatst < 1 %}
-#               {{ kwh_nu - kwh_laatst }}
-#             {% endif %}
 
-#           bedrag_delta: >-
-#             {% set kwh = state_attr('sensor.frank_slim_terugleveren_bedrag', "energie_delta") | float(0) %}
-#             {% set prijs = states('sensor.frank_energie_prijzen_huidige_elektriciteitsprijs_all_in') | float(0) %}
-#             {#% if is_state('binary_sensor.frank_slim_terugleveren', 'on' ) %#}
-#             {% if is_state('binary_sensor.envoy_122025007960_dynamic_power_export_limiting', 'on' ) %}
-#               {{ kwh * prijs }}
-#             {% endif %}
+#
+# Prognose Solar energieproductie (W)
+# Vandaag, per kwartier
+#
+- sensor:
+      - name: "Prognose energie productie vandaag"
+        state: "OK"
+        attributes:
+          watts: >
+            {% set s1 = state_attr('sensor.thuis_energy_production_today', 'watts') %}
+            {% set s2 = state_attr('sensor.thuis_energy_production_today_2', 'watts') %}
+            {% set s3 = state_attr('sensor.thuis_energy_production_today_3', 'watts') %}
+            {% set s4 = state_attr('sensor.thuis_energy_production_today_4', 'watts') %}
+            
+            {% set ns = namespace(items=[]) %}
+            
+            {% if s1 is not none and s1 is mapping %}
+              {% for timestamp, val1 in s1.items() %}
+                {% set v1 = val1 | float(0) %}
+                {% set v2 = s2[timestamp] | float(0) if s2 is mapping and timestamp in s2 else 0 %}
+                {% set v3 = s3[timestamp] | float(0) if s3 is mapping and timestamp in s3 else 0 %}
+                {% set v4 = s4[timestamp] | float(0) if s4 is mapping and timestamp in s4 else 0 %}
+                
+                {% set totaal = v1 + v2 + v3 + v4 %}
+                {% set ns.items = ns.items + [{"time": timestamp, "value": totaal}] %}
+              {% endfor %}
+            {% endif %}
+            
+            {{ ns.items }}
+#
+# Prognose Solar energieproductie (W)
+# Morgen, per kwartier
+#
+- sensor:
+      - name: "Prognose energie productie morgen"
+        state: "OK"
+        attributes:
+          watts: >
+            {% set s1 = state_attr('sensor.thuis_energy_production_tomorrow', 'watts') %}
+            {% set s2 = state_attr('sensor.thuis_energy_production_tomorrow_2', 'watts') %}
+            {% set s3 = state_attr('sensor.thuis_energy_production_tomorrow_3', 'watts') %}
+            {% set s4 = state_attr('sensor.thuis_energy_production_tomorrow_4', 'watts') %}
+            
+            {% set ns = namespace(items=[]) %}
+            
+            {% if s1 is not none and s1 is mapping %}
+              {% for timestamp, val1 in s1.items() %}
+                {% set v1 = val1 | float(0) %}
+                {% set v2 = s2[timestamp] | float(0) if s2 is mapping and timestamp in s2 else 0 %}
+                {% set v3 = s3[timestamp] | float(0) if s3 is mapping and timestamp in s3 else 0 %}
+                {% set v4 = s4[timestamp] | float(0) if s4 is mapping and timestamp in s4 else 0 %}
+                
+                {% set totaal = v1 + v2 + v3 + v4 %}
+                {% set ns.items = ns.items + [{"time": timestamp, "value": totaal}] %}
+              {% endfor %}
+            {% endif %}
+            
+            {{ ns.items }}
 
-#           bedrag_som: >-
-#             {% set bedrag_delta = state_attr('sensor.frank_slim_terugleveren_bedrag', "bedrag_delta") | float(0) %}
-#             {% set bedrag_nu = state_attr('sensor.frank_slim_terugleveren_bedrag', "bedrag_som") | float(0) %}
-#               {{ (bedrag_nu + bedrag_delta) | round(5) }}
+#
+# Berekening goedkoopste moment gebruik apparaten
+# Afhankelijk van prognose solar energie en energieprijs, per kwartier
+#
+- trigger:
+    - platform: time_pattern
+      minutes: "/15"
+  sensor:
+    # ==========================================
+    # 1. AFWASMACHINE SENSOR
+    # ==========================================
+    - name: "Netto Afwas Prijs per Kwartier"
+      state: "measurement"
+      attributes:
+        prices_today: >
+          {% set prices = state_attr('sensor.average_electricity_price', 'prices_today') %}
+          {% set sun = state_attr('sensor.prognose_energie_productie_vandaag', 'watts') %}
+          {% set machine_max_watt = 2000 %} 
+          {% set baseload = 450 %}
+          {% set ns = namespace(items=[]) %}
+          {% if prices is not none and sun is not none %}
+            {% for p in prices %}
+              {% set s_match = sun | selectattr('time', 'equalto', p.time) | first %}
+              {% set sun_watt = s_match.value if s_match is defined else 0 %}
+              {% set beschikbare_zon = [sun_watt - baseload, 0] | max %}
+              {% set solar_coverage = [beschikbare_zon / machine_max_watt, 1.0] | min %}
+              {% if p.price > 0 %}
+                {% set netto_price = p.price * (1.0 - solar_coverage) %}
+              {% else %}
+                {% set netto_price = p.price %}
+              {% endif %}
+              {% set ns.items = ns.items + [{'time': p.time, 'price': netto_price | round(5)}] %}
+            {% endfor %}
+          {% endif %}
+          {{ ns.items }}
+        prices_tomorrow: >
+          {% set prices_tom = state_attr('sensor.average_electricity_price', 'prices_tomorrow') %}
+          {% set sun_tom = state_attr('sensor.prognose_energie_productie_morgen', 'watts') %}
+          {% set machine_max_watt = 2000 %} 
+          {% set baseload = 450 %}
+          {% set ns_tom = namespace(items=[]) %}
+          {% if prices_tom is not none and sun_tom is not none %}
+            {% for p in prices_tom %}
+              {% set p_time_t = p.time | replace(' ', 'T') %}
+              {% set s_match = sun_tom | selectattr('time', 'equalto', p_time_t) | first %}
+              {% set sun_watt = s_match.value if s_match is defined else 0 %}
+              {% set beschikbare_zon = [sun_watt - baseload, 0] | max %}
+              {% set solar_coverage = [beschikbare_zon / machine_max_watt, 1.0] | min %}
+              {% if p.price > 0 %}
+                {% set netto_price = p.price * (1.0 - solar_coverage) %}
+              {% else %}
+                {% set netto_price = p.price %}
+              {% endif %}
+              {% set ns_tom.items = ns_tom.items + [{'time': p.time, 'price': netto_price | round(5)}] %}
+            {% endfor %}
+          {% endif %}
+          {{ ns_tom.items }}
 
-#           # {#% if is_state('binary_sensor.frank_slim_terugleveren', 'off' ) %#}
-#           #   {#% set tijd = (now() - states.binary_sensor.frank_slim_terugleveren.last_changed).total_seconds() %#}
-#           #   {#% set bedrag = state_attr('sensor.frank_slim_terugleveren_bedrag', "bedrag_som") | float(0) %#}
-#           #   #  {{ bedrag | round(2) }}
-#           #   {#% endif %#}
+    # ==========================================
+    # 2. WASMACHINE SENSOR
+    # ==========================================
+    - name: "Netto Was Prijs per Kwartier"
+      state: "measurement"
+      attributes:
+        prices_today: >
+          {% set prices = state_attr('sensor.average_electricity_price', 'prices_today') %}
+          {% set sun = state_attr('sensor.prognose_energie_productie_vandaag', 'watts') %}
+          {% set machine_max_watt = 2000 %} 
+          {% set baseload = 450 %}
+          {% set ns = namespace(items=[]) %}
+          {% if prices is not none and sun is not none %}
+            {% for p in prices %}
+              {% set s_match = sun | selectattr('time', 'equalto', p.time) | first %}
+              {% set sun_watt = s_match.value if s_match is defined else 0 %}
+              {% set beschikbare_zon = [sun_watt - baseload, 0] | max %}
+              {% set solar_coverage = [beschikbare_zon / machine_max_watt, 1.0] | min %}
+              {% if p.price > 0 %}
+                {% set netto_price = p.price * (1.0 - solar_coverage) %}
+              {% else %}
+                {% set netto_price = p.price %}
+              {% endif %}
+              {% set ns.items = ns.items + [{'time': p.time, 'price': netto_price | round(5)}] %}
+            {% endfor %}
+          {% endif %}
+          {{ ns.items }}
+        prices_tomorrow: >
+          {% set prices_tom = state_attr('sensor.average_electricity_price', 'prices_tomorrow') %}
+          {% set sun_tom = state_attr('sensor.prognose_energie_productie_morgen', 'watts') %}
+          {% set machine_max_watt = 2000 %} 
+          {% set baseload = 450 %}
+          {% set ns_tom = namespace(items=[]) %}
+          {% if prices_tom is not none and sun_tom is not none %}
+            {% for p in prices_tom %}
+              {% set p_time_t = p.time | replace(' ', 'T') %}
+              {% set s_match = sun_tom | selectattr('time', 'equalto', p_time_t) | first %}
+              {% set sun_watt = s_match.value if s_match is defined else 0 %}
+              {% set beschikbare_zon = [sun_watt - baseload, 0] | max %}
+              {% set solar_coverage = [beschikbare_zon / machine_max_watt, 1.0] | min %}
+              {% if p.price > 0 %}
+                {% set netto_price = p.price * (1.0 - solar_coverage) %}
+              {% else %}
+                {% set netto_price = p.price %}
+              {% endif %}
+              {% set ns_tom.items = ns_tom.items + [{'time': p.time, 'price': netto_price | round(5)}] %}
+            {% endfor %}
+          {% endif %}
+          {{ ns_tom.items }}
+    # ==========================================
+    # 3. NETTO WASDROGER SENSOR
+    # ==========================================
+    - name: "Netto Droger Prijs per Kwartier"
+      state: "measurement"
+      attributes:
+        # --- GEGEVENS VOOR VANDAAG ---
+        prices_today: >
+          {% set prices = state_attr('sensor.average_electricity_price', 'prices_today') %}
+          {% set sun = state_attr('sensor.prognose_energie_productie_vandaag', 'watts') %}
+          {% set machine_max_watt = 2100 %} 
+          {% set baseload = 450 %}
+          {% set ns = namespace(items=[]) %}
+          {% if prices is not none and sun is not none %}
+            {% for p in prices %}
+              {% set s_match = sun | selectattr('time', 'equalto', p.time) | first %}
+              {% set sun_watt = s_match.value if s_match is defined else 0 %}
+              {% set beschikbare_zon = [sun_watt - baseload, 0] | max %}
+              {% set solar_coverage = [beschikbare_zon / machine_max_watt, 1.0] | min %}
+              {% if p.price > 0 %}
+                {% set netto_price = p.price * (1.0 - solar_coverage) %}
+              {% else %}
+                {% set netto_price = p.price %}
+              {% endif %}
+              {% set ns.items = ns.items + [{'time': p.time, 'price': netto_price | round(5)}] %}
+            {% endfor %}
+          {% endif %}
+          {{ ns.items }}
+
+        # --- GEGEVENS VOOR MORGEN ---
+        prices_tomorrow: >
+          {% set prices_tom = state_attr('sensor.average_electricity_price', 'prices_tomorrow') %}
+          {% set sun_tom = state_attr('sensor.prognose_energie_productie_morgen', 'watts') %}
+          {% set machine_max_watt = 2100 %} 
+          {% set baseload = 450 %}
+          {% set ns_tom = namespace(items=[]) %}
+          {% if prices_tom is not none and sun_tom is not none %}
+            {% for p in prices_tom %}
+              {% set p_time_t = p.time | replace(' ', 'T') %}
+              {% set s_match = sun_tom | selectattr('time', 'equalto', p_time_t) | first %}
+              {% set sun_watt = s_match.value if s_match is defined else 0 %}
+              {% set beschikbare_zon = [sun_watt - baseload, 0] | max %}
+              {% set solar_coverage = [beschikbare_zon / machine_max_watt, 1.0] | min %}
+              {% if p.price > 0 %}
+                {% set netto_price = p.price * (1.0 - solar_coverage) %}
+              {% else %}
+                {% set netto_price = p.price %}
+              {% endif %}
+              {% set ns_tom.items = ns_tom.items + [{'time': p.time, 'price': netto_price | round(5)}] %}
+            {% endfor %}
+          {% endif %}
+          {{ ns_tom.items }}
+    # ==========================================
+    # 4. NETTO WASMACHINE + DROGER SENSOR
+    # ==========================================
+    - name: "Netto Was Droger Prijs per Kwartier"
+      state: "measurement"
+      attributes:
+        # --- GEGEVENS VOOR VANDAAG ---
+        prices_today: >
+          {% set prices = state_attr('sensor.average_electricity_price', 'prices_today') %}
+          {% set sun = state_attr('sensor.prognose_energie_productie_vandaag', 'watts') %}
+          {% set machine_max_watt = 2100 %} 
+          {% set baseload = 450 %}
+          {% set ns = namespace(items=[]) %}
+          {% if prices is not none and sun is not none %}
+            {% for p in prices %}
+              {% set s_match = sun | selectattr('time', 'equalto', p.time) | first %}
+              {% set sun_watt = s_match.value if s_match is defined else 0 %}
+              {% set beschikbare_zon = [sun_watt - baseload, 0] | max %}
+              {% set solar_coverage = [beschikbare_zon / machine_max_watt, 1.0] | min %}
+              {% if p.price > 0 %}
+                {% set netto_price = p.price * (1.0 - solar_coverage) %}
+              {% else %}
+                {% set netto_price = p.price %}
+              {% endif %}
+              {% set ns.items = ns.items + [{'time': p.time, 'price': netto_price | round(5)}] %}
+            {% endfor %}
+          {% endif %}
+          {{ ns.items }}
+
+        # --- GEGEVENS VOOR MORGEN ---
+        prices_tomorrow: >
+          {% set prices_tom = state_attr('sensor.average_electricity_price', 'prices_tomorrow') %}
+          {% set sun_tom = state_attr('sensor.prognose_energie_productie_morgen', 'watts') %}
+          {% set machine_max_watt = 2100 %} 
+          {% set baseload = 450 %}
+          {% set ns_tom = namespace(items=[]) %}
+          {% if prices_tom is not none and sun_tom is not none %}
+            {% for p in prices_tom %}
+              {% set p_time_t = p.time | replace(' ', 'T') %}
+              {% set s_match = sun_tom | selectattr('time', 'equalto', p_time_t) | first %}
+              {% set sun_watt = s_match.value if s_match is defined else 0 %}
+              {% set beschikbare_zon = [sun_watt - baseload, 0] | max %}
+              {% set solar_coverage = [beschikbare_zon / machine_max_watt, 1.0] | min %}
+              {% if p.price > 0 %}
+                {% set netto_price = p.price * (1.0 - solar_coverage) %}
+              {% else %}
+                {% set netto_price = p.price %}
+              {% endif %}
+              {% set ns_tom.items = ns_tom.items + [{'time': p.time, 'price': netto_price | round(5)}] %}
+            {% endfor %}
+          {% endif %}
+          {{ ns_tom.items }}
+

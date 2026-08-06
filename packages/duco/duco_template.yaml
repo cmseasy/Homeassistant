@@ -140,13 +140,16 @@ template:
 
   #######################
 
-    - name: "Ducobox Bypassstatus"
+    - name: Ducobox Bypassstatus
       unique_id: ducobox_bypassstatus
+      unit_of_measurement: "%"
+      state_class: measurement
       availability: >
         {{ state_attr('sensor.ducobox_boxinfoget_2', 'EnergyInfo') is not none }}
       state: >
         {% set info = state_attr('sensor.ducobox_boxinfoget_2', 'EnergyInfo') %}
         {{ info['BypassStatus'] | int(0) if info is not none else this.state | int(0) }}
+
 
 
 

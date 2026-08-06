@@ -1,0 +1,44 @@
+fan: #Shelly's
+  - platform: group
+    name: "Jaga DBH Ventilatoren"
+    entities:
+      - fan.jaga_pui
+      # - fan.jaga_bijkeuken
+      # - fan.jaga_voor_groot
+      # - fan.jaga_voor_klein
+
+
+template:
+  
+#   - sensor:
+#       - name: "Jaga pui fanspeed"
+#         unique_id: jaga_pui_fanspeed
+#         unit_of_measurement: "%"
+#         state_class: measurement
+#         icon: mdi:brightness-6
+# #        availability: >
+# #          {{ is_state('fan.jaga_pui', 'on') }}
+#         state: >
+#           {% if is_state('fan.jaga_pui', 'on') %}
+#             {% set bri = state_attr('fan.jaga_pui', 'percentage') | int(0) %}
+#             {{ bri }}
+#           {% else %}
+#             0
+#           {% endif %}
+# #            # {{ ((bri / 255) * 100) | round(0) }}
+
+  - sensor: 
+      - name: "Jaga DBH fanspeed"
+        unique_id: jaga_dbh_fanspeed
+        unit_of_measurement: "%"
+        state_class: measurement
+        icon: mdi:brightness-6
+        # Tip: Haal de hashtag weg als je wilt dat de sensor 'unavailable' wordt als de groep uit staat
+        # availability: >
+        #   {{ is_state('fan.jaga_dbh_ventilatoren', 'on') }}
+        state: >
+          {% if is_state('fan.jaga_dbh_ventilatoren', 'on') %}
+            {{ state_attr('fan.jaga_dbh_ventilatoren', 'percentage') | int(0) }}
+          {% else %}
+            0
+          {% endif %}
