@@ -1,9 +1,10 @@
-alias: "WP koelen: dauwpuntregeling (outlet)"
-description: ""
+alias: 'WP koelen: dauwpuntregeling (outlet)'
+description: ''
 triggers:
   - trigger: time_pattern
-    minutes: /1
+    minutes: /30
     id: periodiek
+    enabled: true
   - trigger: state
     entity_id:
       - input_select.wp_selecteer_bedrijfsmodus
@@ -17,9 +18,9 @@ triggers:
     entity_id:
       - binary_sensor.adlar_compressor_active
     from:
-      - "off"
+      - 'off'
     to:
-      - "on"
+      - 'on'
     id: Compressor gestart 10 sec geleden
     enabled: true
     for:
@@ -30,9 +31,9 @@ triggers:
     entity_id:
       - binary_sensor.adlar_compressor_active
     from:
-      - "off"
+      - 'off'
     to:
-      - "on"
+      - 'on'
     id: Compressor gestart 1 min geleden
     enabled: true
     for:
@@ -43,9 +44,9 @@ triggers:
     entity_id:
       - binary_sensor.adlar_compressor_active
     from:
-      - "on"
+      - 'on'
     to:
-      - "off"
+      - 'off'
     id: Compressor gestopt
     enabled: true
     for:
@@ -67,10 +68,11 @@ triggers:
       hours: 0
       minutes: 0
       seconds: 1
-    enabled: false
+    enabled: true
     from: null
     to: null
     trigger: state
+    id: Dauwpunt
   - trigger: state
     entity_id:
       - sensor.adlar_water_outlet_temp_t7
@@ -80,12 +82,13 @@ triggers:
       seconds: 0
     from: null
     to: null
-    enabled: false
+    enabled: true
+    id: Outlet
 conditions:
   - condition: state
     entity_id: switch.adlar_main_switch
     state:
-      - "on"
+      - 'on'
   - condition: state
     entity_id: select.adlar_mode
     state:
@@ -93,7 +96,7 @@ conditions:
   - condition: state
     entity_id: select.adlar_cooling_setting_curve
     state:
-      - "Off"
+      - 'Off'
   - condition: state
     entity_id: timer.wachttijd_koelcurve_veranderen
     state: idle
@@ -102,7 +105,7 @@ conditions:
     state:
       - Auto koelen
   - condition: template
-    value_template: "{{ is_state_attr('switch.schedule_d94a8d', 'current_slot', none) }}"
+    value_template: '{{ is_state_attr(''switch.schedule_d94a8d'', ''current_slot'', none) }}'
     enabled: true
   - condition: state
     entity_id: select.adlar_p116_regeling_in_of_outlet
@@ -121,30 +124,32 @@ actions:
           - condition: trigger
             id:
               - periodiek
+              - Dauwpunt
+              - Outlet
           - condition: state
             entity_id: switch.schedule_d94a8d
             state:
-              - "on"
+              - 'on'
         sequence:
           - repeat:
               while:
                 - condition: state
                   entity_id: binary_sensor.adlar_compressor_active
                   state:
-                    - "off"
+                    - 'off'
                   for:
                     hours: 0
                     minutes: 45
                     seconds: 0
                 - condition: numeric_state
                   entity_id: sensor.adlar_water_outlet_temp_t7
-                  value_template: "{{ float(state.state) }}"
+                  value_template: '{{ float(state.state) }}'
                   above: sensor.dauwpunt_woonkamer
                 - condition: timer.is_idle
                   target:
                     entity_id: timer.wachttijd_temp_set_veranderen
                   options:
-                    for: "00:00:00"
+                    for: '00:00:00'
               sequence:
                 - action: number.set_value
                   target:
@@ -198,23 +203,99 @@ actions:
               dauwpunt: >-
                 {{ states('sensor.dauwpunt_woonkamer') | float(0) | round(0,
                 'ceil') }}
-              temp_set: "{{ states('number.adlar_temp_set_cooling') | int(0) }}"
-              temp_buiten: "{{ states('sensor.buitentemperatuur_gemiddeld') | float(0) }}"
+              temp_set: '{{ states(''number.adlar_temp_set_cooling'') | int(0) }}'
+              temp_buiten: '{{ states(''sensor.buitentemperatuur_gemiddeld'') | float(0) }}'
               max_temp_set: >-
                 {% if temp_buiten < 23 %} 18 {% elif 23 <= temp_buiten < 25 %}
                 17 {% elif 25 <= temp_buiten < 27 %} 16 {% elif 27 <=
                 temp_buiten < 29 %} 15 {% elif 29 <= temp_buiten < 31 %} 14  {%
                 elif 31 <= temp_buiten < 33 %} 13 {% else %} 10 {% endif %}
-              new_temp_set: "{{ [dauwpunt, max_temp_set | int] | max }}"
+              new_temp_set: '{{ [dauwpunt, max_temp_set | int] | max }}'
+            enabled: false
           - if:
               - condition: template
-                value_template: "{{ temp_set != new_temp_set | int }}"
+                value_template: '{{ temp_set != new_temp_set | int }}'
+                enabled: false
+              - condition: template
+                value_template: |-
+                  {% set n = new_temp_set | int %}
+                  {% set t = temp_set | int %}
+                  {% set h = 1 %}
+                  {{ (n > t) or (n < t and (t - n) >= h) }}
+                enabled: false
+              - condition: template
+                value_template: >-
+                  {% set dauwpunt = states('sensor.dauwpunt_woonkamer') |
+                  float(0) | round(0, 'ceil') | int %} {% set temp_set =
+                  states('number.adlar_temp_set_cooling') | int(0) %} {% set
+                  temp_buiten = states('sensor.buitentemperatuur_gemiddeld') |
+                  float(0) %}
+                          
+                  {# 1. Bereken max_temp_set met de nieuwe lagere temperaturen
+                  #} {% if temp_buiten < 23 %} {% set max_temp_set = 18 %} {%
+                  elif 23 <= temp_buiten < 25 %} {% set max_temp_set = 17 %} {%
+                  elif 25 <= temp_buiten < 27 %} {% set max_temp_set = 16 %} {%
+                  elif 27 <= temp_buiten < 29 %} {% set max_temp_set = 15 %} {%
+                  elif 29 <= temp_buiten < 31 %} {% set max_temp_set = 14 %} {%
+                  elif 31 <= temp_buiten < 33 %} {% set max_temp_set = 13 %} {%
+                  else %} {% set max_temp_set = 10 %} {% endif %}
+                          
+                  {# 2. Bepaal het nieuwe setpoint #} {% set n = [dauwpunt,
+                  max_temp_set] | max | int %} {% set t = temp_set | int %} {%
+                  set h = 1 %}
+                          
+                  {# 3. De voorwaarde geeft TRUE of FALSE terug aan de IF #} {{
+                  (n > t) or (n < t and (t - n) >= h) }}
             then:
               - action: number.set_value
                 target:
                   entity_id: number.adlar_temp_set_cooling
                 data:
-                  value: "{{ new_temp_set }}"
+                  value: '{{ new_temp_set }}'
+                enabled: false
+              - action: number.set_value
+                target:
+                  entity_id: number.adlar_temp_set_cooling
+                data:
+                  value: >-
+                    {% set dauwpunt = states('sensor.dauwpunt_woonkamer') |
+                    float(0) | round(0, 'ceil') | int %} {% set temp_buiten =
+                    states('sensor.buitentemperatuur_gemiddeld') | float(0) %}
+                    {% if temp_buiten < 23 %} {% set max_temp_set = 18 %} {%
+                    elif 23 <= temp_buiten < 25 %} {% set max_temp_set = 17 %}
+                    {% elif 25 <= temp_buiten < 27 %} {% set max_temp_set = 16
+                    %} {% elif 27 <= temp_buiten < 29 %} {% set max_temp_set =
+                    15 %} {% elif 29 <= temp_buiten < 31 %} {% set max_temp_set
+                    = 14 %} {% elif 31 <= temp_buiten < 33 %} {% set
+                    max_temp_set = 13 %} {% else %} {% set max_temp_set = 10 %}
+                    {% endif %} {{ [dauwpunt, max_temp_set] | max | int }}
+                enabled: false
+              - action: number.set_value
+                target:
+                  entity_id: number.adlar_temp_set_cooling
+                data:
+                  value: |2-
+                          {% set dauwpunt = states('sensor.dauwpunt_woonkamer') | float(0) | round(0, 'ceil') | int %}
+                          {% set temp_set = states('number.adlar_temp_set_cooling') | int(0) %}
+                          {% set temp_buiten = states('sensor.buitentemperatuur_gemiddeld') | float(0) %}
+                          
+                          {# 1. Bereken max_temp_set met de lagere temperaturen #}
+                          {% if temp_buiten < 23 %} {% set max_temp_set = 18 %}
+                          {% elif 23 <= temp_buiten < 25 %} {% set max_temp_set = 17 %}
+                          {% elif 25 <= temp_buiten < 27 %} {% set max_temp_set = 16 %}
+                          {% elif 27 <= temp_buiten < 29 %} {% set max_temp_set = 15 %}
+                          {% elif 29 <= temp_buiten < 31 %} {% set max_temp_set = 14 %}
+                          {% elif 31 <= temp_buiten < 33 %} {% set max_temp_set = 13 %}
+                          {% else %} {% set max_temp_set = 10 %} {% endif %}
+                          
+                          {# 2. Bepaal het potentiële nieuwe setpoint (n) en het huidige setpoint (t) #}
+                          {% set n = [dauwpunt, max_temp_set] | max | int %}
+                          {% set t = temp_set | int %}
+                          {% set h = 1 %}
+                          
+                          {# 3. Controleer de hysterese. Indien WAAR: stuur 'n', indien ONWAAR: stuur huidige 't' terug #}
+                          {{ n if (n > t) or (n < t and (t - n) >= h) else t }}
+                enabled: true
               - delay:
                   hours: 0
                   minutes: 0
@@ -294,23 +375,90 @@ actions:
               dauwpunt: >-
                 {{ states('sensor.dauwpunt_woonkamer') | float(0) | round(0,
                 'ceil') }}
-              temp_set: "{{ states('number.adlar_temp_set_cooling') | int(0) }}"
-              temp_buiten: "{{ states('sensor.buitentemperatuur_gemiddeld') | float(0) }}"
+              temp_set: '{{ states(''number.adlar_temp_set_cooling'') | int(0) }}'
+              temp_buiten: '{{ states(''sensor.buitentemperatuur_gemiddeld'') | float(0) }}'
               max_temp_set: >-
                 {% if temp_buiten < 23 %} 20 {% elif 23 <= temp_buiten < 25 %}
                 19 {% elif 25 <= temp_buiten < 27 %} 18 {% elif 27 <=
                 temp_buiten < 29 %} 17 {% elif 29 <= temp_buiten < 31 %} 16  {%
                 elif 31 <= temp_buiten < 33 %} 15 {% else %} 10 {% endif %}
-              new_temp_set: "{{ [dauwpunt, max_temp_set | int] | max }}"
+              new_temp_set: '{{ [dauwpunt, max_temp_set | int] | max }}'
+            enabled: false
           - if:
               - condition: template
-                value_template: "{{ temp_set != new_temp_set | int }}"
+                value_template: |-
+
+
+
+                  {% set n = new_temp_set | int %}
+                  {% set t = temp_set | int %}
+                  {% set h = 1 %}
+                  {{ (n > t) or (n < t and (t - n) >= h) }}
+                enabled: false
+              - condition: template
+                value_template: >-
+                  {% set dauwpunt = states('sensor.dauwpunt_woonkamer') |
+                  float(0) | round(0, 'ceil') | int %} {% set temp_set =
+                  states('number.adlar_temp_set_cooling') | int(0) %} {% set
+                  temp_buiten = states('sensor.buitentemperatuur_gemiddeld') |
+                  float(0) %}
+                          
+                  {# 1. Bereken max_temp_set #} {% if temp_buiten < 23 %} {% set
+                  max_temp_set = 20 %} {% elif 23 <= temp_buiten < 25 %} {% set
+                  max_temp_set = 19 %} {% elif 25 <= temp_buiten < 27 %} {% set
+                  max_temp_set = 18 %} {% elif 27 <= temp_buiten < 29 %} {% set
+                  max_temp_set = 17 %} {% elif 29 <= temp_buiten < 31 %} {% set
+                  max_temp_set = 16 %} {% elif 31 <= temp_buiten < 33 %} {% set
+                  max_temp_set = 15 %} {% else %} {% set max_temp_set = 10 %} {%
+                  endif %}
+                          
+                  {# 2. Bepaal het nieuwe setpoint #} {% set n = [dauwpunt,
+                  max_temp_set] | max | int %} {% set t = temp_set | int %} {%
+                  set h = 1 %}
+                      
+                  {# 3. De voorwaarde geeft TRUE of FALSE terug aan de IF #} {{
+                  (n > t) or (n < t and (t - n) >= h) }}
             then:
               - action: number.set_value
                 target:
                   entity_id: number.adlar_temp_set_cooling
                 data:
-                  value: "{{ new_temp_set }}"
+                  value: '{{ new_temp_set }}'
+                enabled: false
+              - action: number.set_value
+                target:
+                  entity_id: number.adlar_temp_set_cooling
+                data:
+                  value: >-
+                    {% set dauwpunt = states('sensor.dauwpunt_woonkamer') |
+                    float(0) | round(0, 'ceil') | int %}
+                                {% set temp_buiten = states('sensor.buitentemperatuur_gemiddeld') | float(0) %}
+                                {% if temp_buiten < 23 %} {% set max_temp_set = 20 %}
+                                {% elif 23 <= temp_buiten < 25 %} {% set max_temp_set = 19 %}
+                                {% elif 25 <= temp_buiten < 27 %} {% set max_temp_set = 18 %}
+                                {% elif 27 <= temp_buiten < 29 %} {% set max_temp_set = 17 %}
+                                {% elif 29 <= temp_buiten < 31 %} {% set max_temp_set = 16 %}
+                                {% elif 31 <= temp_buiten < 33 %} {% set max_temp_set = 15 %}
+                                {% else %} {% set max_temp_set = 10 %} {% endif %}
+                                {{ [dauwpunt, max_temp_set] | max | int }}
+                enabled: false
+              - action: number.set_value
+                target:
+                  entity_id: number.adlar_temp_set_cooling
+                data:
+                  value: |2-
+                          {% set dauwpunt = states('sensor.dauwpunt_woonkamer') | float(0) | round(0, 'ceil') | int %}
+                          {% set t = states('number.adlar_temp_set_cooling') | int(0) %}
+                          {% set tb = states('sensor.buitentemperatuur_gemiddeld') | float(0) %}
+                          
+                          {# 1. Bereken max_temp_set via een compacte inline-if #}
+                          {% set max_t = 18 if tb < 23 else 17 if tb < 25 else 16 if tb < 27 else 15 if tb < 29 else 14 if tb < 31 else 13 if tb < 33 else 10 %}
+                          
+                          {# 2. Bepaal het potentieel nieuwe setpoint (n) #}
+                          {% set n = [dauwpunt + 1, max_t] | max | int %}
+                          
+                          {# 3. Controleer de hysterese-voorwaarde. Indien WAAR: stuur 'n', indien ONWAAR: behoud huidige 't' #}
+                          {{ n if (n > t) or (n < t and (t - n) >= 1) else t }}
               - action: timer.start
                 metadata: {}
                 data:
@@ -330,33 +478,22 @@ actions:
                 data:
                   name: Adlar automation
                   message: >
-                    {% set dauwpunt = states ('sensor.dauwpunt_woonkamer') |
-                    float(0) | round(0,'ceil') %} {% set temp_set =
-                    states('number.adlar_temp_set_cooling') | int(0) %} Wp
-                    koelen (outlet) 2 temp set: van {{ temp_set }} naar {{
-                    dauwpunt + 0 }} 
+                    Wp koelen (outlet) 2 temp set aangepast van {{ temp_set }}
+                    naar {{ new_temp_set }} (Dauwpunt: {{ dauwpunt }})
                   entity_id: number.adlar_temp_set_cooling
                 enabled: true
           - alias: Temp set bij start kouderegeling
             target:
               entity_id: number.adlar_temp_set_cooling
             data:
-              value: >+
+              value: >
                 {% set dauwpunt = states('sensor.dauwpunt_woonkamer') | float(0)
-                | round(0, 'ceil') %}
-
-                {% set temp_set = states('number.adlar_temp_set_cooling') |
-                int(0) %} 
-
-                {% if temp_set != dauwpunt %}
-
-                {{ [dauwpunt + 0, 15] | max }}
-
-                {% else %}
+                | round(0, 'ceil') %} {% set temp_set =
+                states('number.adlar_temp_set_cooling') | int(0) %}  {% if
+                temp_set != dauwpunt %} {{ [dauwpunt + 0, 15] | max }} {% else
+                %}
                   {{ temp_set }}
                 {% endif %}
-
-
             action: number.set_value
             enabled: false
       - conditions:
@@ -366,7 +503,7 @@ actions:
           - condition: state
             entity_id: binary_sensor.adlar_compressor_active
             state:
-              - "on"
+              - 'on'
           - condition: state
             entity_id: timer.wachttijd_temp_set_veranderen
             state:
@@ -376,7 +513,7 @@ actions:
             below: -2
           - condition: numeric_state
             entity_id: sensor.adlar_compressor_running_frequency
-            above: 30
+            above: 29
             enabled: true
             below: 35
           - condition: numeric_state
@@ -439,16 +576,16 @@ actions:
           - condition: state
             entity_id: switch.adlar_main_switch
             state:
-              - "off"
+              - 'off'
           - condition: numeric_state
             entity_id: sensor.adlar_water_outlet_temp_t7
-            value_template: "{{ float(state.state, 0) - 2 }}"
+            value_template: '{{ float(state.state, 0) - 2 }}'
             enabled: true
             above: sensor.dauwpunt_woonkamer
           - condition: state
             entity_id: binary_sensor.adlar_compressor_active
             state:
-              - "on"
+              - 'on'
             for:
               hours: 0
               minutes: 5
