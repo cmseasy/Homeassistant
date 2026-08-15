@@ -161,7 +161,7 @@ uart:
     data_bits: 8
     stop_bits: 1
     parity: NONE
-    rx_full_threshold: 1 # Helpt om de buffer direct te legen en timeouts 
+#    rx_full_threshold: 1 # Helpt om de buffer direct te legen en timeouts 
 
 # 2. De basis Modbus-bus configureren
 modbus:
