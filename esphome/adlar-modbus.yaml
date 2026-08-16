@@ -24,7 +24,10 @@ esp32:
       minimum_chip_revision: "3.1"
       sram1_as_iram: true
 
-
+# Dit activeert het automatische knipperen bij storingen
+status_led:
+  pin: GPIO2  # GPIO2 is de ingebouwde blauwe LED op de esp32dev
+  
 logger:
   level: INFO
   baud_rate: 0
