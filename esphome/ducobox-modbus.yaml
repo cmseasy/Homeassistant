@@ -70,7 +70,11 @@ esp32:
     components:
     - name: "espressif/esp_websocket_client"
       ref: 1.5.0
-          
+
+# Dit activeert het automatische knipperen bij storingen
+status_led:
+  pin: GPIO2  # GPIO2 is de ingebouwde blauwe LED op de esp32dev
+      
 # Verbind met uw Wi-Fi netwerk
 wifi:
   ssid: !secret wifi_ssid
