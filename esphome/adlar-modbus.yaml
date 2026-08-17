@@ -111,8 +111,8 @@ one_wire:
 # Adlar modbus UART
 uart:
   - id: uart_modbus
-    tx_pin: GPIO17
-    rx_pin: GPIO16
+    # tx_pin: GPIO17
+    # rx_pin: GPIO16
     baud_rate: 9600
     data_bits: 8
     stop_bits: 1
