@@ -119,6 +119,7 @@ uart:
     parity: NONE
     rx_buffer_size: 512
     rx_timeout: 4       # ESP32-specifiek: geeft de Adlar-chip meer tijd tussen losse bytes
+    
 
 # De juiste plek voor de maximale wachttijd (timeout)
 modbus:
@@ -127,7 +128,8 @@ modbus:
     role: client
     send_wait_time: 2000ms # 2000 is default #1000ms   # Verhoogd naar 1000ms om de trage Adlar meer tijd te geven
     turnaround_time: 600ms # 600 is default # 100ms   # Iets meer rusttijd tussen opeenvolgende commando's
-
+  
+    
 modbus_controller:
   - id: modbus_adlar
     modbus_id: modbus_client
@@ -135,7 +137,7 @@ modbus_controller:
     update_interval: 30s
     command_throttle: 300ms  # Verhoogd: geef de warmtepomp 300ms ademruimte tussen registers
     setup_priority: -100
-
+    
   - id: modbus_adlar_traag
     modbus_id: modbus_client
     address: 0x01
