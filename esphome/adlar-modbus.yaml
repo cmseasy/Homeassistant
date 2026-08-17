@@ -105,7 +105,7 @@ one_wire:
   - platform: gpio
     pin: 
       number: 22
-
+    id: dallas_bus
 
       
 # Adlar modbus UART
@@ -1278,9 +1278,10 @@ sensor:
 
 # Temperatuur voelers DS18B20
   - platform: dallas_temp
+    one_wire_id: dallas_bus
 #    address: 0x14000000afadea28
     name: "Buffervat aanvoer temp"
-    id: Ta
+#    id: Ta
     unit_of_measurement: "°C"
     device_class: temperature
     update_interval: 10s
@@ -1290,9 +1291,10 @@ sensor:
       sorting_weight: 1
 
   - platform: dallas_temp
+    one_wire_id: dallas_bus
 #    address:  0x16000000bad9d528
     name: "Buffervat retour temp"
-    id: Tr
+#    id: Tr
     unit_of_measurement: "°C"
     device_class: temperature
     update_interval: 10s
