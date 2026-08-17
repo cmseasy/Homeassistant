@@ -28,30 +28,30 @@ esp32:
 status_led:
   pin: GPIO2  # GPIO2 is de ingebouwde blauwe LED op de esp32dev
   
-# logger:
-#   level: INFO
-#   baud_rate: 0
-
-#   on_message:
-#     - level: ERROR
-#       then:
-#         - homeassistant.event:
-#             event: esphome.log_message
-#             data:
-#               level: ERROR
-#               device: "ducobox-modbus"
-#               tag: !lambda "return tag;"
-#               message: !lambda "return message;"
-
 logger:
-  level: DEBUG
-  logs:
-    modbus: NONE
-    modbus_controller: NONE
-    modbus_controller.sensor: NONE
-    modbus_controller.binary_sensor: NONE
-    modbus_controller.text_sensor: NONE
-    modbus_controller.switch: NONE
+  level: INFO
+  baud_rate: 0
+
+  on_message:
+    - level: ERROR
+      then:
+        - homeassistant.event:
+            event: esphome.log_message
+            data:
+              level: ERROR
+              device: "ducobox-modbus"
+              tag: !lambda "return tag;"
+              message: !lambda "return message;"
+
+# logger:
+#   level: DEBUG
+#   logs:
+#     modbus: NONE
+#     modbus_controller: NONE
+#     modbus_controller.sensor: NONE
+#     modbus_controller.binary_sensor: NONE
+#     modbus_controller.text_sensor: NONE
+#     modbus_controller.switch: NONE
 
 # logger:
 #   level: VERY_VERBOSE
