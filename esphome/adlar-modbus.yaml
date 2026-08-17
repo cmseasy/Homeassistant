@@ -1291,8 +1291,8 @@ sensor:
 # Temperatuur voelers DS18B20
   - platform: dallas_temp
     one_wire_id: dallas_bus
-    address: 0x9d000000baec5428
-    name: "Buffervat aanvoer temp"
+    address:  0x43000000bab35b28
+    name: "Buffervat aanvoer temp I"
 #    id: Ta
     unit_of_measurement: "°C"
     device_class: temperature
@@ -1304,8 +1304,8 @@ sensor:
 
   - platform: dallas_temp
     one_wire_id: dallas_bus
-    address:  0x43000000bab35b28
-    name: "Buffervat retour temp"
+    address: 0x9d000000baec5428
+    name: "Buffervat retour temp II"
 #    id: Tr
     unit_of_measurement: "°C"
     device_class: temperature
