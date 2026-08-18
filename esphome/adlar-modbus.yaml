@@ -31,6 +31,8 @@ status_led:
 logger:
   level: INFO
   baud_rate: 0
+  logs:
+    modbus: ERROR   # Verberg specifiek de [W][modbus:057] waarschuwingen
 
   on_message:
     - level: ERROR
@@ -39,7 +41,7 @@ logger:
             event: esphome.log_message
             data:
               level: ERROR
-              device: "ducobox-modbus"
+              device: "adlar-modbus" # Aangepast van ducobox naar adlar
               tag: !lambda "return tag;"
               message: !lambda "return message;"
 
@@ -136,7 +138,7 @@ modbus:
   - uart_id: uart_modbus
     id: modbus_client
     role: client
-    send_wait_time: 5000ms # was 3000  was 2000 is default #1000ms   # Verhoogd naar 1000ms om de trage Adlar meer tijd te geven
+    send_wait_time: 2000ms # was 3000  was 2000 is default #1000ms   # Verhoogd naar 1000ms om de trage Adlar meer tijd te geven
     turnaround_time: 300ms # 600 is default # 100ms   # Iets meer rusttijd tussen opeenvolgende commando's
   
     
