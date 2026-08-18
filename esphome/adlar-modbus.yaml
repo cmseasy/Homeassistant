@@ -136,12 +136,12 @@ modbus:
   - uart_id: uart_modbus
     id: modbus_client
     role: client
-    send_wait_time: 3000ms # was 2000 is default #1000ms   # Verhoogd naar 1000ms om de trage Adlar meer tijd te geven
-    turnaround_time: 600ms # 600 is default # 100ms   # Iets meer rusttijd tussen opeenvolgende commando's
+    send_wait_time: 5000ms # was 3000  was 2000 is default #1000ms   # Verhoogd naar 1000ms om de trage Adlar meer tijd te geven
+    turnaround_time: 300ms # 600 is default # 100ms   # Iets meer rusttijd tussen opeenvolgende commando's
   
     
 modbus_controller:
-  - id: modbus_adlar
+  - id: modbus_adlar 
     modbus_id: modbus_client
     address: 0x01
     update_interval: 30s
