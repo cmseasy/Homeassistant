@@ -144,7 +144,7 @@ modbus_controller:
   - id: modbus_adlar 
     modbus_id: modbus_client
     address: 0x01
-    update_interval: 30s
+    update_interval: 29s  # priemgetal
     command_throttle: 300ms  # Verhoogd: geef de warmtepomp 300ms ademruimte tussen registers
     setup_priority: -100
     
@@ -1296,7 +1296,7 @@ sensor:
 #    id: Ta
     unit_of_measurement: "°C"
     device_class: temperature
-    update_interval: 29s
+    update_interval: 31s
     filters:
     - offset: 0 # adjust temp afwijking
     web_server:
@@ -1309,7 +1309,7 @@ sensor:
 #    id: Tr
     unit_of_measurement: "°C"
     device_class: temperature
-    update_interval: 31s
+    update_interval: 37s
     filters:
     - offset: 0 # adjust temp afwijking
     web_server:
