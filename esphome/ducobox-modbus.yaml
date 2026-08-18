@@ -528,6 +528,14 @@ interval:
 
 sensor:
 
+  - platform: uptime
+    name: "ESP Uptime"
+    id: esp_uptime
+    update_interval: 60s
+
+
+
+  
   # ==============================================================================
   # Matterjs_server sensoren, temperaturen en vochtigheid
   # ==============================================================================
