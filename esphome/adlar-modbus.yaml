@@ -1296,7 +1296,7 @@ sensor:
 #    id: Ta
     unit_of_measurement: "°C"
     device_class: temperature
-    update_interval: 10s
+    update_interval: 29s
     filters:
     - offset: 0 # adjust temp afwijking
     web_server:
@@ -1309,7 +1309,7 @@ sensor:
 #    id: Tr
     unit_of_measurement: "°C"
     device_class: temperature
-    update_interval: 10s
+    update_interval: 31s
     filters:
     - offset: 0 # adjust temp afwijking
     web_server:
