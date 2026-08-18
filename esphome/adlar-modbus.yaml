@@ -1279,10 +1279,15 @@ binary_sensor:
 
 sensor:
 
+  # - platform: uptime
+  #   name: Adlar Uptime
+  #   accuracy_decimals: 0
+  #   disabled_by_default: true
+
   - platform: uptime
-    name: Adlar Uptime
-    accuracy_decimals: 0
-    disabled_by_default: true
+    name: "ESP Uptime"
+    id: esp_uptime
+    update_interval: 60s
 
   - platform: wifi_signal
     name: Adlar WiFi Signal
