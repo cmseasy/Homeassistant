@@ -180,6 +180,7 @@ modbus_controller:
     modbus_id: modbus_client
     address: 1
     update_interval: 11s # 11 is priemgetal30s
+    max_cmd_retries: 2
 
   - id: modbus_duco_traag
     modbus_id: modbus_client
@@ -188,13 +189,15 @@ modbus_controller:
                          # matterjs-server interval staat op 61s, beide priemgetallen
     # command_throttle: 293ms  # Verhoogd: geef de warmtepomp 300ms ademruimte tussen registers
     setup_priority: -110
+    max_cmd_retries: 2
         
   - id: modbus_duco_statisch # voor bv setpoints die niet vaak veranderen
     modbus_id: modbus_client
     address: 1
-    update_interval: 599s  # Ongeveer 1 uur en een priemgetal
+    update_interval: 599s  # Ongeveer 10min en een priemgetal
     # command_throttle: 300ms  # Verhoogd: geef de warmtepomp 300ms ademruimte tussen registers
     setup_priority: -120
+    max_cmd_retries: 2
 
 # Glabale variabelen  
 globals:
