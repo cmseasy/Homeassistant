@@ -291,67 +291,104 @@ number:
     mode: box
     unit_of_measurement: "%"
     disabled_by_default: false
-    force_new_range: true 
+    # GEWIJZIGD: Alleen triggeren als de waarde ECHT verandert. Voorkomt constante on_value triggers.
+    force_new_range: false 
     
-    # CRUCIALE FIX: Polled deze holding slechts 1x per minuut (12 x 5s) om Exception 4 te voorkomen
-    # skip_updates: 12  # niet meer nodig, modbus controller staat op ca 1 minuut
 
     write_lambda: |-
       ESP_LOGI("main", "Schrijf setpoint %d%% naar Modbus.", (int)x);
       return x;
 
-    # Jouw complete ongewijzigde regellogica
+    # Geoptimaliseerde regellogica
     on_value:
       then:
         - lambda: |-
-            // 1. BLOKKEER TIJDENS BOOT EN NEGEER INCORRECTE NULLEN/NAN
-            if (std::isnan(x) || !id(wtw_systeem_volledig_online)) {
-              return; 
-            }
+            // 1. BLOKKEER SNELLER (Early exit)
+            if (std::isnan(x) || !id(wtw_systeem_volledig_online)) return; 
 
             int binnenkomende_waarde = (int)x;
             int berekend_doel = (int)id(rh_berekend_doel).state;
             int vorige_waarde = id(vorige_rh_setpoint);
 
-            // CRUCIALE BOOT-FIX: Als de vorige waarde nog 0 is, is dit de allereerste poll na de upload.
+            // 2. CRUCIALE BOOT-FIX
             if (vorige_waarde == 0) {
               id(vorige_rh_setpoint) = binnenkomende_waarde;
-              ESP_LOGI("main", "Eerste Modbus-poll succesvol verwerkt na boot. Systeem blijft in AUTOMATISCHE modus.\nDe RH regeling begint met een RH setpoint van %d%%.", binnenkomende_waarde);
+              ESP_LOGI("main", "Eerste Modbus-poll succesvol. RH setpoint start op %d%%.", binnenkomende_waarde);
               return;
             }
 
-            // Sla de nieuwe waarde op voor de volgende poll
+            // Sla direct op
             id(vorige_rh_setpoint) = binnenkomende_waarde;
 
-            // 2. Als de waarde exact gelijk is aan de vorige keer, doe niets
-            if (binnenkomende_waarde == vorige_waarde) {
+            // 3. COMBINEER CHECKS (Bespaart tijd en voorkomt fantoom-triggers)
+            if (binnenkomende_waarde == vorige_waarde || binnenkomende_waarde == berekend_doel) {
               return;
             }
 
-            // 3. Negeer automatische updates van onze eigen reguliere scripts
-            if (binnenkomende_waarde == berekend_doel) {
-              ESP_LOGI("main", "Automatische RH setpoint update naar %d%%.", binnenkomende_waarde);
+            // 4. CRUCIALE BLOKKADES (Douche & Handmatig al actief)
+            if (id(wtw_douche_actief).state || id(wtw_handmatig_actief).state) {
               return;
             }
 
-            // --- CRUCIALE BLOKKADE: Fantoom handmatige modus voorkomen ---
-            if (id(wtw_douche_actief).state) {
-              ESP_LOGD("main", "Modbus wijziging genegeerd: Douche-afwikkeling is actief.");
-              return;
-            }
-
-            // 4. Als de handmatige modus al actief is, negeer dan de Modbus-echo's
-            if (id(wtw_handmatig_actief).state) {
-              return;
-            }
-
-            // 5. De gebruiker verandert ZELF de waarde via de UI -> Naar handmatig forceren!
+            // 5. Gebruiker verandert zelf de waarde via UI -> Activeer handmatig
             id(wtw_rh_regeling).stop();
             id(wtw_modus_normaal).stop();
-
-            // Activeer de handmatige modus direct
             id(wtw_handmatig_actief).publish_state(true);
-            ESP_LOGI("main", "Handmatige modus door gebruiker! Van %d%% naar %d%%.", vorige_waarde, binnenkomende_waarde);
+            ESP_LOGI("main", "Handmatige modus geactiveerd! (%d%% -> %d%%)", vorige_waarde, binnenkomende_waarde);
+
+      
+    # Jouw complete ongewijzigde regellogica
+    # on_value:
+    #   then:
+    #     - lambda: |-
+    #         // 1. BLOKKEER TIJDENS BOOT EN NEGEER INCORRECTE NULLEN/NAN
+    #         if (std::isnan(x) || !id(wtw_systeem_volledig_online)) {
+    #           return; 
+    #         }
+
+    #         int binnenkomende_waarde = (int)x;
+    #         int berekend_doel = (int)id(rh_berekend_doel).state;
+    #         int vorige_waarde = id(vorige_rh_setpoint);
+
+    #         // CRUCIALE BOOT-FIX: Als de vorige waarde nog 0 is, is dit de allereerste poll na de upload.
+    #         if (vorige_waarde == 0) {
+    #           id(vorige_rh_setpoint) = binnenkomende_waarde;
+    #           ESP_LOGI("main", "Eerste Modbus-poll succesvol verwerkt na boot. Systeem blijft in AUTOMATISCHE modus.\nDe RH regeling begint met een RH setpoint van %d%%.", binnenkomende_waarde);
+    #           return;
+    #         }
+
+    #         // Sla de nieuwe waarde op voor de volgende poll
+    #         id(vorige_rh_setpoint) = binnenkomende_waarde;
+
+    #         // 2. Als de waarde exact gelijk is aan de vorige keer, doe niets
+    #         if (binnenkomende_waarde == vorige_waarde) {
+    #           return;
+    #         }
+
+    #         // 3. Negeer automatische updates van onze eigen reguliere scripts
+    #         if (binnenkomende_waarde == berekend_doel) {
+    #           ESP_LOGI("main", "Automatische RH setpoint update naar %d%%.", binnenkomende_waarde);
+    #           return;
+    #         }
+
+    #         // --- CRUCIALE BLOKKADE: Fantoom handmatige modus voorkomen ---
+    #         if (id(wtw_douche_actief).state) {
+    #           ESP_LOGD("main", "Modbus wijziging genegeerd: Douche-afwikkeling is actief.");
+    #           return;
+    #         }
+
+    #         // 4. Als de handmatige modus al actief is, negeer dan de Modbus-echo's
+    #         if (id(wtw_handmatig_actief).state) {
+    #           return;
+    #         }
+
+    #         // 5. De gebruiker verandert ZELF de waarde via de UI -> Naar handmatig forceren!
+    #         id(wtw_rh_regeling).stop();
+    #         id(wtw_modus_normaal).stop();
+
+    #         // Activeer de handmatige modus direct
+    #         id(wtw_handmatig_actief).publish_state(true);
+    #         ESP_LOGI("main", "Handmatige modus door gebruiker! Van %d%% naar %d%%.", vorige_waarde, binnenkomende_waarde);
 
     web_server:
       sorting_group_id: sorting_group_configuration_setup
