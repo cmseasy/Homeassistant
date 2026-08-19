@@ -276,65 +276,65 @@ switch:
       sorting_weight: 000
 
 # 2. Setpoint RH
-number:
-  - platform: modbus_controller
-    modbus_controller_id: modbus_duco_traag
-    name: "WTW RH setpoint"
-    id: rh_setpoint
-    icon: "mdi:water-percent"
-    register_type: holding       # Terug naar holding om de echte 60% te kunnen lezen
-    address: 582
-    value_type: S_WORD
-    min_value: 0
-    max_value: 100
-    step: 5
-    mode: box
-    unit_of_measurement: "%"
-    disabled_by_default: false
-    # GEWIJZIGD: Alleen triggeren als de waarde ECHT verandert. Voorkomt constante on_value triggers.
-    force_new_range: false 
+# number:
+#   - platform: modbus_controller
+#     modbus_controller_id: modbus_duco_traag
+#     name: "WTW RH setpoint"
+#     id: rh_setpoint
+#     icon: "mdi:water-percent"
+#     register_type: holding       # Terug naar holding om de echte 60% te kunnen lezen
+#     address: 582
+#     value_type: S_WORD
+#     min_value: 0
+#     max_value: 100
+#     step: 5
+#     mode: box
+#     unit_of_measurement: "%"
+#     disabled_by_default: false
+#     # GEWIJZIGD: Alleen triggeren als de waarde ECHT verandert. Voorkomt constante on_value triggers.
+#     force_new_range: false 
     
 
-    write_lambda: |-
-      ESP_LOGI("main", "Schrijf setpoint %d%% naar Modbus.", (int)x);
-      return x;
+#     write_lambda: |-
+#       ESP_LOGI("main", "Schrijf setpoint %d%% naar Modbus.", (int)x);
+#       return x;
 
-    # Geoptimaliseerde regellogica
-    on_value:
-      then:
-        - lambda: |-
-            // 1. BLOKKEER SNELLER (Early exit)
-            if (std::isnan(x) || !id(wtw_systeem_volledig_online)) return; 
+#     # Geoptimaliseerde regellogica
+#     on_value:
+#       then:
+#         - lambda: |-
+#             // 1. BLOKKEER SNELLER (Early exit)
+#             if (std::isnan(x) || !id(wtw_systeem_volledig_online)) return; 
 
-            int binnenkomende_waarde = (int)x;
-            int berekend_doel = (int)id(rh_berekend_doel).state;
-            int vorige_waarde = id(vorige_rh_setpoint);
+#             int binnenkomende_waarde = (int)x;
+#             int berekend_doel = (int)id(rh_berekend_doel).state;
+#             int vorige_waarde = id(vorige_rh_setpoint);
 
-            // 2. CRUCIALE BOOT-FIX
-            if (vorige_waarde == 0) {
-              id(vorige_rh_setpoint) = binnenkomende_waarde;
-              ESP_LOGI("main", "Eerste Modbus-poll succesvol. RH setpoint start op %d%%.", binnenkomende_waarde);
-              return;
-            }
+#             // 2. CRUCIALE BOOT-FIX
+#             if (vorige_waarde == 0) {
+#               id(vorige_rh_setpoint) = binnenkomende_waarde;
+#               ESP_LOGI("main", "Eerste Modbus-poll succesvol. RH setpoint start op %d%%.", binnenkomende_waarde);
+#               return;
+#             }
 
-            // Sla direct op
-            id(vorige_rh_setpoint) = binnenkomende_waarde;
+#             // Sla direct op
+#             id(vorige_rh_setpoint) = binnenkomende_waarde;
 
-            // 3. COMBINEER CHECKS (Bespaart tijd en voorkomt fantoom-triggers)
-            if (binnenkomende_waarde == vorige_waarde || binnenkomende_waarde == berekend_doel) {
-              return;
-            }
+#             // 3. COMBINEER CHECKS (Bespaart tijd en voorkomt fantoom-triggers)
+#             if (binnenkomende_waarde == vorige_waarde || binnenkomende_waarde == berekend_doel) {
+#               return;
+#             }
 
-            // 4. CRUCIALE BLOKKADES (Douche & Handmatig al actief)
-            if (id(wtw_douche_actief).state || id(wtw_handmatig_actief).state) {
-              return;
-            }
+#             // 4. CRUCIALE BLOKKADES (Douche & Handmatig al actief)
+#             if (id(wtw_douche_actief).state || id(wtw_handmatig_actief).state) {
+#               return;
+#             }
 
-            // 5. Gebruiker verandert zelf de waarde via UI -> Activeer handmatig
-            id(wtw_rh_regeling).stop();
-            id(wtw_modus_normaal).stop();
-            id(wtw_handmatig_actief).publish_state(true);
-            ESP_LOGI("main", "Handmatige modus geactiveerd! (%d%% -> %d%%)", vorige_waarde, binnenkomende_waarde);
+#             // 5. Gebruiker verandert zelf de waarde via UI -> Activeer handmatig
+#             id(wtw_rh_regeling).stop();
+#             id(wtw_modus_normaal).stop();
+#             id(wtw_handmatig_actief).publish_state(true);
+#             ESP_LOGI("main", "Handmatige modus geactiveerd! (%d%% -> %d%%)", vorige_waarde, binnenkomende_waarde);
 
       
     # Jouw complete ongewijzigde regellogica
@@ -389,7 +389,36 @@ number:
     #         // Activeer de handmatige modus direct
     #         id(wtw_handmatig_actief).publish_state(true);
     #         ESP_LOGI("main", "Handmatige modus door gebruiker! Van %d%% naar %d%%.", vorige_waarde, binnenkomende_waarde);
+number:
+  - platform: modbus_controller
+    modbus_controller_id: modbus_duco_traag
+    name: "WTW RH setpoint"
+    id: rh_setpoint
+    icon: "mdi:water-percent"
+    register_type: holding
+    address: 582
+    value_type: S_WORD
+    min_value: 0
+    max_value: 100
+    step: 5
+    mode: box
+    unit_of_measurement: "%"
+    disabled_by_default: false
+    force_new_range: true # was true 
 
+    write_lambda: |-
+      ESP_LOGI("main", "Schrijf setpoint %d%% naar Modbus.", (int)x);
+      return x;
+
+    on_value:
+      then:
+        - lambda: |-
+            // Snelle pre-checks om de event-loop DIRECT vrij te geven
+            if (std::isnan(x) || !id(wtw_systeem_volledig_online)) {
+              return; 
+            }
+            // Start direct het asynchrone script en geef de waarde mee
+            id(verwerk_rh_wijziging).execute(x);
     web_server:
       sorting_group_id: sorting_group_configuration_setup
       sorting_weight: 5
@@ -1078,6 +1107,45 @@ sensor:
 # ==============================================================================
 
 script:
+  - id: verwerk_rh_wijziging
+    mode: restart # Als er snel achter elkaar getriggerd wordt, herstart het script netjes
+    parameters:
+      x_waarde: float
+    then:
+      - lambda: |-
+          int binnenkomende_waarde = (int)x_waarde;
+          int berekend_doel = (int)id(rh_berekend_doel).state;
+          int vorige_waarde = id(vorige_rh_setpoint);
+
+          // CRUCIALE BOOT-FIX
+          if (vorige_waarde == 0) {
+            id(vorige_rh_setpoint) = binnenkomende_waarde;
+            ESP_LOGI("main", "Eerste Modbus-poll na boot: %d%%.", binnenkomende_waarde);
+            return;
+          }
+
+          id(vorige_rh_setpoint) = binnenkomende_waarde;
+
+          if (binnenkomende_waarde == vorige_waarde) return;
+
+          if (binnenkomende_waarde == berekend_doel) {
+            ESP_LOGI("main", "Automatische RH setpoint update naar %d%%.", binnenkomende_waarde);
+            return;
+          }
+
+          if (id(wtw_douche_actief).state) {
+            ESP_LOGD("main", "Modbus wijziging genegeerd: Douche-afwikkeling actief.");
+            return;
+          }
+
+          if (id(wtw_handmatig_actief).state) return;
+
+          // Gebruiker actie
+          id(wtw_rh_regeling).stop();
+          id(wtw_modus_normaal).stop();
+          id(wtw_handmatig_actief).publish_state(true);
+          ESP_LOGI("main", "Handmatige modus door gebruiker! Van %d%% naar %d%%.", vorige_waarde, binnenkomende_waarde);
+
 
   # ==========================================
   # HOOFDREGELING: COORDINATOR SCRIPT (Routeert de modi)
