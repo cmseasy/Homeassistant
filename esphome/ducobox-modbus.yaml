@@ -170,20 +170,20 @@ uart:
 # 2. De basis Modbus-bus configureren
 modbus:
   - uart_id: modbus_uart
-    id: modbus_client
+    id: modbus_hub
     send_wait_time: 500ms
-    turnaround_time: 200ms
+    turnaround_time: 200ms 
 
 # 3. De Modbus Controller koppelen aan het Duco Slave adres
 modbus_controller:
   - id: modbus_duco
-    modbus_id: modbus_client
+    modbus_id: modbus_hub
     address: 1
     update_interval: 11s # 11 is priemgetal30s
     max_cmd_retries: 2
 
   - id: modbus_duco_traag
-    modbus_id: modbus_client
+    modbus_id: modbus_hub
     address: 1
     update_interval: 59s # Een priemgetal (~1 min) zodat hij bijna nooit tegelijk start met de 11s cyclus
                          # matterjs-server interval staat op 61s, beide priemgetallen
@@ -192,7 +192,7 @@ modbus_controller:
     max_cmd_retries: 2
         
   - id: modbus_duco_statisch # voor bv setpoints die niet vaak veranderen
-    modbus_id: modbus_client
+    modbus_id: modbus_hub
     address: 1
     update_interval: 599s  # Ongeveer 10min en een priemgetal
     # command_throttle: 300ms  # Verhoogd: geef de warmtepomp 300ms ademruimte tussen registers
