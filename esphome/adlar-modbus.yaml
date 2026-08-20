@@ -136,7 +136,7 @@ uart:
 # De juiste plek voor de maximale wachttijd (timeout)
 modbus:
   - uart_id: uart_modbus
-    id: modbus_client
+    id: modbus_hub
     role: client
     send_wait_time: 2000ms # was 3000  was 2000 is default #1000ms   # Verhoogd naar 1000ms om de trage Adlar meer tijd te geven
     turnaround_time: 300ms # 600 is default # 100ms   # Iets meer rusttijd tussen opeenvolgende commando's
@@ -144,21 +144,21 @@ modbus:
     
 modbus_controller:
   - id: modbus_adlar 
-    modbus_id: modbus_client
+    modbus_id: modbus_hub
     address: 0x01
     update_interval: 29s  # priemgetal
     command_throttle: 300ms  # Verhoogd: geef de warmtepomp 300ms ademruimte tussen registers
     setup_priority: -100
     
   - id: modbus_adlar_traag
-    modbus_id: modbus_client
+    modbus_id: modbus_hub
     address: 0x01
     update_interval: 293s # Een priemgetal (~5 min) zodat hij bijna nooit tegelijk start met de 30s cyclus
     command_throttle: 300ms  # Verhoogd: geef de warmtepomp 300ms ademruimte tussen registers
     setup_priority: -110
         
   - id: modbus_adlar_statisch # voor bv setpoints die niet vaak veranderen
-    modbus_id: modbus_client
+    modbus_id: modbus_hub
     address: 0x01
     update_interval: 599s  # Ongeveer 1 uur en een priemgetal
     command_throttle: 300ms  # Verhoogd: geef de warmtepomp 300ms ademruimte tussen registers
