@@ -115,6 +115,7 @@ binary_sensor:
   # icon: mdi:snowflake
 
 
+
   - platform: trend
     sensors:
       kamertemperatuur_stijgt:
@@ -148,7 +149,7 @@ binary_sensor:
       buffer_aanvoer_daalt:
         friendly_name: 'Buffervat aanvoer daalt'
 #        entity_id: var.wp_inlet_temperatuur
-        entity_id: sensor.wp_buffervat_temperatuur_aanvoer
+        entity_id: sensor.adlar_modbus_buffervat_aanvoer_temp_i
         sample_duration: 0
         max_samples: 10
         min_samples: 2 #6

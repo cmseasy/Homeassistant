@@ -1,3 +1,27 @@
+# template:
+#   - sensor:
+#       - name: "lichtintensiteit gemiddeld"
+#         unique_id: lichtintensiteit_gemiddeld
+#         state_class: measurement
+#         device_class: irradiance
+#         icon: mdi:calculator
+#         state: >
+#           {% if is_state('sun.sun', 'above_horizon') %}
+#             {% set s1 = states('sensor.thuis_globale_stralingsintensiteit') | float(none) %}
+#             {% set s2 = states('sensor.buienradar_irradiance') | float(none) %}
+#             {% if s1 is not none and s2 is not none %}
+#               {{ ((s1 + s2) / 2) | round(1) }}
+#             {% else %}
+#               0
+#             {% endif %}
+#           {% else %}
+#             0
+#           {% endif %}
+
+
+
+
+
 sensor:
   - platform: min_max
     name: Buitentemperatuur gemiddeld
@@ -7,7 +31,7 @@ sensor:
     entity_ids:
       - sensor.thuis_temperatuur
       - sensor.adlar_ambient_temp_t1
-      - sensor.ducobox_temperatuur_toevoer_van_buiten
+      - sensor.ducobox_buitentemperatuur
       - sensor.buienradar_temperature
 
   - platform: min_max
@@ -18,6 +42,9 @@ sensor:
     entity_ids:
       - sensor.thuis_luchtvochtigheid
       - sensor.buienradar_humidity
+
+
+
 
   - platform: min_max
     name: Buitenluchtdruk gemiddeld
@@ -31,14 +58,16 @@ sensor:
 
 
 
+
   - platform: min_max
     name: lichtintensiteit gemiddeld
     unique_id: lichtintensiteit_gemiddeld
     type: mean
     round_digits: 1
     entity_ids:
-      - sensor.thuis_globale_stralingsintensiteit
+    #  - sensor.thuis_globale_stralingsintensiteit
       - sensor.buienradar_irradiance
+
 
   - platform: min_max
     name: Kamertemperatuur gemiddeld
@@ -46,5 +75,6 @@ sensor:
     type: mean
     round_digits: 1
     entity_ids:
-      - sensor.ducobox_temperatuur_woonkamer
+#      - sensor.ducobox_temperatuur_woonkamer
+      - sensor.woonkamer_temperature_2
       - sensor.woonkamer_temperature

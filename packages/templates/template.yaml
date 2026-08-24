@@ -1,0 +1,127 @@
+template:
+
+  - sensor:
+    - name: "Date and time"
+      state: "{{ as_timestamp(states('sensor.date_time_iso')) | timestamp_custom('%A, %d %B %Y, %Rh') }}"
+      icon: "mdi:calendar-clock"
+
+
+  #
+  # Waterkosten per m3: WMD
+  # Kale prijs plus inkoopvergoeding en belasting per m3
+  #
+  - sensor:
+    - unique_id: price_water_incl
+      name: "Prijs water inclusief"
+      state_class: measurement
+      unit_of_measurement: "€/m³"
+  #    device_class: monetary
+      icon: mdi:currency-eur
+      state: >-
+        {% set btw = 9.0 | float() %}
+        {% set inkoopprijs = 1.155400 | float() %} {# per m3, ex BTW #}
+        {% set belasting_m3 = 0.149673 | float() %} {# per m3, ex BTW #}
+        {% set price_m3 = (1 + btw/100) * (inkoopprijs + belasting_m3 ) %}
+        {{ price_m3 }} 
+
+
+
+
+  # Graaddag
+  - trigger:
+      trigger: time
+      at: "23:59:01"
+    sensor:
+    - name: degree_day_daily
+      unique_id: degree_day_daily
+      state: >
+        {% set regularized_temp = 19.5 | float %}
+        {% set average_outside_temp = states('sensor.buitentemperatuur_gemiddeld') | float %}
+        {% set dd = regularized_temp - average_outside_temp %}
+        {% if dd > 0 %}
+          {{ dd }}
+        {% else %}
+          0
+        {% endif %}      
+      unit_of_measurement: 'DD'
+
+
+
+
+  # - trigger:
+  #     trigger: state
+  #     entity_id: sensor.average_electricity_price
+  #     # trigger: time_pattern
+  #     # minutes: "/1"
+  #   sensor:
+  #     - name: "Gekopieerde Elektriciteitsprijs"
+  #       unique_id: gekopieerde_elektriciteitsprijs_01
+  #       state: >
+  #         {{ states('sensor.average_electricity_price') }}
+  #       icon: "{{ state_attr('sensor.average_electricity_price', 'icon') }}"
+  #       attributes:
+  #         unit_of_measurement: "{{ state_attr('sensor.average_electricity_price', 'unit_of_measurement') }}"
+  #         device_class: "{{ state_attr('sensor.average_electricity_price', 'device_class') }}"
+  #         state_class: "{{ state_attr('sensor.average_electricity_price', 'state_class') }}"
+  #         prices_today: "{{ state_attr('sensor.average_electricity_price', 'prices_today') }}"
+  #         prices_tomorrow: "{{ state_attr('sensor.average_electricity_price', 'prices_tomorrow') }}"
+  #         prices: "{{ state_attr('sensor.average_electricity_price', 'prices') }}"
+
+
+
+  - trigger:
+      - trigger: time_pattern
+        hours: "/1"
+      - trigger: homeassistant
+        event: start
+      - trigger: event
+        event_type: event_template_reloaded # Zorgt dat hij DIRECT start bij handmatig herladen
+    action:
+      - action: weather.get_forecasts
+        data:
+          type: hourly
+        target:
+          entity_id: weather.peize
+        response_variable: knmi_hourly
+    binary_sensor:
+      - name: "Ramen Open Advies"
+        icon: mdi:window-open-variant
+        device_class: opening
+        
+        # Dit wordt nu wél aangemaakt omdat de state hieronder niet meer crasht
+        attributes:
+          voorspellingen: "{{ knmi_hourly['weather.peize'].forecast }}"
+
+        availability: >
+          {{ states('sensor.kamertemperatuur_gemiddeld') | float(none) is not none and
+            states('sensor.buitentemperatuur_gemiddeld') | float(none) is not none }}
+
+        state: >
+          {% set binnen = states('sensor.kamertemperatuur_gemiddeld') | float(0) %}
+          {% set buiten = states('sensor.buitentemperatuur_gemiddeld') | float(0) %}
+          
+          {% set voorspellingen = knmi_hourly['weather.peize'].forecast | default([], true) %}
+          
+          {# DE FIX: Hier zijn de, [1] en [2] toegevoegd om de juiste uren te pakken #}
+          {% if voorspellingen and voorspellingen | length >= 3 %}
+            {% set temp_u0 = voorspellingen[0].temperature | float(0) %}
+            {% set temp_u1 = voorspellingen[1].temperature | float(0) %}
+            {% set temp_u2 = voorspellingen[2].temperature | float(0) %}
+            {% set max_verwacht_buiten = [temp_u0, temp_u1, temp_u2] | max %}
+          {% else %}
+            {% set max_verwacht_buiten = buiten %}
+          {% endif %}
+          
+          {% if binnen < 23.0 and buiten < 23.0 %}
+            off
+          {% else %}
+            {% set huidige_status = is_state('binary_sensor.ramen_open_advies', 'on') %}
+            
+            {% if huidige_status %}
+              {{ buiten < (binnen + 0.2) }}
+            {% else %}
+              {{ buiten <= (binnen - 0.3) and max_verwacht_buiten <= (binnen - 0.3) }}
+            {% endif %}
+          {% endif %}
+
+

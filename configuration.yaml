@@ -18,19 +18,6 @@ homeassistant:
     "number.adlar_*": # For number entities from integrations
       mode: box
 
-# voor persons https://companion.home-assistant.io/docs/getting_started/
-# cloud:
-
-#
-# Http setup
-#
-# http:
-#   use_x_forwarded_for: true
-#   trusted_proxies:
-#     - 192.168.1.0/24
-#     - 127.0.0.1
-#     - ::1
-
 #
 # Text to speech
 #
@@ -85,28 +72,34 @@ influxdb:
       - sensor.airq_*_air_temperature
       - sensor.airq_*_humidity
       - sensor.airq_*_carbon_dioxide_co2_level
+      - sensor.*_last_seen
+      - sensor.warmtepomp_energieverbruik_e_*
+      - sensor.degree_days_this_year
+      - sensor.weighted_degree_days_this_year
+      - sensor.energy_consumption_*
     entities:
       - sensor.volle_zonuren
-  exclude:
-    entity_globs:
-      - adlar_warmtepomp_wp_* # local tuya
+#  exclude:
+#    entity_globs:
+#      - adlar_warmtepomp_wp_* # local tuya
 
 #
 # Files include
 #
-script: !include scripts.yaml
-scene: !include scenes.yaml
+script: !include scripts.yaml #ja
+scene: !include scenes.yaml #ja
 group: !include group.yaml
+climate: !include climate.yaml
 
 # My own handmade automations
 automation manual: !include_dir_list automation/
 # Automations I create in the UI
-automation ui: !include automations.yaml
+automation ui: !include automations.yaml #ja
 
 #
 # Directories include
 #
-template: !include_dir_merge_list templates/
+#template: !include_dir_merge_list templates/
 
 #`
 # Log data
@@ -139,6 +132,7 @@ logbook:
       - sensor.inverter_*
       - sensor.time*
       - sensor.date*
+      - sensor.*_last_seen
     domains:
       - Envoy-S-Metered-EU
       - Forecast.Solar
@@ -161,49 +155,18 @@ frontend:
     - /hacsfiles/lovelace-card-mod/card-mod.js?hacstag=190927524421
     - /hacsfiles/sidebar-organizer/sidebar-organizer.js?hacstag=932534411420
 
+
 # climate:
-#   - platform: generic_thermostat
+#   - platform: dual_smart_thermostat
 #     name: WP thermostaat
-#     heater: switch.adlar_main_switch
-#     target_sensor: sensor.woonkamer_temperature
-#     target_temp_step: 0.5
-#     precision: 0.1
-#     min_temp: 15
-#     max_temp: 23  932534411400
-#     ac_mode: false
-#     initial_hvac_mode: "off"
-climate:
-  - platform: dual_smart_thermostat
-    name: WP thermostaat
-    heater: switch.hvac_verwarmen # <-required
-    cooler: switch.hvac_koelen # <-required
-    #    heat_pump_cooling: switch.hvac_koelen
-    target_sensor: sensor.smart_thermostat_x_temperatuur
-    min_temp: 10
-    max_temp: 25
-    keep_alive:
-      minutes: 1
-# deze zomer toegevoegd, matig/niet getest
-# onbekend of dit werkt/een functie heeft ivm automatisering koelen/verwarmen
-#    initial_hvac_mode: "heat"
-    # heat_pump_cooling: switch.hvac_koelen
-    heat_cool_mode: true
-#    keep_alive: 0
-#    target_temp_low: 20.0
-#    target_temp_high: 23.0
-# wordt in automation verwarmen/koelen geregeld
-# min_cycle_duration:
-#   minutes: 15
-# min_hysteresis: 0.3
+#     heater: switch.hvac_verwarmen # <-required
+#     cooler: switch.hvac_koelen # <-required
+#     #    heat_pump_cooling: switch.hvac_koelen
+#     target_sensor: sensor.smart_thermostat_x_temperatuur
+#     min_temp: 10
+#     max_temp: 25
+#     keep_alive:
+#       minutes: 1
+#     heat_cool_mode: true
 
-# sensor:
-#   - platform: min_max
-#     name: Buitentemperatuur gemiddeld
-#     unique_id: buitentemperatuur_gemiddeld
-#     type: mean
-#     entity_ids:
-#         - sensor.thuis_temperatuur
-#         - sensor.adlar_ambient_temp_t1
-#         - sensor.ducobox_temperatuur_toevoer_van_buiten
 
-# #      - sensor.buienradar_temperature

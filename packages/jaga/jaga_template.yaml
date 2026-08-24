@@ -1,4 +1,4 @@
-fan: #Shelly's
+fan: # Shelly's of qubino's
   - platform: group
     name: "Jaga DBH Ventilatoren"
     entities:

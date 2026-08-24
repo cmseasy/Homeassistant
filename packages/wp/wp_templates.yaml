@@ -151,7 +151,7 @@ template:
         {% endif %}
 
   # - trigger:
-  #     - platform: time_pattern
+  #     - trigger: time_pattern
   #       seconds: "/1" # Update elke seconde
   - sensor:
     - name: "Wachttijd Temp set Resterende Tijd"
@@ -257,6 +257,22 @@ template:
   #           unavailable
   #         {% endif %}
 
- 
+# DE hoogste/maximale temperatuur die de koeling geeft bij een bepaalde buitentemperatuur
+  - sensor:
+    - name: "WP maximale temp_set_cooling"
+      unique_id: wp_max_temp_set_cooling
+      icon: "mdi:sun-thermometer"
+      state: >-
+        {% set temp_buiten = states('sensor.buitentemperatuur_gemiddeld') | float(0) %}
+        {% if temp_buiten < 23 %} 18
+        {% elif 23 <= temp_buiten < 25 %} 17
+        {% elif 25 <= temp_buiten < 27 %} 16
+        {% elif 27 <= temp_buiten < 29 %} 15
+        {% elif 29 <= temp_buiten < 31 %} 14
+        {% elif 31 <= temp_buiten < 33 %} 13
+        {% else %} 10
+        {% endif %}
+
+
 
 
